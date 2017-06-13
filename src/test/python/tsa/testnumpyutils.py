@@ -263,10 +263,6 @@ class TestNumPyUtils(unittest.TestCase):
         npt.assert_almost_equal(r, np.array([[56.], [3.], [434.]]))
         self.assertEqual(funcvcallcount, 1)
         
-    def testNumericError(self):
-        with self.assertRaises(npu.NumericError):
-            raise npu.NumericError('Failed to converge')
-        
 if __name__ == '__main__':
     unittest.main()
     

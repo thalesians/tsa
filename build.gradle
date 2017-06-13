@@ -37,6 +37,6 @@ dependencies {
     // EJML, as described in https://github.com/lessthanoptimal/ejml
     compile group: 'org.ejml', name: 'all', version: '0.30'
     
-    // Apache Commons, as described in https://mvnrepository.com/artifact/org.apache.commons/commons-math3
+    // Apache Commons Math, as described in https://mvnrepository.com/artifact/org.apache.commons/commons-math3
     compile group: 'org.apache.commons', name: 'commons-math3', version: '3.0'
 }

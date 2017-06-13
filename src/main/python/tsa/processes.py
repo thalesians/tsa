@@ -30,15 +30,34 @@ class ItoProcess(object):
     def __str__(self):
         return 'ItoProcess(processdim=%d, noisedim=%d)' % (self.__processdim, self.__noisedim)
     
+class SolvedItoProcess(ItoProcess):
+    def __init__(self, processdim=1, noisedim=1, drift=None, diffusion=None):
+        super(SolvedItoProcess, self).__init__(processdim, noisedim, drift, diffusion)
+        
+    def propagate(self, time, variate, time0, value0, state0=None):
+        raise NotImplementedError()
+    
+    def __str__(self):
+        return 'SolvedItoProcess(processdim=%d, noisedim=%d)' % (self.__processdim, self.__noisedim)
+
+# TODO To be implemented
 class MarkovProcess(object):
     def __init__(self, processdim, noisedim):
         self.__processdim = processdim
         self.__noisedim = noisedim
         
-    def propagate(self, time, value, timedelta, variatedelta):
+    def propagatevalue(self, time, value, timedelta, variatedelta):
+        raise NotImplementedError()
+    
+    def propagatedistribution(self):
         pass
     
-class WienerProcess(ItoProcess):
+# TODO To be implemented
+class KalmanProcess(object):
+    def __init__(self):
+        pass
+    
+class WienerProcess(SolvedItoProcess):
     def __init__(self, mean=None, vol=None):
         if mean is None and vol is None:
             mean = 0.; vol = 1.
@@ -81,10 +100,18 @@ class WienerProcess(ItoProcess):
     @staticmethod
     def createfromcov(mean, cov):
         return WienerProcess(mean, WienerProcess.makevolfromcov(cov))
+    
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+        timedelta = time - time0
+        return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
 
     def __str__(self):
         return 'WienerProcess(processdim=%d, noisedim=%d, mean=%s, vol=%s)' % (self.processdim, self.noisedim, str(self.__mean), str(self.__vol))
 
+# TODO Add the propagate method
 class OrnsteinUhlenbeckProcess(ItoProcess):
     def __init__(self, transition=None, mean=None, vol=None):
         if transition is None and mean is None and vol is None:

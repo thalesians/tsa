@@ -99,7 +99,3 @@ def isvectorised(func):
     if not res and hasattr(func, '__dict__'):
         res = func.__getattribute__('__dict__').get('vectorised', False)
     return res
-
-class NumericError(Exception):
-    def __init__(self, message):
-        super(NumericError, self).__init__(message)

@@ -2,6 +2,7 @@ import datetime as dt
 
 import numpy as np
 
+import tsa.exceptions as exc
 import tsa.numpyutils as npu
 import tsa.numpychecks as npc
 
@@ -15,7 +16,7 @@ def randomstate(randomstate=None, force=False):
         if force:
             __randomstate = randomstate
         else:
-            raise npu.NumericError('Process-wide random state is already set; it may not be set twice')
+            raise exc.NumericError('Process-wide random state is already set; it may not be set twice')
     return __randomstate
 
 # So we don't have the clash between the "randomstate" function and the "randomstate" argument name occurring later

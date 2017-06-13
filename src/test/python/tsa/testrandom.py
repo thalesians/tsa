@@ -4,6 +4,7 @@ import datetime as dt
 import numpy as np
 import numpy.testing as npt
 
+import tsa.exceptions as exc
 import tsa.random as rnd
 import tsa.numpyutils as npu
 
@@ -14,7 +15,7 @@ class TestRandom(unittest.TestCase):
         rs = np.random.RandomState(seed=42)
         rnd.randomstate(rs, force=True)
         self.assertEqual(rnd.randomstate(), rs)
-        with self.assertRaises(npu.NumericError):
+        with self.assertRaises(exc.NumericError):
             rnd.randomstate(rs)
         rs = np.random.RandomState(seed=132)
         rnd.randomstate(rs, force=True)
