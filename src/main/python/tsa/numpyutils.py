@@ -87,6 +87,15 @@ def uppertosymmetric(a, copy=False):
     a[(idxs[1], idxs[0])] = a[idxs]
     return a
 
+def kronsum(arg1, arg2):
+    return np.kron(arg1, np.eye(nrow(arg2))) + np.kron(np.eye(nrow(arg1)), arg2)
+
+def vec(arg):
+    return np.resize(tondim2(arg, ndim1tocol=True, copy=False).T, (np.size(arg), 1))
+
+def unvec(arg, nrow):
+    return np.resize(tondim1(arg, copy=False), (np.size(arg) // nrow, nrow)).T
+
 def vectorised(func):
     func.__dict__['vectorised'] = True
     return func

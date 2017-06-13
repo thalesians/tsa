@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg as la
 
 import tsa.numpyutils as npu
 import tsa.numpychecks as npc
@@ -84,7 +85,7 @@ class WienerProcess(SolvedItoProcess):
         npu.makeimmutable(self.__vol)
         
         super(WienerProcess, self).__init__(processdim, noisedim, lambda t, x: self.__mean, lambda t, x: self.__vol)
-    
+        
     @staticmethod    
     def makevol2d(sd1, sd2, cor):
         return np.array([[sd1, 0.], [cor*sd2, np.sqrt(1. - cor*cor)*sd2]])
@@ -100,6 +101,14 @@ class WienerProcess(SolvedItoProcess):
     @staticmethod
     def createfromcov(mean, cov):
         return WienerProcess(mean, WienerProcess.makevolfromcov(cov))
+    
+    @property
+    def mean(self):
+        return self.__mean
+    
+    @property
+    def vol(self):
+        return self.__vol
     
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
@@ -129,7 +138,7 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
             self.__vol = npu.tondim2(vol, ndim1tocol=True, copy=True)
             processdim = npu.nrow(self.__vol)
         
-        if self.__transition is None: self.__transition = np.eye(processdim)    
+        if self.__transition is None: self.__transition = np.eye(processdim)
         if self.__mean is None: self.__mean = npu.colof(processdim, 0.)
         if self.__vol is None: self.__vol = np.eye(processdim)
         
@@ -146,6 +155,41 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         npu.makeimmutable(self.__vol)
         
         super(OrnsteinUhlenbeckProcess, self).__init__(processdim, noisedim, lambda t, x: -np.dot(self.__transition, x - self.__mean), lambda t, x: self.__vol)
+        
+    @property
+    def transition(self):
+        return self.__transition
+        
+    @property
+    def mean(self):
+        return self.__mean
+    
+    @property
+    def vol(self):
+        return self.__vol
+    
+    def meanreversionfactor(self, timedelta):
+        # TODO Cache if timedelta is the same
+        return la.expm(self.__transition * (-timedelta))
+    
+    def meanreversionfactorsquared(self, timedelta):
+        # TODO Cache if timedelta is the same
+        return la.expm()
+        
+    
+    def noisecovariance(self, time, time0):
+        timedelta = time - time0
+        mrfsquared = meanreversionfactorsquared(timedelta)
+        
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+        variate = npu.tondim2(variate, ndim2tocol=True, copy=False)
+        timedelta = time - time0
+        mrf = self.meanreversionfactor(timedelta)
+        eyeminusmrf = np.eye(self.processdim) - mrf
+        m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
+        return m
         
     def __str__(self):
         return 'OrnsteinUhlenbeckProcess(processdim=%d, noisedim=%d, transition=%s, mean=%s, vol=%s)' % (self.processdim, self.noisedim, str(self.__transition), str(self.__mean), str(self.__vol))

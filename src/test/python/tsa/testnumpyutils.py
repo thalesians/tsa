@@ -225,6 +225,50 @@ class TestNumPyUtils(unittest.TestCase):
         b = npu.uppertosymmetric(a, copy=True)
         npt.assert_almost_equal(a, npu.matrix(3, 429., 5., 42., 0., 2., 1., 0., 0., 1.))
         npt.assert_almost_equal(b, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))
+        
+    def testkron(self):
+        a = np.array([[  5., 1.,   14., 2., 42.],
+                      [132., 2.,  429., 1.,  1.],
+                      [  1., 2., 1430., 2.,  2.]])
+        b = np.array([[42.,   2.],
+                      [ 5.,   1.],
+                      [ 5.,   2.],
+                      [14., 132.]])
+        c = np.kron(a, b)
+        
+        n = npu.nrow(a); p = npu.ncol(a)
+        m = npu.nrow(b); q = npu.ncol(b)
+        
+        self.assertEqual(npu.nrow(c), m*n)
+        self.assertEqual(npu.ncol(c), p*q)
+
+        for i in range(n):
+            for j in range(p):
+                npt.assert_almost_equal(c[i*m:(i+1)*m, j*q:(j+1)*q], a[i, j] * b)
+
+    def testkronsum(self):
+        a = np.array([[5., 1.],
+                      [2., 5.]])
+        b = np.array([[ 14., 42.,  1.],
+                      [132., 14.,  2.],
+                      [  5.,  2., 42.]])
+        c = npu.kronsum(a, b)
+        
+        m = npu.nrow(a)
+        self.assertEqual(npu.ncol(a), m)
+        n = npu.nrow(b)
+        self.assertEqual(npu.ncol(b), n)
+        
+        knownkronsum = np.kron(a, np.eye(n)) + np.kron(np.eye(m), b)
+        npt.assert_almost_equal(c, knownkronsum)
+        
+    def testvecandunvec(self):
+        a = np.array([[  5., 1.,   14., 2., 42.],
+                      [132., 2.,  429., 1.,  1.],
+                      [  1., 2., 1430., 2.,  2.]])
+        b = npu.col(5., 132., 1., 1., 2., 2., 14., 429., 1430., 2., 1., 2., 42., 1., 2.)
+        npt.assert_almost_equal(npu.vec(a), b)
+        npt.assert_almost_equal(npu.unvec(b, 3), a)
 
     def testvectorised(self):
         funccallcount = 0
