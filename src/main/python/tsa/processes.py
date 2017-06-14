@@ -150,9 +150,23 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         
         noisedim = npu.ncol(self.__vol)
         
+        self.__transitionx2 = npu.kronsum(self.__transition, self.__transition)
+        self.__transitionx2inverse = np.linalg.inv(self.__transitionx2)
+        self.__cov = np.dot(self.__vol, self.__vol.T)
+        self.__covvec = npu.vec(self.__cov)
+        
+        self.__cachedmeanreversionfactor = None
+        self.__cachedmeanreversionfactortimedelta = None
+        self.__cachedmeanreversionfactorsquared = None
+        self.__cachedmeanreversionfactorsquaredtimedelta = None
+        
         npu.makeimmutable(self.__transition)
+        npu.makeimmutable(self.__transitionx2)
+        npu.makeimmutable(self.__transitionx2inverse)
         npu.makeimmutable(self.__mean)
         npu.makeimmutable(self.__vol)
+        npu.makeimmutable(self.__cov)
+        npu.makeimmutable(self.__covvec)
         
         super(OrnsteinUhlenbeckProcess, self).__init__(processdim, noisedim, lambda t, x: -np.dot(self.__transition, x - self.__mean), lambda t, x: self.__vol)
         
@@ -169,17 +183,22 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         return self.__vol
     
     def meanreversionfactor(self, timedelta):
-        # TODO Cache if timedelta is the same
-        return la.expm(self.__transition * (-timedelta))
+        if self.__cachedmeanreversionfactorsquaredtimedelta is None or self.__cachedmeanreversionfactortimedelta != timedelta:
+            self.__cachedmeanreversionfactorsquaredtimedelta = timedelta
+            self.__cachedmeanreversionfactor = la.expm(self.__transition * (-timedelta))
+        return self.__cachedmeanreversionfactor
     
     def meanreversionfactorsquared(self, timedelta):
-        # TODO Cache if timedelta is the same
-        return la.expm()
+        if self.__cachedmeanreversionfactorsquaredtimedelta is None or self.__cachedmeanreversionfactorsquaredtimedelta != timedelta:
+            self.__cachedmeanreversionfactorsquaredtimedelta = timedelta
+            self.__cachedmeanreversionfactorsquared = la.expm(self.__transitionratex2 * (-timedelta))
+        return self.__cachedmeanreversionfactorsquared
         
-    
     def noisecovariance(self, time, time0):
         timedelta = time - time0
-        mrfsquared = meanreversionfactorsquared(timedelta)
+        mrfsquared = self.meanreversionfactorsquared(timedelta)
+        eyeminusmrfsquared = np.eye(self.processdim) - mrfsquared
+        return npu.unvec(np.dot(np.dot(self.__transitionx2inverse, eyeminusmrfsquared), self.__covvec), self.processdim)
         
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
@@ -189,7 +208,8 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         mrf = self.meanreversionfactor(timedelta)
         eyeminusmrf = np.eye(self.processdim) - mrf
         m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
-        return m
+        c = self.noisecovariance(time, time0)
+        return m + np.dot(np.linalg.cholesky(c), variate)
         
     def __str__(self):
         return 'OrnsteinUhlenbeckProcess(processdim=%d, noisedim=%d, transition=%s, mean=%s, vol=%s)' % (self.processdim, self.noisedim, str(self.__transition), str(self.__mean), str(self.__vol))
