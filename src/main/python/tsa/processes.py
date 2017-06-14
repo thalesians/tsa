@@ -183,15 +183,15 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         return self.__vol
     
     def meanreversionfactor(self, timedelta):
-        if self.__cachedmeanreversionfactorsquaredtimedelta is None or self.__cachedmeanreversionfactortimedelta != timedelta:
-            self.__cachedmeanreversionfactorsquaredtimedelta = timedelta
+        if self.__cachedmeanreversionfactortimedelta is None or self.__cachedmeanreversionfactortimedelta != timedelta:
+            self.__cachedmeanreversionfactortimedelta = timedelta
             self.__cachedmeanreversionfactor = la.expm(self.__transition * (-timedelta))
         return self.__cachedmeanreversionfactor
     
     def meanreversionfactorsquared(self, timedelta):
         if self.__cachedmeanreversionfactorsquaredtimedelta is None or self.__cachedmeanreversionfactorsquaredtimedelta != timedelta:
             self.__cachedmeanreversionfactorsquaredtimedelta = timedelta
-            self.__cachedmeanreversionfactorsquared = la.expm(self.__transitionratex2 * (-timedelta))
+            self.__cachedmeanreversionfactorsquared = la.expm(self.__transitionx2 * (-timedelta))
         return self.__cachedmeanreversionfactorsquared
         
     def noisecovariance(self, time, time0):
@@ -203,7 +203,7 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
         value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-        variate = npu.tondim2(variate, ndim2tocol=True, copy=False)
+        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
         timedelta = time - time0
         mrf = self.meanreversionfactor(timedelta)
         eyeminusmrf = np.eye(self.processdim) - mrf
