@@ -1,16 +1,18 @@
 import numpy as np
 import scipy.linalg as la
 
+import tsa.distrs as distrs
 import tsa.numpyutils as npu
 import tsa.numpychecks as npc
 
 class ItoProcess(object):
-    def __init__(self, processdim=1, noisedim=1, drift=None, diffusion=None):
+    def __init__(self, processdim=1, noisedim=None, drift=None, diffusion=None, **kwargs):
         self.__processdim = processdim
-        self.__noisedim = noisedim
+        self.__noisedim = processdim if noisedim is None else noisedim
         # Note: the brackets around the lambdas below are essential, otherwise the result of the parsing will not be what we need:
         self.__drift = (lambda t, x: npu.rowof(self.__processdim, 0.)) if drift is None else drift
         self.__diffusion = (lambda t, x: npu.matrixof(self.__processdim, self.__noisedim, 0.)) if diffusion is None else diffusion
+        super(ItoProcess, self).__init__(processdim=processdim, noisedim=noisedim, drift=drift, diffusion=diffusion, **kwargs)
         
     @property
     def processdim(self):
@@ -32,49 +34,75 @@ class ItoProcess(object):
         return 'ItoProcess(processdim=%d, noisedim=%d)' % (self.__processdim, self.__noisedim)
     
 class SolvedItoProcess(ItoProcess):
-    def __init__(self, processdim=1, noisedim=1, drift=None, diffusion=None):
-        super(SolvedItoProcess, self).__init__(processdim, noisedim, drift, diffusion)
+    def __init__(self, processdim=1, noisedim=None, drift=None, diffusion=None, **kwargs):
+        super(SolvedItoProcess, self).__init__(processdim=processdim, noisedim=noisedim, drift=drift, diffusion=diffusion, **kwargs)
         
     def propagate(self, time, variate, time0, value0, state0=None):
         raise NotImplementedError()
     
     def __str__(self):
-        return 'SolvedItoProcess(processdim=%d, noisedim=%d)' % (self.__processdim, self.__noisedim)
+        return 'SolvedItoProcess(processdim=%d, noisedim=%d)' % (self.processdim, self.noisedim)
 
-# TODO To be implemented
 class MarkovProcess(object):
-    def __init__(self, processdim, noisedim):
+    def __init__(self, processdim, **kwargs):
         self.__processdim = processdim
-        self.__noisedim = noisedim
         
-    def propagatevalue(self, time, value, timedelta, variatedelta):
+        self.__cachedtime = None
+        self.__cachedtime0 = None
+        self.__cacheddistr0 = None
+        self.__cacheddistr = None
+        super(MarkovProcess, self).__init__()
+        
+    def propagatedistr(self, time, time0, distr0):
+        if time == time0: return distr0
+        if self.__cachedtime is None or self.__cachedtime != time or self.__cachedtime0 != time0 or self.__cacheddistr0 != distr0:
+            self.__cacheddistr = self._propagatedistrimpl(time, time0, distr0)
+            self.__cachedtime = time
+            self.__cachedtime0 = time0
+            self.__cacheddistr0 = distr0
+        return self.__cacheddistr
+    
+    def _propagatedistrimpl(self, time, time0, distr0):
         raise NotImplementedError()
     
-    def propagatedistribution(self):
-        pass
+    def __str__(self):
+        return 'MarkovProcess(processdim=%d)' % self.__processdim
     
+class SolvedItoMarkovProcess(SolvedItoProcess, MarkovProcess):
+    def __init__(self, processdim=1, noisedim=None, drift=None, diffusion=None, **kwargs):
+        super(SolvedItoMarkovProcess, self).__init__(processdim=processdim, noisedim=noisedim, drift=drift, diffusion=diffusion, **kwargs)
+    
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+        distr = self.propagatedistr(time, time0, distrs.NormalDistr(mean=value0, cov=np.zeros((self.processdim, self.processdim))))
+        return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
+
+    def __str__(self):
+        return 'SolvedItoMarkovProcess(processdim=%d, noisedim=%d)' % (self.processdim, self.noisedim)
+
 # TODO To be implemented
-class KalmanProcess(object):
+class KalmanProcess(MarkovProcess):
     def __init__(self):
         pass
     
-class WienerProcess(SolvedItoProcess):
+class WienerProcess(SolvedItoMarkovProcess):
     def __init__(self, mean=None, vol=None):
         if mean is None and vol is None:
             mean = 0.; vol = 1.
-            
+        
         self.__mean, self.__vol = None, None
-            
+        
         if mean is not None:
             self.__mean = npu.tondim2(mean, ndim1tocol=True, copy=True)
             processdim = npu.nrow(self.__mean)
         if vol is not None:
             self.__vol = npu.tondim2(vol, ndim1tocol=True, copy=True)
             processdim = npu.nrow(self.__vol)
-            
+        
         if self.__mean is None: self.__mean = npu.colof(processdim, 0.)
         if self.__vol is None: self.__vol = np.eye(processdim)
-            
+        
         npc.checkcol(self.__mean)
         npc.checknrow(self.__mean, processdim)
         npc.checknrow(self.__vol, processdim)
@@ -84,23 +112,15 @@ class WienerProcess(SolvedItoProcess):
         npu.makeimmutable(self.__mean)
         npu.makeimmutable(self.__vol)
         
-        super(WienerProcess, self).__init__(processdim, noisedim, lambda t, x: self.__mean, lambda t, x: self.__vol)
+        super(WienerProcess, self).__init__(processdim=processdim, noisedim=noisedim, drift=lambda t, x: self.__mean, diffusion=lambda t, x: self.__vol)
         
-    @staticmethod    
-    def makevol2d(sd1, sd2, cor):
-        return np.array([[sd1, 0.], [cor*sd2, np.sqrt(1. - cor*cor)*sd2]])
-    
-    @staticmethod
-    def makevolfromcov(cov):
-        return np.linalg.cholesky(cov)
-    
     @staticmethod
     def create2d(mean1, mean2, sd1, sd2, cor):
-        return WienerProcess(npu.col(mean1, mean2), WienerProcess.makevol2d(sd1, sd2, cor))
+        return WienerProcess(npu.col(mean1, mean2), distrs.NormalDistr.makevol2d(sd1, sd2, cor))
     
     @staticmethod
     def createfromcov(mean, cov):
-        return WienerProcess(mean, WienerProcess.makevolfromcov(cov))
+        return WienerProcess(mean, distrs.NormalDistr.makevolfromcov(cov))
     
     @property
     def mean(self):
@@ -110,18 +130,31 @@ class WienerProcess(SolvedItoProcess):
     def vol(self):
         return self.__vol
     
-    def propagate(self, time, variate, time0, value0, state0=None):
-        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
-        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+    #def propagate(self, time, variate, time0, value0, state0=None):
+    #    if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+    #    value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+    #    variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+    #    timedelta = time - time0
+    #    return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
+    
+    def _propagatedistrimpl(self, time, time0, distr0):
         timedelta = time - time0
-        return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
+        mean = distr0.mean + self.__mean * timedelta
+        cov = distr0.cov + timedelta * self.__vol
+        return distrs.NormalDistr(mean=mean, cov=cov)
+        
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__mean == other.__mean and self.__vol == other.__vol
+        return False
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __str__(self):
         return 'WienerProcess(processdim=%d, noisedim=%d, mean=%s, vol=%s)' % (self.processdim, self.noisedim, str(self.__mean), str(self.__vol))
 
-# TODO Add the propagate method
-class OrnsteinUhlenbeckProcess(ItoProcess):
+class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
     def __init__(self, transition=None, mean=None, vol=None):
         if transition is None and mean is None and vol is None:
             transition = 1.; mean = 0.; vol = 1.
@@ -168,7 +201,7 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         npu.makeimmutable(self.__cov)
         npu.makeimmutable(self.__covvec)
         
-        super(OrnsteinUhlenbeckProcess, self).__init__(processdim, noisedim, lambda t, x: -np.dot(self.__transition, x - self.__mean), lambda t, x: self.__vol)
+        super(OrnsteinUhlenbeckProcess, self).__init__(processdim=processdim, noisedim=noisedim, drift=lambda t, x: -np.dot(self.__transition, x - self.__mean), diffusion=lambda t, x: self.__vol)
         
     @property
     def transition(self):
@@ -200,17 +233,34 @@ class OrnsteinUhlenbeckProcess(ItoProcess):
         eyeminusmrfsquared = np.eye(self.processdim) - mrfsquared
         return npu.unvec(np.dot(np.dot(self.__transitionx2inverse, eyeminusmrfsquared), self.__covvec), self.processdim)
         
-    def propagate(self, time, variate, time0, value0, state0=None):
-        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
-        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+    #def propagate(self, time, variate, time0, value0, state0=None):
+    #    if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+    #    value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+    #    variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+    #    timedelta = time - time0
+    #    mrf = self.meanreversionfactor(timedelta)
+    #    eyeminusmrf = np.eye(self.processdim) - mrf
+    #    m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
+    #    c = self.noisecovariance(time, time0)
+    #    return m + np.dot(np.linalg.cholesky(c), variate)
+        
+    def _propagatedistrimpl(self, time, time0, distr0):
+        value0 = distr0.mean
         timedelta = time - time0
         mrf = self.meanreversionfactor(timedelta)
         eyeminusmrf = np.eye(self.processdim) - mrf
         m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
-        c = self.noisecovariance(time, time0)
-        return m + np.dot(np.linalg.cholesky(c), variate)
-        
+        c = np.dot(np.dot(mrf, distr0.cov), mrf.T) + self.noisecovariance(time, time0)
+        return distrs.NormalDistr(mean=m, cov=c)
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__mean == other.__mean and self.__vol == other.__vol
+        return False
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         return 'OrnsteinUhlenbeckProcess(processdim=%d, noisedim=%d, transition=%s, mean=%s, vol=%s)' % (self.processdim, self.noisedim, str(self.__transition), str(self.__mean), str(self.__vol))
     
