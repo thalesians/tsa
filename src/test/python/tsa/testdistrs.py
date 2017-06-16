@@ -32,20 +32,3 @@ class TestDistrs(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-    
-    
-    
-    def propagate(self, time, variate, time0, value0, state0=None):
-        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
-        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
-        timedelta = time - time0
-        return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
-    
-    def _propagatedistrimpl(self, time, time0, distr0):
-        timedelta = time - time0
-        mean = distr0.mean + self.__mean * timedelta
-        cov = distr0.cov + timedelta * self.__vol
-        return distrs.NormalDistr(mean=mean, cov=cov)
-        
-    
