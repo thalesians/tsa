@@ -2,7 +2,10 @@ import warnings
 
 import numpy as np
 
+import tsa.checks as checks
+import tsa.distrs as distrs
 import tsa.numpyutils as npu
+import tsa.processes as proc
 
 class KalmanFilter(object):
     r"""
@@ -27,7 +30,12 @@ The Kalman filter.
 # Constructor
 # ------------------------------------------------------------------------------
 
-    def __init__(self, x=None, P=None, Q=None, R=None, F=None, H=None, a=None, b=None, W=None, V=None):
+    def __init__(self, process, time, x=None, P=None, R=None, H=None, b=None, V=None):
+        checks.checkisinstance(process, proc.MarkovProcess)
+        self.__process = process
+        
+        self.__time = time
+        
         self.n = None
         self.q = None
 
@@ -36,13 +44,9 @@ The Kalman filter.
         self.P = P
         self.__priorx = None
         self.__priorP = None
-        self.Q = Q
         self.R = R
-        self.F = F
         self.H = H
-        self.a = a
         self.b = b
-        self.W = W
         self.V = V
 
         # We shall be storing the latest innovation and its variance.
@@ -60,41 +64,11 @@ The Kalman filter.
 # The core of the implementation.
 # ------------------------------------------------------------------------------
 
-    def predict(self, **kwargs):
-        assert not self.Q is None, 'The covariance matrix Q is not set'
-
-        # By default, our transition matrix is the n-by-n-dimensional identity
-        # matrix: the state stays the same as time passes.
-        if self.F is None:
-            if not self.n is None:
-                warnings.warn('The transition matrix F is not set. Defaulting to n-by-n-dimensional identity')
-                self.F = np.eye(self.n)
-
-        assert not self.F is None, 'The transition matrix F is not set'
-        
-        if self.W is None:
-            self.W = np.eye(self.n)
-            
-        if self.W is None:
-            if not self.n is None:
-                warnings.warn('The matrix W is not set. Defaulting to n-by-n-dimensional identity')
-                self.W = np.eye(self.n)
-
-        assert not self.W is None, 'The matrix W is not set'
-
-        # Here we shall refer to the steps given in [Haykin-2001]_.
-
-        # State estimate propagation (step 1):
-        self.x = np.dot(self.F, self.x)
-        if self.a is not None:
-            self.x += self.a
-
-        # Error covariance propagation (step 2):
-        self.P = np.dot(np.dot(self.F, self.P), self.F.T) + np.dot(np.dot(self.W, self.Q), self.W.T)
-
+    def predict(self, time):
+        distr = self.__process.propagatedistr(time, self.__time, distrs.NormalDistr(mean=self.x, cov=self.P))
+        self.x, self.P = distr.mean, distr.cov        
         self.__priorx = self.x
         self.__priorP = self.P
-
         return self.x
 
     def observe(self, observation, **kwargs):

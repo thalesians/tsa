@@ -1,3 +1,5 @@
+Q F a W
+
 import numpy as np
 
 import tsa.numpychecks as npc
@@ -43,6 +45,11 @@ class NormalDistr(object):
         if self.__vol is not None: npu.makeimmutable(self.__vol)
         
         super(NormalDistr, self).__init__()
+        
+    @staticmethod
+    def creatediracdelta(value):
+        dim = np.size(value)
+        return NormalDistr(mean=value, cov=np.zeros((dim, dim)))
 
     @staticmethod
     def makecov2d(sd1, sd2, cor):

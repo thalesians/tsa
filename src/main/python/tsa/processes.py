@@ -75,7 +75,7 @@ class SolvedItoMarkovProcess(SolvedItoProcess, MarkovProcess):
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
         value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-        distr = self.propagatedistr(time, time0, distrs.NormalDistr(mean=value0, cov=np.zeros((self.processdim, self.processdim))))
+        distr = self.propagatedistr(time, time0, distrs.NormalDistr.creatediracdelta(value0))
         return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
 
     def __str__(self):
