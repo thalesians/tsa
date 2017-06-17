@@ -69,7 +69,7 @@ The Kalman filter.
         self.x, self.P = distr.mean, distr.cov        
         self.__priorx = self.x
         self.__priorP = self.P
-        return self.x
+        return self.x, self.P
 
     def observe(self, observation, **kwargs):
         if 'R' in kwargs:

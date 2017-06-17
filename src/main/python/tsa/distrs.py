@@ -1,5 +1,3 @@
-Q F a W
-
 import numpy as np
 
 import tsa.numpychecks as npc
