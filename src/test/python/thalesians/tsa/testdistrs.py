@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import tsa.distrs as distrs
-import tsa.numpyutils as npu
+import thalesians.tsa.distrs as distrs
+import thalesians.tsa.numpyutils as npu
 
 class TestDistrs(unittest.TestCase):
     def testMultivariateNormalDistr(self):

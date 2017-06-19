@@ -1,6 +1,6 @@
 import unittest
 
-from tsa.conditions import precondition, postcondition
+from thalesians.tsa.conditions import precondition, postcondition
 
 class TestConditions(unittest.TestCase):
     def testunaryfunctionprecondition(self):

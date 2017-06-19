@@ -1,6 +1,6 @@
 import unittest
 
-import tsa.exceptions as exc
+import thalesians.tsa.exceptions as exc
 
 class TestExceptions(unittest.TestCase):
         

@@ -1,7 +1,7 @@
 import numpy as np
 
-import tsa.numpychecks as npc
-import tsa.numpyutils as npu
+import thalesians.tsa.numpychecks as npc
+import thalesians.tsa.numpyutils as npu
 
 class NormalDistr(object):
     def __init__(self, mean=None, cov=None, vol=None, dim=None):

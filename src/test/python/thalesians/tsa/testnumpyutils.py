@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import tsa.numpyutils as npu
-from tsa.numpyutils import vectorised
+import thalesians.tsa.numpyutils as npu
+from thalesians.tsa.numpyutils import vectorised
 
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers)
 

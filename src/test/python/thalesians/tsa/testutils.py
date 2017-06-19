@@ -1,6 +1,6 @@
 import unittest
 
-import tsa.utils as utils
+import thalesians.tsa.utils as utils
 
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers).
 

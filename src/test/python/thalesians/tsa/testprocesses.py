@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import tsa.processes as proc
+import thalesians.tsa.distrs as distrs
+import thalesians.tsa.processes as proc
 
 class TestProcesses(unittest.TestCase):
     def testItoProcess(self):
@@ -16,9 +17,9 @@ class TestProcesses(unittest.TestCase):
         
         sd1 = 3.; sd2 = 4.; cor = .5
         vol = np.array([[sd1, 0.], [cor * sd2, np.sqrt(1. - cor*cor) * sd2]])
-        npt.assert_almost_equal(proc.WienerProcess.makevol2d(sd1, sd2, cor), vol)
+        npt.assert_almost_equal(distrs.NormalDistr.makevol2d(sd1, sd2, cor), vol)
         cov = np.array([[sd1*sd1, cor*sd1*sd2], [cor*sd1*sd2, sd2*sd2]])
-        npt.assert_almost_equal(proc.WienerProcess.makevolfromcov(cov), vol)
+        npt.assert_almost_equal(distrs.NormalDistr.makevolfromcov(cov), vol)
         
     def testOrnsteinUhlenbeckProcess(self):
         p = proc.OrnsteinUhlenbeckProcess(3., 3., 5.)

@@ -2,10 +2,10 @@ import warnings
 
 import numpy as np
 
-import tsa.checks as checks
-import tsa.distrs as distrs
-import tsa.numpyutils as npu
-import tsa.processes as proc
+import thalesians.tsa.checks as checks
+import thalesians.tsa.distrs as distrs
+import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.processes as proc
 
 class KalmanFilter(object):
     r"""

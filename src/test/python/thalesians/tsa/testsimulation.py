@@ -7,10 +7,10 @@ import numpy.testing as npt
 import pandas as pd
 import pandas.util.testing as pdt
 
-import tsa.numpyutils as npu
-import tsa.simulation as sim
-import tsa.processes as proc
-import tsa.random as rnd
+import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.simulation as sim
+import thalesians.tsa.processes as proc
+import thalesians.tsa.random as rnd
 
 class TestSimulation(unittest.TestCase):
     def testxtimes(self):

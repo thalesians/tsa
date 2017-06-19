@@ -3,11 +3,11 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
-import tsa.checks as checks
-import tsa.numpyutils as npu
-import tsa.processes
-import tsa.random as rnd
-import tsa.utils as utils
+import thalesians.tsa.checks as checks
+import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.processes as proc
+import thalesians.tsa.random as rnd
+import thalesians.tsa.utils as utils
 
 def xtimes(start, stop, step=1):
     checks.checknotnone(start)
@@ -41,7 +41,7 @@ def times(start, stop, step=1):
 
 class EulerMaruyama(object):
     def __init__(self, process, initialvalue=None, times=None, variates=None, timeunit=dt.timedelta(days=1), flatten=False):
-        checks.checkisinstance(process, tsa.processes.ItoProcess)
+        checks.checkisinstance(process, proc.ItoProcess)
         self.__process = process
         self.__value = npu.tondim2(initialvalue, ndim1tocol=True, copy=True) if initialvalue is not None else npu.colof(process.processdim, 0.)
         self.__times = times if times is not None else xtimes(0., None, 1.)

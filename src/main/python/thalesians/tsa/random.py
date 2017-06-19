@@ -2,9 +2,9 @@ import datetime as dt
 
 import numpy as np
 
-import tsa.exceptions as exc
-import tsa.numpyutils as npu
-import tsa.numpychecks as npc
+import thalesians.tsa.exceptions as exc
+import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.numpychecks as npc
 
 __randomstate = None
 

@@ -1,7 +1,7 @@
 import numpy as np
 
-import tsa.checks as checks
-import tsa.utils as utils
+import thalesians.tsa.checks as checks
+import thalesians.tsa.utils as utils
 
 def isviewof(arg1, arg2):
     if not isinstance(arg1, np.ndarray) or not isinstance(arg2, np.ndarray):
