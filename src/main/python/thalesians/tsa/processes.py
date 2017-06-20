@@ -146,12 +146,12 @@ class WienerProcess(SolvedItoMarkovProcess):
     def cov(self):
         return self.__cov
     
-#     def propagate(self, time, variate, time0, value0, state0=None):
-#         if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
-#         value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-#         variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
-#         timedelta = time - time0
-#         return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+        timedelta = time - time0
+        return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
     
     def _propagatedistrimpl(self, time, time0, distr0):
         timedelta = time - time0
@@ -249,16 +249,16 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         eyeminusmrfsquared = np.eye(self.processdim) - mrfsquared
         return npu.unvec(np.dot(np.dot(self.__transitionx2inverse, eyeminusmrfsquared), self.__covvec), self.processdim)
         
-#     def propagate(self, time, variate, time0, value0, state0=None):
-#         if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
-#         value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
-#         variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
-#         timedelta = time - time0
-#         mrf = self.meanreversionfactor(timedelta)
-#         eyeminusmrf = np.eye(self.processdim) - mrf
-#         m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
-#         c = self.noisecovariance(time, time0)
-#         return m + np.dot(np.linalg.cholesky(c), variate)
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.tondim2(value0, ndim1tocol=True, copy=True)
+        value0 = npu.tondim2(value0, ndim1tocol=True, copy=False)
+        variate = npu.tondim2(variate, ndim1tocol=True, copy=False)
+        timedelta = time - time0
+        mrf = self.meanreversionfactor(timedelta)
+        eyeminusmrf = np.eye(self.processdim) - mrf
+        m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
+        c = self.noisecovariance(time, time0)
+        return m + np.dot(np.linalg.cholesky(c), variate)
         
     def _propagatedistrimpl(self, time, time0, distr0):
         value0 = distr0.mean

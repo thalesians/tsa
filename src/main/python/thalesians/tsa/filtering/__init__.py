@@ -1,12 +1,77 @@
 import warnings
 
 import numpy as np
+from scipy.linalg import block_diag
 
 import thalesians.tsa.checks as checks
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.processes as proc
 
+class PredictedObs(object):
+    def __init__(self, time, distr, crosscov):
+        self.__time = time
+        self.__distr = distr
+        self.__crosscov = crosscov
+    
+    @property
+    def time(self):
+        return self.__time
+    
+    @property
+    def distr(self):
+        return self.__distr
+    
+    @property
+    def crosscov(self):
+        return self.__crosscov
+    
+    def __str__(self):
+        return 'PredictedObs(time=%s, distr=%s, crosscov=%s)' % (self.__time, self.__distr, self.__crosscov)
+
+class ObsResult(object):
+    def __init__(self, time, obs, accepted, predictedobs, innov, loglikelihood):
+        self.__time = time
+        self.__obs = obs
+        self.__accepted = accepted
+        self.__predictedobs = predictedobs
+        self.__innov = innov
+        self.__loglikelihood = loglikelihood
+        
+    @property
+    def time(self):
+        return self.__time
+    
+    @property
+    def obs(self):
+        return self.__obs
+    
+    @property
+    def accepted(self):
+        return self.__accepted
+    
+    @property
+    def predictedobs(self):
+        return self.__predictedobs
+    
+    @property
+    def innov(self):
+        return self.__innov
+    
+    @property
+    def loglikelihood(self):
+        return self.__loglikelihood
+    
+    def __str__(self):
+        return 'ObsResult(time=%s, obs=%s, accepted=%s, predictedobs=%s, innov=%s, loglikelihood=%f)' % (self.__time, self.__obs, self.__accepted, self.__predictedobs, self.__innov, self.__loglikelihood)
+    
+class Observable(object):
+    def predict(self, time):
+        raise NotImplementedError()
+        
+    def observe(self, time, obs, obscov):
+        raise NotImplementedError()
+    
 class KalmanFilter(object):
     r"""
 The Kalman filter.
@@ -30,33 +95,67 @@ The Kalman filter.
 # Constructor
 # ------------------------------------------------------------------------------
 
-    def __init__(self, process, time, x=None, P=None, R=None, H=None, b=None, V=None):
+    def __init__(self, time, distr, process):
+        checks.checkisinstance(distr, distrs.NormalDistr)
+        # TODO process may also be an iterable of MarkovProcesses
         checks.checkisinstance(process, proc.MarkovProcess)
-        self.__process = process
-        
         self.__time = time
+        self.__distr = distr
+        self.__processes = process
         
-        self.n = None
-        self.q = None
-
-        # The n-dimensional state of the system.
-        self.x = x
-        self.P = P
-        self.__priorx = None
-        self.__priorP = None
         self.R = R
         self.H = H
         self.b = b
         self.V = V
 
-        # We shall be storing the latest innovation and its variance.
-        self.predictedobservation = None
-        self.lastobservation = None
-        self.innovation = None
-        self.innovationvar = None
         self.gain = None
 
-        self.loglikelihood = 0.0
+    class KalmanObservable(Observable):
+        def __init__(self, filter, allprocesses, observedprocesses):
+            self.__filter = filter
+            self.__staterects = []
+            self.__statecovrects = []
+            for op in observedprocesses:
+                matched = False
+                row = 0
+                for ap in allprocesses:
+                    processdim = ap.processdim
+                    if op is ap:
+                        matched = True
+                        self.__staterects.append(np.s_[row:row+processdim, 0:1])
+                        self.__statecovrects.append(np.s_[row:row+processdim, row:row+processdim])
+                    row += processdim
+                if not matched: raise ValueError('Each observed process must match a Kalman filter\'s process')
+                
+        def __substate(self, state):
+            return np.vstack([state[r] for r in self.__staterects])
+        
+        def __substatecov(self, statecov):
+            return block_diag(*[statecov[r] for r in self.__statecovrects])
+        
+        def predict(self, time):
+            self.__filter.predict()
+        
+        def observe(self, time, obs, obscov):
+            pass
+        
+    def createobservable(self, process):
+        pass
+    
+    def predict(self, time):
+        if time < self.__time: raise ValueError('Predicting the past (current time=%s, prediction time=%s)' % (self.__time, time))
+        if time == self.__time: return
+        distrs = []
+        row = 0
+        for p in self.__processes:
+            processdim = p.processdim
+            m = self.__state[row:row+processdim, 0:1]
+            c = self.__statecov[row:row+processdim, row:row+processdim]
+            distrs.append(p.propagatedistr(time, self.__time, distrs.NormalDistr(mean=m, cov=c)))
+            row += processdim
+        self.__state = np.vstack([d.mean for d in distrs])
+        self.__statecov = block_diag(*[d.cov for d in distrs])
+        self.__time = time
 
 # ------------------------------------------------------------------------------
 # Predict and observe
@@ -67,11 +166,9 @@ The Kalman filter.
     def predict(self, time):
         distr = self.__process.propagatedistr(time, self.__time, distrs.NormalDistr(mean=self.x, cov=self.P))
         self.x, self.P = distr.mean, distr.cov        
-        self.__priorx = self.x
-        self.__priorP = self.P
         return self.x, self.P
 
-    def observe(self, observation, **kwargs):
+    def observe(self, obs, **kwargs):
         if 'R' in kwargs:
             R = kwargs['R']
         else:
@@ -96,33 +193,34 @@ The Kalman filter.
 
         assert not self.V is None, 'The matrix V is not set'
 
-        observation = npu.tondim2(observation, ndim1tocol=True, copy=False)
+        obs = npu.tondim2(obs, ndim1tocol=True, copy=False)
 
         # Here we shall refer to the steps given in [Haykin-2001]_.
 
         # Kalman gain matrix (step 3):
-        self.innovationvar = np.dot(np.dot(self.H, self.P), self.H.T) + np.dot(np.dot(self.V, R), self.V.T)
+        innovcov = np.dot(np.dot(self.H, self.P), self.H.T) + np.dot(np.dot(self.V, R), self.V.T)
 
-        self.gain = np.dot(np.dot(self.P, self.H.T), np.linalg.pinv(self.innovationvar))
+        self.gain = np.dot(np.dot(self.P, self.H.T), np.linalg.pinv(innovcov))
         
-        self.predictedobservation = np.dot(self.H, self.x)
+        predictedobs = np.dot(self.H, self.x)
         if self.b is not None:
-            self.predictedobservation += self.b
+            predictedobs += self.b
 
         # State estimate update (step 4):
-        self.innovation = observation - self.predictedobservation
-        self.x = self.x + np.dot(self.gain, self.innovation)
+        self.innov = obs - predictedobs
+        self.x = self.x + np.dot(self.gain, innov)
         self.P = np.dot(np.identity(self.n) - np.dot(self.gain, self.H), self.P)
 
-        self.loglikelihood += KalmanFilter.MINUS_HALF_LN_2PI - .5 * (np.log(self.innovationvar) + self.innovation * self.innovation / self.innovationvar)
+        loglikelihood = KalmanFilter.MINUS_HALF_LN_2PI - .5 * (np.log(innovcov) + innov * innov / innovcov)
         
-        self._lastobservation = observation
+        return ObsResult(accepted=True, loglikelihood=loglikelihood)
+    
+        
+        (accepted, predictedobs=distrs.NormalDistr(mean=predictedobs, innovcov), innov, loglikelihood)
 
-        return self.x
-
-    def predictAndObserve(self, observation, **kwargs):
+    def predictAndObserve(self, obs, **kwargs):
         self.predict(**kwargs)
-        return self.observe(observation, **kwargs)
+        return self.observe(obs, **kwargs)
 
 # ------------------------------------------------------------------------------
 # Properties
@@ -132,6 +230,7 @@ The Kalman filter.
 # inputs to (two-dimensional) matrices. This helps us avoid subtle
 # bugs.
 # ------------------------------------------------------------------------------
+
     def __get_x(self):
         return self.__x
 
@@ -161,31 +260,6 @@ The Kalman filter.
 
     P = property(fget=__get_P, fset=__set_P, doc='The n-by-n-dimensional a posteriori error covariance matrix (a measure of the estimated accuracy of the state estimate)')
 
-    def __get_priorx(self):
-        return self.__priorx
-
-    priorx = property(fget=__get_priorx, doc='The n-dimensional predicted state of the system')
-
-    def __get_priorP(self):
-        return self.__priorP
-
-    priorP = property(fget=__get_priorP, doc='The n-by-n-dimensional a priori error covariance matrix (a measure of the estimated accuracy of the state estimate)')
-
-    def __get_Q(self):
-        return self.__Q
-
-    def __set_Q(self, value):
-        if value is not None:
-            self.__Q = npu.tondim2(value, copy=True)
-            shape = np.shape(self.__Q)
-            assert shape[0] == shape[1], 'The covariance matrix Q must be square'
-            assert (self.n is None) or (self.n == shape[0]), 'The covariance matrix Q must be n-by-n-dimensional'
-            self.n = shape[0]
-        else:
-            self.__Q = None
-
-    Q = property(fget=__get_Q, fset=__set_Q, doc='The n-by-n-dimensional covariance matrix of the state noise process due to disturbances and modelling errors')
-
     def __get_R(self):
         return self.__R
 
@@ -200,21 +274,6 @@ The Kalman filter.
             self.__R = None
 
     R = property(fget=__get_R, fset=__set_R, doc='The q-by-q-dimensional covariance matrix of the measurement noise process')
-
-    def __get_F(self):
-        return self.__F
-
-    def __set_F(self, value):
-        if value is not None:
-            self.__F = npu.tondim2(value, copy=True)
-            shape = np.shape(self.__F)
-            assert shape[0] == shape[1], 'The transition matrix F must be square'
-            assert (self.n is None) or (self.n == shape[0]), 'The transition matrix F must be n-by-n-dimensional'
-            self.n = shape[0]
-        else:
-            self.__F = None
-
-    F = property(fget=__get_F, fset=__set_F, doc='The n-by-n-dimensional transition matrix taking the state x from time k to time k+1')
 
     def __get_H(self):
         return self.__H
@@ -232,17 +291,6 @@ The Kalman filter.
 
     H = property(fget=__get_H, fset=__set_H, doc='The q-by-n-dimensional measurement matrix. Applied to a state, it produces the corresponding observable')
     
-    def __get_a(self):
-        return self.__a
-    
-    def __set_a(self, value):
-        if value is not None:
-            self.__a = npu.tondim2(value, ndim1tocol=True, copy=True)
-        else:
-            self.__a = None
-    
-    a = property(fget=__get_a, fset=__set_a)
-
     def __get_b(self):
         return self.__b
     
@@ -260,10 +308,5 @@ The Kalman filter.
     @property
     def var(self): return self.P
 
-# ------------------------------------------------------------------------------
-# Special methods
-# ------------------------------------------------------------------------------
-
     def __str__(self):
-        return 'KalmanFilter(n=%s, q=%s, x=%s, P=%s, Q=%s, R=%s, F=%s, H=%s, innovation=%s, innovationvar=%s)' % (
-            self.n, self.q, self.x, self.P, self.Q, self.R, self.F, self.H, self.innovation, self.innovationvar)
+        return 'KalmanFilter(x=%s, P=%s, R=%s, H=%s)' % (self.x, self.P, self.R, self.H)

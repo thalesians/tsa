@@ -3,7 +3,23 @@ import numpy as np
 import thalesians.tsa.numpychecks as npc
 import thalesians.tsa.numpyutils as npu
 
-class NormalDistr(object):
+class Distr(object):
+    def __init__(self):
+        pass
+
+    @property
+    def dim(self):
+        raise NotImplementedError()
+    
+    @property
+    def mean(self):
+        raise NotImplementedError()
+    
+    @property
+    def cov(self):
+        raise NotImplementedError()
+    
+class NormalDistr(Distr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None):
         if mean is None and vol is None and cov is None:
             self.__dim = 1 if dim is None else dim
@@ -61,6 +77,10 @@ class NormalDistr(object):
     @staticmethod
     def makevolfromcov(cov):
         return np.linalg.cholesky(cov)
+    
+    @property
+    def dim(self):
+        return self.__dim
     
     @property
     def mean(self):
