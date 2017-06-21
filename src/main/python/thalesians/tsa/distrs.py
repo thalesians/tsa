@@ -112,5 +112,5 @@ class NormalDistr(Distr):
         return not self.__eq__(other)
     
     def __str__(self):
-        return 'Normal(%s, %s)' % (str(self.__mean), str(self.__cov))
+        return 'Normal(mean=%s, cov=%s)' % (str(self.__mean), str(self.__cov))
     

@@ -7,7 +7,6 @@ def check(arg, message='Check failed', level=1):
     if settings.MIN_POSTCONDITION_LEVEL <= level:
         if not arg:
             if iscallable(message):
-                print('message:', message)
                 message = message()
             raise AssertionError(message)
         

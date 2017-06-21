@@ -111,7 +111,7 @@ class KalmanFilter(object):
             self.__filter = filter
             self.__obsmodel = obsmodel
             self.__statemeanrects = []
-            self.__statecovrects = []
+            self.__statecovdiagrects = []
             for op in observedprocesses:
                 matched = False
                 row = 0
@@ -120,15 +120,25 @@ class KalmanFilter(object):
                     if op is ap:
                         matched = True
                         self.__statemeanrects.append(np.s_[row:row+processdim, 0:1])
-                        self.__statecovrects.append(np.s_[row:row+processdim, row:row+processdim])
+                        self.__statecovdiagrects.append(np.s_[row:row+processdim, row:row+processdim])
                     row += processdim
                 if not matched: raise ValueError('Each observed process must match a Kalman filter\'s process')
+            self.__statecovrects = []
+            for r in self.__statecovdiagrects:
+                startrow = r[0].start
+                stoprow = r[0].stop
+                rects = []
+                for r1 in self.__statecovdiagrects:
+                    startcol = r1[1].start
+                    stopcol = r1[1].stop
+                    rects.append(np.s_[startrow:stoprow, startcol:stopcol])
+                self.__statecovrects.append(rects)
                 
         def __substatemean(self, statemean):
             return np.vstack([statemean[r] for r in self.__statemeanrects])
         
         def __substatecov(self, statecov):
-            return block_diag(*[statecov[r] for r in self.__statecovrects])
+            return np.vstack([np.hstack([statecov[r] for r in rs]) for rs in self.__statecovrects])
         
         def __substatedistr(self, statedistr):
             return N(mean=self.__substatemean(statedistr.mean), cov=self.__substatecov(statedistr.cov), copy=False)
@@ -184,3 +194,6 @@ class KalmanFilter(object):
         self._statedistr = N(mean=m, cov=c, copy=False)
         loglikelihood = -.5 * (obsdistr.dim * KalmanFilter.LN_2PI + np.log(np.linalg.det(innovcov)) + np.dot(np.dot(innov.T, innovcovinv), innov))
         return ObsResult(predictedobs.time, obsdistr, True, predictedobs, N(mean=innov, cov=innovcov, copy=False), loglikelihood)
+    
+    def __str__(self):
+        return 'KalmanFilter(time=%s, state=%s)' % (self.__time, self._statedistr)
