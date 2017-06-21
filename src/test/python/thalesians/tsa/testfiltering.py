@@ -71,7 +71,25 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(posteriorpredictedobs2.distr.mean, 100.45709020)
         npt.assert_almost_equal(posteriorpredictedobs2.distr.cov, 42.395213845)
         npt.assert_almost_equal(posteriorpredictedobs2.crosscov, posteriorpredictedobs2.distr.cov)
-
+        
+    def testkalmanfilterwithlowvarianceobs(self):
+        t0 = dt.datetime(2014, 2, 12, 16, 18, 25, 204000)
+        
+        process = proc.WienerProcess.createfromcov(mean=3., cov=25.)
+        
+        kf = filtering.KalmanFilter(t0, statedistr=N(mean=100., cov=250.), process=process)
+        
+        observable = kf.createobservable(filtering.KalmanFilterObsModel.createfromcompoundobsmatrix(1.), process)
+        
+        t1 = t0 + dt.timedelta(hours=1)
+        
+        observable.observe(t1, N(mean=200., cov=0.0))
+        
+        posteriorpredictedobs1 = observable.predict(t1)
+        npt.assert_almost_equal(posteriorpredictedobs1.distr.mean, 200.0)
+        npt.assert_almost_equal(posteriorpredictedobs1.distr.cov, 2.8421709430404007E-14)
+        npt.assert_almost_equal(posteriorpredictedobs1.crosscov, posteriorpredictedobs1.distr.cov)
+    
 if __name__ == '__main__':
     unittest.main()
     
