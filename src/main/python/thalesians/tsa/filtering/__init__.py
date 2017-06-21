@@ -7,6 +7,7 @@ import thalesians.tsa.checks as checks
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.processes as proc
+import thalesians.tsa.utils as utils
 
 class PredictedObs(object):
     def __init__(self, time, distr, crosscov):
@@ -28,14 +29,14 @@ class PredictedObs(object):
     
     def __str__(self):
         return 'PredictedObs(time=%s, distr=%s, crosscov=%s)' % (self.__time, self.__distr, self.__crosscov)
-
+    
 class ObsResult(object):
-    def __init__(self, time, obs, accepted, predictedobs, innov, loglikelihood):
+    def __init__(self, time, obsdistr, accepted, predictedobs, innovdistr, loglikelihood):
         self.__time = time
-        self.__obs = obs
+        self.__obsdistr = obsdistr
         self.__accepted = accepted
         self.__predictedobs = predictedobs
-        self.__innov = innov
+        self.__innovdistr = innovdistr
         self.__loglikelihood = loglikelihood
         
     @property
@@ -43,8 +44,8 @@ class ObsResult(object):
         return self.__time
     
     @property
-    def obs(self):
-        return self.__obs
+    def obsdistr(self):
+        return self.__obsdistr
     
     @property
     def accepted(self):
@@ -55,16 +56,35 @@ class ObsResult(object):
         return self.__predictedobs
     
     @property
-    def innov(self):
-        return self.__innov
+    def innovdistr(self):
+        return self.__innovdistr
     
     @property
     def loglikelihood(self):
         return self.__loglikelihood
     
     def __str__(self):
-        return 'ObsResult(time=%s, obs=%s, accepted=%s, predictedobs=%s, innov=%s, loglikelihood=%f)' % (self.__time, self.__obs, self.__accepted, self.__predictedobs, self.__innov, self.__loglikelihood)
+        return 'ObsResult(time=%s, obsdistr=%s, accepted=%s, predictedobs=%s, innovdistr=%s, loglikelihood=%f)' % (self.__time, self.__obsdistr, self.__accepted, self.__predictedobs, self.__innovdistr, self.__loglikelihood)
     
+class ObsModel(object):
+    def predictobs(self, time, statedistr):
+        pass
+    
+class KalmanFilterObsModel(ObsModel):
+    def __init__(self, obsmatrix):
+        self.__obsmatrix = obsmatrix
+    
+    @staticmethod
+    def createfromcompoundobsmatrix(obsmatrix):
+        obsmatrix = npu.tondim2(obsmatrix, ndim1tocol=False, copy=True)
+        return KalmanFilterObsModel(obsmatrix)
+    
+    def predictobs(self, time, statedistr):
+        obsmean = np.dot(self.__obsmatrix, statedistr.mean)
+        crosscov = np.dot(self.__obsmatrix, statedistr.cov)
+        obscov = np.dot(crosscov, self.__obsmatrix.T)
+        return PredictedObs(time, distrs.NormalDistr(mean=obsmean, cov=obscov), crosscov)
+
 class Observable(object):
     def predict(self, time):
         raise NotImplementedError()
@@ -73,240 +93,92 @@ class Observable(object):
         raise NotImplementedError()
     
 class KalmanFilter(object):
-    r"""
-The Kalman filter.
-
-:param x: The initial n-dimensional estimate of the state of the system
-:param P: The n-by-n-dimensional a posteriori error covariance matrix (a measure
-    of the estimated accuracy of the state estimate)
-:param Q: The n-by-n-dimensional covariance matrix of the state noise process
-    due to disturbances and modelling errors
-:param R: The q-by-q-dimensional covariance matrix of the measurement noise
-    process
-:param F: The n-by-n-dimensional transition matrix taking the state x from time
-    k to time k+1
-:param H: The q-by-n-dimensional measurement matrix. Applied to a state, it
-    produces the corresponding observable
-    """
-
-    MINUS_HALF_LN_2PI = -.5 * np.log(2. * np.pi)
+    LN_2PI = np.log(2. * np.pi)
     
-# ------------------------------------------------------------------------------
-# Constructor
-# ------------------------------------------------------------------------------
-
-    def __init__(self, time, distr, process):
-        checks.checkisinstance(distr, distrs.NormalDistr)
-        # TODO process may also be an iterable of MarkovProcesses
-        checks.checkisinstance(process, proc.MarkovProcess)
+    def __init__(self, time, statedistr, process):
+        if not checks.isiterable(process): process = (process,)
+        checks.checkinstance(statedistr, distrs.NormalDistr)
+        process = checks.checkiterableoverinstances(process, proc.MarkovProcess)
         self.__time = time
-        self.__distr = distr
-        self.__processes = process
-        
-        self.R = R
-        self.H = H
-        self.b = b
-        self.V = V
-
-        self.gain = None
+        self._statedistr = statedistr
+        self._processes = tuple(process)
 
     class KalmanObservable(Observable):
-        def __init__(self, filter, allprocesses, observedprocesses):
+        def __init__(self, filter, obsmodel, observedprocesses):
+            if not checks.isiterable(observedprocesses): observedprocesses = [observedprocesses]
+            observedprocesses = checks.checkiterableoverinstances(observedprocesses, proc.MarkovProcess)
             self.__filter = filter
-            self.__staterects = []
+            self.__obsmodel = obsmodel
+            self.__statemeanrects = []
             self.__statecovrects = []
             for op in observedprocesses:
                 matched = False
                 row = 0
-                for ap in allprocesses:
+                for ap in self.__filter._processes:
                     processdim = ap.processdim
                     if op is ap:
                         matched = True
-                        self.__staterects.append(np.s_[row:row+processdim, 0:1])
+                        self.__statemeanrects.append(np.s_[row:row+processdim, 0:1])
                         self.__statecovrects.append(np.s_[row:row+processdim, row:row+processdim])
                     row += processdim
                 if not matched: raise ValueError('Each observed process must match a Kalman filter\'s process')
                 
-        def __substate(self, state):
-            return np.vstack([state[r] for r in self.__staterects])
+        def __substatemean(self, statemean):
+            return np.vstack([statemean[r] for r in self.__statemeanrects])
         
         def __substatecov(self, statecov):
             return block_diag(*[statecov[r] for r in self.__statecovrects])
         
+        def __substatedistr(self, statedistr):
+            return distrs.NormalDistr(mean=self.__substatemean(statedistr.mean), cov=self.__substatecov(statedistr.cov), copy=False)
+        
         def predict(self, time):
-            self.__filter.predict()
+            self.__filter.predict(time)
+            predictedobs = self.__obsmodel.predictobs(time, self.__substatedistr(self.__filter._statedistr))
+            
+            cc = predictedobs.crosscov
+            
+            # While cc is the cross-covariance between the "observed" processes and the observation, we need the cross-covariance between the full compound
+            # process and the observation. Therefore we enlarge this matrix by inserting columns of zeros at appropriate indices
+            crosscov = np.zeros((npu.nrow(cc), self.__filter._statedistr.dim))
+            col = 0
+            for r in self.__statemeanrects:
+                size = r[0].stop - r[0].start
+                crosscov[0:size, r[0].start:r[0].stop] = cc[0:size, col:col+size]
+                col += size
+            
+            return PredictedObs(time, predictedobs.distr, crosscov)
         
-        def observe(self, time, obs, obscov):
-            pass
+        def observe(self, time, obsdistr):
+            predictedobs = self.predict(time)
+            self.__filter.observe(obsdistr, predictedobs)
         
-    def createobservable(self, process):
-        pass
+    def createobservable(self, obsmodel, process):
+        return KalmanFilter.KalmanObservable(self, obsmodel, process)
     
     def predict(self, time):
         if time < self.__time: raise ValueError('Predicting the past (current time=%s, prediction time=%s)' % (self.__time, time))
         if time == self.__time: return
-        distrs = []
+        statedistrs = []
         row = 0
-        for p in self.__processes:
+        for p in self._processes:
             processdim = p.processdim
-            m = self.__state[row:row+processdim, 0:1]
-            c = self.__statecov[row:row+processdim, row:row+processdim]
-            distrs.append(p.propagatedistr(time, self.__time, distrs.NormalDistr(mean=m, cov=c)))
+            m = self._statedistr.mean[row:row+processdim, 0:1]
+            c = self._statedistr.cov[row:row+processdim, row:row+processdim]
+            statedistrs.append(p.propagatedistr(time, self.__time, distrs.NormalDistr(mean=m, cov=c)))
             row += processdim
-        self.__state = np.vstack([d.mean for d in distrs])
-        self.__statecov = block_diag(*[d.cov for d in distrs])
+        statemean = np.vstack([d.mean for d in statedistrs])
+        statecov = block_diag(*[d.cov for d in statedistrs])
+        self._statedistr = distrs.NormalDistr(mean=statemean, cov=statecov, copy=False)
         self.__time = time
-
-# ------------------------------------------------------------------------------
-# Predict and observe
-# ------------------------------------------------------------------------------
-# The core of the implementation.
-# ------------------------------------------------------------------------------
-
-    def predict(self, time):
-        distr = self.__process.propagatedistr(time, self.__time, distrs.NormalDistr(mean=self.x, cov=self.P))
-        self.x, self.P = distr.mean, distr.cov        
-        return self.x, self.P
-
-    def observe(self, obs, **kwargs):
-        if 'R' in kwargs:
-            R = kwargs['R']
-        else:
-            R = self.R
-
-        assert not R is None, 'The covariance matrix R is not set'
-
-        # By default, our measurement matrix is the n-by-n-dimensional identity
-        # matrix: we are observing the state directly. This only makes sense if
-        # n == q.
-        if self.H is None:
-            if (not self.n is None) and (self.n == self.q):
-                warnings.warn('The measurement matrix H is not set. Defaulting to n-by-n-dimensional identity')
-                self.H = np.eye(self.n)
-
-        assert not self.H is None, 'The measurement matrix H is not set'
         
-        if self.V is None:
-            if self.q is not None:
-                warnings.warn('The matrix V is not set. Defaulting to q-by-q-dimensional identity')
-                self.V = np.eye(self.q)
-
-        assert not self.V is None, 'The matrix V is not set'
-
-        obs = npu.tondim2(obs, ndim1tocol=True, copy=False)
-
-        # Here we shall refer to the steps given in [Haykin-2001]_.
-
-        # Kalman gain matrix (step 3):
-        innovcov = np.dot(np.dot(self.H, self.P), self.H.T) + np.dot(np.dot(self.V, R), self.V.T)
-
-        self.gain = np.dot(np.dot(self.P, self.H.T), np.linalg.pinv(innovcov))
-        
-        predictedobs = np.dot(self.H, self.x)
-        if self.b is not None:
-            predictedobs += self.b
-
-        # State estimate update (step 4):
-        self.innov = obs - predictedobs
-        self.x = self.x + np.dot(self.gain, innov)
-        self.P = np.dot(np.identity(self.n) - np.dot(self.gain, self.H), self.P)
-
-        loglikelihood = KalmanFilter.MINUS_HALF_LN_2PI - .5 * (np.log(innovcov) + innov * innov / innovcov)
-        
-        return ObsResult(accepted=True, loglikelihood=loglikelihood)
-    
-        
-        (accepted, predictedobs=distrs.NormalDistr(mean=predictedobs, innovcov), innov, loglikelihood)
-
-    def predictAndObserve(self, obs, **kwargs):
-        self.predict(**kwargs)
-        return self.observe(obs, **kwargs)
-
-# ------------------------------------------------------------------------------
-# Properties
-# ------------------------------------------------------------------------------
-# This code is mostly wrappers and glue. The reason it is here is to ensure that
-# we are dealing with numpy arrays of the right rank and shape. We are coercing
-# inputs to (two-dimensional) matrices. This helps us avoid subtle
-# bugs.
-# ------------------------------------------------------------------------------
-
-    def __get_x(self):
-        return self.__x
-
-    def __set_x(self, value):
-        if value is not None:
-            self.__x = npu.tondim2(value, ndim1tocol=True, copy=True)
-            shape = np.shape(self.__x)
-            assert (self.n is None) or (self.n == shape[0]), 'The state estimate x must be n-dimensional'
-            self.n = shape[0]
-        else:
-            self.__x = None
-
-    x = property(fget=__get_x, fset=__set_x, doc='The n-dimensional estimate of the state of the system')
-
-    def __get_P(self):
-        return self.__P
-
-    def __set_P(self, value):
-        if value is not None:
-            self.__P = npu.tondim2(value, copy=True)
-            shape = np.shape(self.__P)
-            assert shape[0] == shape[1], 'The covariance matrix P must be square'
-            assert (self.n is None) or (self.n == shape[0]), 'The covariance matrix P must be n-by-n-dimensional'
-            self.n = shape[0]
-        else:
-            self.__P = None
-
-    P = property(fget=__get_P, fset=__set_P, doc='The n-by-n-dimensional a posteriori error covariance matrix (a measure of the estimated accuracy of the state estimate)')
-
-    def __get_R(self):
-        return self.__R
-
-    def __set_R(self, value):
-        if value is not None:
-            self.__R = npu.tondim2(value, copy=True)
-            shape = np.shape(self.__R)
-            assert shape[0] == shape[1], 'The covariance matrix R must be square'
-            assert (self.q is None) or (self.q == shape[0]), 'The covariance matrix R must be q-by-q-dimensional'
-            self.q = shape[0]
-        else:
-            self.__R = None
-
-    R = property(fget=__get_R, fset=__set_R, doc='The q-by-q-dimensional covariance matrix of the measurement noise process')
-
-    def __get_H(self):
-        return self.__H
-
-    def __set_H(self, value):
-        if value is not None:
-            self.__H = npu.tondim2(value, copy=True)
-            shape = np.shape(self.__H)
-            assert (self.q is None) or (self.q == shape[0]), 'The measurement matrix H must have q (%d) rows; it has %d rows' % (self.q, shape[0])
-            assert (self.n is None) or (self.n == shape[1]), 'The measurement matrix H must have n (%d) columns; it has %d columns' % (self.n, shape[1])
-            self.q = shape[0]
-            self.n = shape[1]
-        else:
-            self.__H = None
-
-    H = property(fget=__get_H, fset=__set_H, doc='The q-by-n-dimensional measurement matrix. Applied to a state, it produces the corresponding observable')
-    
-    def __get_b(self):
-        return self.__b
-    
-    def __set_b(self, value):
-        if value is not None:
-            self.__b = npu.tondim2(value, ndim1tocol=True, copy=True)
-        else:
-            self.__b = None
-    
-    b = property(fget=__get_b, fset=__set_b)
-    
-    @property
-    def mean(self): return self.x
-    
-    @property
-    def var(self): return self.P
-
-    def __str__(self):
-        return 'KalmanFilter(x=%s, P=%s, R=%s, H=%s)' % (self.x, self.P, self.R, self.H)
+    def observe(self, obsdistr, predictedobs):
+        innov = obsdistr.mean - predictedobs.distr.mean
+        innovcov = predictedobs.distr.cov + obsdistr.cov
+        innovcovinv = np.linalg.inv(innovcov)
+        gain = np.dot(predictedobs.crosscov.T, innovcovinv)
+        m = self.statedistr.mean + np.dot(gain, innov)
+        c = self.statedistr.cov - np.dot(gain, predictedobs.crosscov)
+        self._statedistr = distrs.NormalDistr(mean=m, cov=c, copy=False)
+        loglikelihood = -.5 * (obsdistr.dim * KalmanFilter.LN_2PI + np.log(np.linalg.det(innovcov)) + np.dot(np.dot(innov.T, innovcovinv), innov))
+        return ObsResult(predictedobs.time, obsdistr, True, predictedobs, distrs.NormalDistr(mean=innov, cov=innovcov, copy=False), loglikelihood)

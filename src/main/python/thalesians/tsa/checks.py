@@ -1,10 +1,13 @@
+import collections
+
 import thalesians.tsa.settings as settings
 import thalesians.tsa.utils as utils
 
 def check(arg, message='Check failed', level=1):
     if settings.MIN_POSTCONDITION_LEVEL <= level:
         if not arg:
-            if utils.iscallable(message):
+            if iscallable(message):
+                print('message:', message)
                 message = message()
             raise AssertionError(message)
         
@@ -28,5 +31,36 @@ def checkatmostonenotnone(*args, **kwargs):
     level = kwargs['level'] if 'level' in kwargs else 1
     check(isatmostonenotnone(*args), message, level)
     
-def checkisinstance(arg, type, message='Argument is not of type %(expected), but of type %(actual)', level=1):
-    check(isinstance(arg, type), lambda: message % {'actual': str(type(arg)), 'expected': str(type)}, level)
+def checkinstance(arg, types, message='Argument is not of type %(expected)s, but of type %(actual)s', level=1):
+    check(isinstance(arg, types), lambda: message % {'actual': type(arg), 'expected': types}, level)
+    return arg
+
+def checkint(arg, message='Argument is not an integer, but of type %(actual)s', level=1):
+    check(isinstance(arg, int), lambda: message % {'actual': type(arg)}, level)
+    return arg
+
+def isiterable(arg):
+    return isinstance(arg, collections.Iterable)
+
+def checkiterable(arg, message='Argument of type %(actual)s is not iterable', level=1):
+    check(isiterable(arg), lambda: message % {'actual': type(arg)}, level)
+    return arg
+
+def iscallable(arg):
+    return hasattr(arg, '__call__') or isinstance(arg, collections.Callable)
+
+def checkcallable(arg, message='Argument of type %(actual)s is not callable', level=1):
+    check(iscallable(arg), lambda: message % {'actual': type(arg)}, level)
+    return arg
+
+def isiterableoverinstances(arg, types):
+    if isiterable(arg):
+        objs, iterable = utils.peek(iter(arg))
+        if (len(objs) == 0): return False, iterable
+        return isinstance(objs[0], types), iterable
+    return False, arg
+    
+def checkiterableoverinstances(arg, types, message='Argument is not an iterable over type %(expected)s', level=1):
+    result, iterable = isiterableoverinstances(arg, types)
+    check(result, lambda: message % {'expected': types}, level)
+    return iterable

@@ -1,6 +1,9 @@
+import datetime as dt
+
 import numpy as np
 import scipy.linalg as la
 
+import thalesians.tsa.checks as checks
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.numpychecks as npc
@@ -51,8 +54,9 @@ class SolvedItoProcess(ItoProcess):
         return 'SolvedItoProcess(processdim=%d, noisedim=%d)' % (self.processdim, self.noisedim)
 
 class MarkovProcess(Process):
-    def __init__(self, processdim, **kwargs):
-        self.__processdim = processdim
+    def __init__(self, processdim, timeunit=dt.timedelta(days=1), **kwargs):
+        self.__processdim = checks.checkint(processdim)
+        self.__timeunit = timeunit
         
         self.__cachedtime = None
         self.__cachedtime0 = None
@@ -63,13 +67,16 @@ class MarkovProcess(Process):
     def propagatedistr(self, time, time0, distr0):
         if time == time0: return distr0
         if self.__cachedtime is None or self.__cachedtime != time or self.__cachedtime0 != time0 or self.__cacheddistr0 != distr0:
-            self.__cacheddistr = self._propagatedistrimpl(time, time0, distr0)
+            timedelta = time - time0
+            if isinstance(timedelta, dt.timedelta):
+                timedelta = timedelta.total_seconds() / self.__timeunit.total_seconds()
+            self.__cacheddistr = self._propagatedistrimpl(timedelta, distr0)
             self.__cachedtime = time
             self.__cachedtime0 = time0
             self.__cacheddistr0 = distr0
         return self.__cacheddistr
     
-    def _propagatedistrimpl(self, time, time0, distr0):
+    def _propagatedistrimpl(self, timedelta, distr0):
         raise NotImplementedError()
     
     def __str__(self):
@@ -153,8 +160,7 @@ class WienerProcess(SolvedItoMarkovProcess):
         timedelta = time - time0
         return value0 + self.__mean * timedelta + np.dot(self.__vol, np.sqrt(timedelta) * variate)
     
-    def _propagatedistrimpl(self, time, time0, distr0):
-        timedelta = time - time0
+    def _propagatedistrimpl(self, timedelta, distr0):
         mean = distr0.mean + self.__mean * timedelta
         cov = distr0.cov + timedelta * self.__cov
         return distrs.NormalDistr(mean=mean, cov=cov)
@@ -243,8 +249,7 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
             self.__cachedmeanreversionfactorsquared = la.expm(self.__transitionx2 * (-timedelta))
         return self.__cachedmeanreversionfactorsquared
         
-    def noisecovariance(self, time, time0):
-        timedelta = time - time0
+    def noisecovariance(self, timedelta):
         mrfsquared = self.meanreversionfactorsquared(timedelta)
         eyeminusmrfsquared = np.eye(self.processdim) - mrfsquared
         return npu.unvec(np.dot(np.dot(self.__transitionx2inverse, eyeminusmrfsquared), self.__covvec), self.processdim)
@@ -260,13 +265,12 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         c = self.noisecovariance(time, time0)
         return m + np.dot(np.linalg.cholesky(c), variate)
         
-    def _propagatedistrimpl(self, time, time0, distr0):
+    def _propagatedistrimpl(self, timedelta, distr0):
         value0 = distr0.mean
-        timedelta = time - time0
         mrf = self.meanreversionfactor(timedelta)
         eyeminusmrf = np.eye(self.processdim) - mrf
         m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
-        c = np.dot(np.dot(mrf, distr0.cov), mrf.T) + self.noisecovariance(time, time0)
+        c = np.dot(np.dot(mrf, distr0.cov), mrf.T) + self.noisecovariance(timedelta)
         return distrs.NormalDistr(mean=m, cov=c)
     
     def __eq__(self, other):

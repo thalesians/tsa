@@ -63,7 +63,7 @@ def ndim1of(n, val):
     return r
 
 def makeimmutable(arg):
-    checks.checkisinstance(arg, np.ndarray)
+    checks.checkinstance(arg, np.ndarray)
     arg.flags.writeable = False
     return arg
 

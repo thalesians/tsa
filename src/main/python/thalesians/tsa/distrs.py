@@ -20,7 +20,7 @@ class Distr(object):
         raise NotImplementedError()
     
 class NormalDistr(Distr):
-    def __init__(self, mean=None, cov=None, vol=None, dim=None):
+    def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
         if mean is None and vol is None and cov is None:
             self.__dim = 1 if dim is None else dim
             mean = npu.colof(self.__dim, 0.)
@@ -32,13 +32,13 @@ class NormalDistr(Distr):
         # TODO We don't currently check whether cov and vol are consistent, i.e. that cov = np.dot(vol, vol.T) -- should we?
         
         if mean is not None:
-            self.__mean = npu.tondim2(mean, ndim1tocol=True, copy=True)
+            self.__mean = npu.tondim2(mean, ndim1tocol=True, copy=copy)
             self.__dim = npu.nrow(self.__mean)
         if cov is not None:
-            self.__cov = npu.tondim2(cov, ndim1tocol=True, copy=True)
+            self.__cov = npu.tondim2(cov, ndim1tocol=True, copy=copy)
             self.__dim = npu.nrow(self.__cov)
         if vol is not None:
-            self.__vol = npu.tondim2(vol, ndim1tocol=True, copy=True)
+            self.__vol = npu.tondim2(vol, ndim1tocol=True, copy=copy)
             self.__dim = npu.nrow(self.__vol)
             
         if self.__mean is None: self.__mean = npu.colof(self.__dim, 0.)
@@ -76,6 +76,7 @@ class NormalDistr(Distr):
     
     @staticmethod
     def makevolfromcov(cov):
+        cov = npu.tondim2(cov, ndim1tocol=True, copy=False)
         return np.linalg.cholesky(cov)
     
     @property

@@ -1,10 +1,7 @@
-import collections
 import datetime as dt
+import itertools
 
 import numpy as np
-
-def iscallable(arg):
-    return hasattr(arg, '__call__') or isinstance(arg, collections.Callable)
 
 def sign(arg):
     if isinstance(arg, dt.timedelta):
@@ -20,3 +17,13 @@ def xbatch(size, iterable):
 
 def batch(size, iterable):
     return list(xbatch(size, iterable))
+
+def peek(iterable, size=1):
+    objs = []
+    for i in range(size):
+        try:
+            obj = next(iterable)
+        except StopIteration:
+            break
+        objs.append(obj)
+    return objs, itertools.chain(objs, iterable)

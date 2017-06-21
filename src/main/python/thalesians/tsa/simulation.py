@@ -21,7 +21,7 @@ def xtimes(start, stop, step=1):
         stop = dt.datetime.combine(dt.datetime(1,1,1,0,0,0), stop) if stop is not None else None
         resultwrap = lambda x: x.time()
 
-    stepfunc = step if utils.iscallable(step) else lambda x: step
+    stepfunc = step if checks.iscallable(step) else lambda x: step
     s = stepfunc(start)
     checks.check(utils.sign(s) != 0, 'Step must be positive or negative, not zero')
     
@@ -41,7 +41,7 @@ def times(start, stop, step=1):
 
 class EulerMaruyama(object):
     def __init__(self, process, initialvalue=None, times=None, variates=None, timeunit=dt.timedelta(days=1), flatten=False):
-        checks.checkisinstance(process, proc.ItoProcess)
+        checks.checkinstance(process, proc.ItoProcess)
         self.__process = process
         self.__value = npu.tondim2(initialvalue, ndim1tocol=True, copy=True) if initialvalue is not None else npu.colof(process.processdim, 0.)
         self.__times = times if times is not None else xtimes(0., None, 1.)
