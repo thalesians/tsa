@@ -4,7 +4,7 @@ import numpy as np
 from scipy.linalg import block_diag
 
 import thalesians.tsa.checks as checks
-import thalesians.tsa.distrs as distrs
+from thalesians.tsa.distrs import NormalDistr as N
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.processes as proc
 import thalesians.tsa.utils as utils
@@ -83,7 +83,7 @@ class KalmanFilterObsModel(ObsModel):
         obsmean = np.dot(self.__obsmatrix, statedistr.mean)
         crosscov = np.dot(self.__obsmatrix, statedistr.cov)
         obscov = np.dot(crosscov, self.__obsmatrix.T)
-        return PredictedObs(time, distrs.NormalDistr(mean=obsmean, cov=obscov), crosscov)
+        return PredictedObs(time, N(mean=obsmean, cov=obscov), crosscov)
 
 class Observable(object):
     def predict(self, time):
@@ -97,7 +97,7 @@ class KalmanFilter(object):
     
     def __init__(self, time, statedistr, process):
         if not checks.isiterable(process): process = (process,)
-        checks.checkinstance(statedistr, distrs.NormalDistr)
+        checks.checkinstance(statedistr, N)
         process = checks.checkiterableoverinstances(process, proc.MarkovProcess)
         self.__time = time
         self._statedistr = statedistr
@@ -130,7 +130,7 @@ class KalmanFilter(object):
             return block_diag(*[statecov[r] for r in self.__statecovrects])
         
         def __substatedistr(self, statedistr):
-            return distrs.NormalDistr(mean=self.__substatemean(statedistr.mean), cov=self.__substatecov(statedistr.cov), copy=False)
+            return N(mean=self.__substatemean(statedistr.mean), cov=self.__substatecov(statedistr.cov), copy=False)
         
         def predict(self, time):
             self.__filter.predict(time)
@@ -165,11 +165,11 @@ class KalmanFilter(object):
             processdim = p.processdim
             m = self._statedistr.mean[row:row+processdim, 0:1]
             c = self._statedistr.cov[row:row+processdim, row:row+processdim]
-            statedistrs.append(p.propagatedistr(time, self.__time, distrs.NormalDistr(mean=m, cov=c)))
+            statedistrs.append(p.propagatedistr(time, self.__time, N(mean=m, cov=c)))
             row += processdim
         statemean = np.vstack([d.mean for d in statedistrs])
         statecov = block_diag(*[d.cov for d in statedistrs])
-        self._statedistr = distrs.NormalDistr(mean=statemean, cov=statecov, copy=False)
+        self._statedistr = N(mean=statemean, cov=statecov, copy=False)
         self.__time = time
         
     def observe(self, obsdistr, predictedobs):
@@ -177,8 +177,8 @@ class KalmanFilter(object):
         innovcov = predictedobs.distr.cov + obsdistr.cov
         innovcovinv = np.linalg.inv(innovcov)
         gain = np.dot(predictedobs.crosscov.T, innovcovinv)
-        m = self.statedistr.mean + np.dot(gain, innov)
-        c = self.statedistr.cov - np.dot(gain, predictedobs.crosscov)
-        self._statedistr = distrs.NormalDistr(mean=m, cov=c, copy=False)
+        m = self._statedistr.mean + np.dot(gain, innov)
+        c = self._statedistr.cov - np.dot(gain, predictedobs.crosscov)
+        self._statedistr = N(mean=m, cov=c, copy=False)
         loglikelihood = -.5 * (obsdistr.dim * KalmanFilter.LN_2PI + np.log(np.linalg.det(innovcov)) + np.dot(np.dot(innov.T, innovcovinv), innov))
-        return ObsResult(predictedobs.time, obsdistr, True, predictedobs, distrs.NormalDistr(mean=innov, cov=innovcov, copy=False), loglikelihood)
+        return ObsResult(predictedobs.time, obsdistr, True, predictedobs, N(mean=innov, cov=innovcov, copy=False), loglikelihood)

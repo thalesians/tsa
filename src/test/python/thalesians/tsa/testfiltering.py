@@ -1,7 +1,9 @@
 import datetime as dt
 import unittest
 
-import thalesians.tsa.distrs as distrs
+import numpy.testing as npt
+
+from thalesians.tsa.distrs import NormalDistr as N
 import thalesians.tsa.filtering as filtering
 import thalesians.tsa.processes as proc
 
@@ -11,13 +13,37 @@ class TestFiltering(unittest.TestCase):
         
         process = proc.WienerProcess.createfromcov(mean=3., cov=25.)
         
-        kf = filtering.KalmanFilter(t0, statedistr=distrs.NormalDistr(mean=100., cov=250.), process=process)
+        kf = filtering.KalmanFilter(t0, statedistr=N(mean=100., cov=250.), process=process)
         
         observable = kf.createobservable(filtering.KalmanFilterObsModel.createfromcompoundobsmatrix(1.), process)
         
         t1 = t0 + dt.timedelta(hours=1)
         
         predictedobs1 = observable.predict(t1)
+        npt.assert_almost_equal(predictedobs1.distr.mean, 100. + 3./24.)
+        npt.assert_almost_equal(predictedobs1.distr.cov, 250. + 25./24.)
+        npt.assert_almost_equal(predictedobs1.crosscov, predictedobs1.distr.cov)
+        
+        observable.observe(t1, N(mean=100.35, cov=100.0))
+        
+        predictedobs2 = observable.predict(t1)
+        npt.assert_almost_equal(predictedobs2.distr.mean, 100.28590504)
+        npt.assert_almost_equal(predictedobs2.distr.cov, 71.513353115)
+        npt.assert_almost_equal(predictedobs2.crosscov, predictedobs2.distr.cov)
+        
+        t2 = t1 + dt.timedelta(hours=2)
+        
+        priorpredictedobs2 = observable.predict(t2)
+        npt.assert_almost_equal(priorpredictedobs2.distr.mean, 100.28590504 + 2.*3./24.)
+        npt.assert_almost_equal(priorpredictedobs2.distr.cov, 71.513353115 + 2.*25./24.)
+        npt.assert_almost_equal(priorpredictedobs2.crosscov, priorpredictedobs2.distr.cov)
+        
+        observable.observe(t2, N(mean=100.35, cov=100.0))
+
+        posteriorpredictedobs2 = observable.predict(t2)
+        npt.assert_almost_equal(posteriorpredictedobs2.distr.mean, 100.45709020)
+        npt.assert_almost_equal(posteriorpredictedobs2.distr.cov, 42.395213845)
+        npt.assert_almost_equal(posteriorpredictedobs2.crosscov, posteriorpredictedobs2.distr.cov)
     
 if __name__ == '__main__':
     unittest.main()
