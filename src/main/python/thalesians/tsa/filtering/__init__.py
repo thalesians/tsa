@@ -72,12 +72,13 @@ class ObsModel(object):
     
 class KalmanFilterObsModel(ObsModel):
     def __init__(self, obsmatrix):
-        self.__obsmatrix = obsmatrix
-    
+        if not isinstance(obsmatrix, np.ndarray) and not checks.isiterable(obsmatrix):
+            obsmatrix = (obsmatrix,)
+        self.__obsmatrix = block_diag(*[npu.tondim2(om, ndim1tocol=False, copy=False) for om in obsmatrix])
+        
     @staticmethod
-    def createfromcompoundobsmatrix(obsmatrix):
-        obsmatrix = npu.tondim2(obsmatrix, ndim1tocol=False, copy=True)
-        return KalmanFilterObsModel(obsmatrix)
+    def create(*args):
+        return KalmanFilterObsModel(args)
     
     def predictobs(self, time, statedistr):
         obsmean = np.dot(self.__obsmatrix, statedistr.mean)
@@ -140,11 +141,12 @@ class KalmanFilter(object):
             
             # While cc is the cross-covariance between the "observed" processes and the observation, we need the cross-covariance between the full compound
             # process and the observation. Therefore we enlarge this matrix by inserting columns of zeros at appropriate indices
-            crosscov = np.zeros((npu.nrow(cc), self.__filter._statedistr.dim))
+            ccnrow = npu.nrow(cc)
+            crosscov = np.zeros((ccnrow, self.__filter._statedistr.dim))
             col = 0
             for r in self.__statemeanrects:
                 size = r[0].stop - r[0].start
-                crosscov[0:size, r[0].start:r[0].stop] = cc[0:size, col:col+size]
+                crosscov[0:ccnrow, r[0].start:r[0].start+size] = cc[0:ccnrow, col:col+size]
                 col += size
             
             return PredictedObs(time, predictedobs.distr, crosscov)
@@ -153,8 +155,8 @@ class KalmanFilter(object):
             predictedobs = self.predict(time)
             self.__filter.observe(obsdistr, predictedobs)
         
-    def createobservable(self, obsmodel, process):
-        return KalmanFilter.KalmanObservable(self, obsmodel, process)
+    def createobservable(self, obsmodel, *args):
+        return KalmanFilter.KalmanObservable(self, obsmodel, args)
     
     def predict(self, time):
         if time < self.__time: raise ValueError('Predicting the past (current time=%s, prediction time=%s)' % (self.__time, time))
