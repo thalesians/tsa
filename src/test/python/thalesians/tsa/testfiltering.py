@@ -11,7 +11,7 @@ import thalesians.tsa.processes as proc
 
 class TestFiltering(unittest.TestCase):
     def testkalmanfilterwithpriorpredict(self):
-        t0 = dt.datetime(2014, 2, 12, 16, 18, 25, 204000)
+        t0 = dt.datetime(2017, 5, 12, 16, 18, 25, 204000)
         
         process = proc.WienerProcess.createfromcov(mean=3., cov=25.)
         
@@ -48,7 +48,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(posteriorpredictedobs2.crosscov, posteriorpredictedobs2.distr.cov)
     
     def testkalmanfilterwithoutpriorpredict(self):
-        t0 = dt.datetime(2014, 2, 12, 16, 18, 25, 204000)
+        t0 = dt.datetime(2017, 5, 12, 16, 18, 25, 204000)
         
         process = proc.WienerProcess.createfromcov(mean=3., cov=25.)
         
@@ -75,7 +75,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(posteriorpredictedobs2.crosscov, posteriorpredictedobs2.distr.cov)
         
     def testkalmanfilterwithlowvarianceobs(self):
-        t0 = dt.datetime(2014, 2, 12, 16, 18, 25, 204000)
+        t0 = dt.datetime(2017, 5, 12, 16, 18, 25, 204000)
         
         process = proc.WienerProcess.createfromcov(mean=3., cov=25.)
         
@@ -93,7 +93,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(posteriorpredictedobs1.crosscov, posteriorpredictedobs1.distr.cov)
         
     def testkalmanfiltermultid(self):
-        t0 = dt.datetime(2014, 2, 12, 16, 18, 25, 204000)
+        t0 = dt.datetime(2017, 5, 12, 16, 18, 25, 204000)
         
         process1 = proc.WienerProcess.createfromcov(mean=3., cov=25.)
         process2 = proc.WienerProcess.createfromcov(mean=[1., 4.], cov=[[36.0, -9.0], [-9.0, 25.0]])
