@@ -9,8 +9,16 @@ import thalesians.tsa.processes as proc
 import thalesians.tsa.random as rnd
 import thalesians.tsa.utils as utils
 
-def xtimes(start, stop, step=1):
+def xtimes(start, stop=None, step=None):
     checks.checknotnone(start)
+    
+    if step is None:
+        if isinstance(start, (dt.date, dt.time, dt.datetime)) or isinstance(stop, (dt.date, dt.time, dt.datetime)):
+            step = dt.timedelta(days=1)
+        elif isinstance(start, float) or isinstance(stop, float):
+            step = 1.
+        else:
+            step = 1
 
     resultwrap = lambda x: x
 
@@ -36,7 +44,7 @@ def xtimes(start, stop, step=1):
             start += s
             s = stepfunc(start)
 
-def times(start, stop, step=1):
+def times(start, stop=None, step=None):
     return list(xtimes(start, stop, step))
 
 class EulerMaruyama(object):
