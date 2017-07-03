@@ -68,7 +68,9 @@ class EulerMaruyama(object):
                 timedelta = timedelta.total_seconds() / self.__timeunit.total_seconds()
             npu.colof(self.__process.noisedim, 0.)
             variatedelta = np.sqrt(timedelta) * npu.tondim2(next(self.__variates), ndim1tocol=True, copy=False)
-            self.__value += self.__process.drift(self.__time, self.__value) * timedelta + self.__process.diffusion(self.__time, self.__value).dot(variatedelta)
+            drift = npu.tondim2(self.__process.drift(self.__time, self.__value), ndim1tocol=True, copy=False)
+            diffusion = npu.tondim2(self.__process.diffusion(self.__time, self.__value), ndim1tocol=True, copy=False)
+            self.__value += drift * timedelta + diffusion.dot(variatedelta)
             self.__time = newtime
         v = np.copy(self.__value)
         if self.__flatten: v = v.flatten()

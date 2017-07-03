@@ -163,7 +163,7 @@ class KalmanFilter(object):
         
         def observe(self, time, obsdistr):
             predictedobs = self.predict(time)
-            self.__filter.observe(obsdistr, predictedobs)
+            return self.__filter.observe(obsdistr, predictedobs)
         
     def createobservable(self, obsmodel, *args):
         return KalmanFilter.KalmanObservable(self, obsmodel, args)
