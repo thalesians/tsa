@@ -30,6 +30,9 @@ class PredictedObs(object):
     def __str__(self):
         return 'PredictedObs(time=%s, distr=%s, crosscov=%s)' % (self.__time, self.__distr, self.__crosscov)
     
+    def __repr__(self):
+        return str(self)
+    
 class ObsResult(object):
     def __init__(self, time, obsdistr, accepted, predictedobs, innovdistr, loglikelihood):
         self.__time = time
@@ -65,6 +68,9 @@ class ObsResult(object):
     
     def __str__(self):
         return 'ObsResult(time=%s, obsdistr=%s, accepted=%s, predictedobs=%s, innovdistr=%s, loglikelihood=%f)' % (self.__time, self.__obsdistr, self.__accepted, self.__predictedobs, self.__innovdistr, self.__loglikelihood)
+    
+    def __repr__(self):
+        return str(self)
     
 class ObsModel(object):
     def predictobs(self, time, statedistr):
@@ -197,3 +203,7 @@ class KalmanFilter(object):
     
     def __str__(self):
         return 'KalmanFilter(time=%s, state=%s)' % (self.__time, self._statedistr)
+    
+    def __repr__(self):
+        return str(self)
+    
