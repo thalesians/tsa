@@ -262,7 +262,7 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         mrf = self.meanreversionfactor(timedelta)
         eyeminusmrf = np.eye(self.processdim) - mrf
         m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self.__mean)
-        c = self.noisecovariance(time, time0)
+        c = self.noisecovariance(timedelta)
         return m + np.dot(np.linalg.cholesky(c), variate)
         
     def _propagatedistrimpl(self, timedelta, distr0):
