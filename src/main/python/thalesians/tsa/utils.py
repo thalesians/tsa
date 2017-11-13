@@ -43,6 +43,14 @@ class Interval:
     @property
     def right(self):
         return self._right
+    
+    @property
+    def left_closed(self):
+        return self._left_closed
+    
+    @property
+    def right_closed(self):
+        return self._right_closed
         
     def replace_left(self, new_left, new_left_closed=None):
         if new_left_closed is None: new_left_closed = self._left_closed
@@ -51,6 +59,10 @@ class Interval:
     def replace_right(self, new_right, new_right_closed=None):
         if new_right_closed is None: new_right_closed = self._right_closed
         return Interval(self._left, new_right, self._left_closed, new_right_closed)
+    
+    def __eq__(self, other):
+        return self._left == other.left and self._right == other.right and \
+            self._left_closed == other.left_closed and self._right_closed == other.right_closed
     
     def __str__(self):
         return ('[' if self._left_closed else '(') + \
@@ -64,6 +76,9 @@ class Bracket:
     def __init__(self, interval, interval_offset):
         self.interval = interval
         self.interval_offset = interval_offset
+        
+    def __eq__(self, other):
+        return self.interval == other.interval and self.interval_offset == other.interval_offset
         
     def __str__(self):
         return '{' + str(self.interval) + ', ' + str(self.interval_offset) + '}'
