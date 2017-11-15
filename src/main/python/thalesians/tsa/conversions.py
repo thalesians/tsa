@@ -1,6 +1,7 @@
 import datetime as dt
 
 import numpy as np
+import pandas as pd
 
 import thalesians.tsa.times as times
 
@@ -14,7 +15,7 @@ def numpy_datetime64_to_python_datetime(x):
             return r
         year = x.astype('datetime64[Y]').astype(int) + 1970
         xm = x.astype('datetime64[M]')
-        month = xm.atype(int) % 12 + 1
+        month = xm.astype(int) % 12 + 1
         days = (x - xm) / np.timedelta64(1, 'D')
         timeindays = days - int(days)
         day = int(days) + 1
@@ -26,13 +27,20 @@ def numpy_datetime64_to_python_datetime(x):
         timeindays -= second / times.SECONDS_PER_DAY
         microsecond = int(timeindays * times.MICROSECONDS_PER_DAY)
         r = dt.datetime(year, month, day, hour, minute, second, microsecond)
-        if microsecond == 999999: r += dt.timedelta(microseconds=1)
+        if microsecond % 10 == 9: r += dt.timedelta(microseconds=1)
+        return r
+    raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
+
+def pandas_timestamp_to_python_datetime(x):
+    if isinstance(x, pd.tslib.Timestamp):
+        return x.to_pydatetime()
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
     
 def to_python_datetime(x):
-    # At the moment only the following conversion is supported:
     if isinstance(x, np.datetime64):
         return numpy_datetime64_to_python_datetime(x)
+    if isinstance(x, pd.tslib.Timestamp):
+        return pandas_timestamp_to_python_datetime(x)
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
 def str_to_int_or_none(s, none_values=[''], raise_value_error=True):

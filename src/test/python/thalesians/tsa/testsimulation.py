@@ -13,7 +13,7 @@ import thalesians.tsa.processes as proc
 import thalesians.tsa.random as rnd
 
 class TestSimulation(unittest.TestCase):
-    def testxtimes(self):
+    def test_xtimes(self):
         self.assertIsInstance(sim.xtimes(-5, 5, step=2), collections.Iterator)
         self.assertTrue(issubclass(collections.Iterator, collections.Iterable))
         self.assertIsInstance(sim.xtimes(-5, 5, step=2), collections.Iterable)
@@ -73,8 +73,8 @@ class TestSimulation(unittest.TestCase):
         self.assertEqual(dt.date(2017, 5, 9), next(ts))
         self.assertEqual(dt.date(2017, 5, 8), next(ts))
 
-    def testxtimesrandomstep(self):
-        rnd.randomstate(np.random.RandomState(seed=42), force=True)
+    def test_xtimes_random_step(self):
+        rnd.random_state(np.random.RandomState(seed=42), force=True)
 
         npt.assert_almost_equal(list(sim.xtimes(-5., 5., step=lambda x: rnd.exponential(2.5))),
                 [-5., -3.8268298, 3.6984738])
@@ -140,10 +140,10 @@ class TestSimulation(unittest.TestCase):
         self.assertEqual(dt.date(2017, 5, 7), next(ts))
         self.assertEqual(dt.date(2017, 5, 5), next(ts))
         
-    def testEulerMaruyama(self):
-        rnd.randomstate(np.random.RandomState(seed=42), force=True)
+    def test_euler_maruyama(self):
+        rnd.random_state(np.random.RandomState(seed=42), force=True)
 
-        W = proc.WienerProcess.create2d(mean1=-.5, mean2=3., sd1=3., sd2=4., cor=.5)
+        W = proc.WienerProcess.create_2d(mean1=-.5, mean2=3., sd1=3., sd2=4., cor=.5)
         em = sim.EulerMaruyama(process=W)
         
         t, v = next(em)
@@ -154,10 +154,10 @@ class TestSimulation(unittest.TestCase):
         npt.assert_almost_equal(t, 1.)
         npt.assert_almost_equal(v, npu.col(0.9901425, 3.5144667))
         
-    def testrun(self):
-        rnd.randomstate(np.random.RandomState(seed=42), force=True)
+    def test_run(self):
+        rnd.random_state(np.random.RandomState(seed=42), force=True)
 
-        W = proc.WienerProcess.create2d(mean1=.25, mean2=.5, sd1=3., sd2=4., cor=.5)
+        W = proc.WienerProcess.create_2d(mean1=.25, mean2=.5, sd1=3., sd2=4., cor=.5)
         em = sim.EulerMaruyama(process=W)
         
         df = sim.run(em, nstep=10)

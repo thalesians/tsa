@@ -1,6 +1,6 @@
-import collections as col
 import datetime as dt
 import itertools
+import operator
 
 import numpy as np
 
@@ -21,7 +21,7 @@ def batch(size, iterable):
 
 def peek(iterable, size=1):
     objs = []
-    for i in range(size):
+    for _ in range(size):
         try:
             obj = next(iterable)
         except StopIteration:
@@ -88,7 +88,7 @@ class Bracket:
 
 def bracket(iterable, origin, interval_size, already_sorted=False, intervals_right_closed=False, coalesce=False):
     if not already_sorted:
-        iterable = sorted(iterable)
+        sorted_indices, iterable = zip(*sorted([(i, v) for i, v in enumerate(iterable)], key=operator.itemgetter(1)))
     
     brackets = []
     bracket_indices = []
@@ -121,5 +121,11 @@ def bracket(iterable, origin, interval_size, already_sorted=False, intervals_rig
                             interval_offset))
             
         bracket_indices.append(len(brackets) - 1)
+        
+    if not already_sorted:
+        new_bracket_indices = [None] * len(bracket_indices)
+        for i in range(len(bracket_indices)):
+            new_bracket_indices[sorted_indices[i]] = bracket_indices[i]
+        bracket_indices = new_bracket_indices
     
     return brackets, bracket_indices

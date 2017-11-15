@@ -3,12 +3,12 @@ import numpy as np
 import thalesians.tsa.checks as checks
 import thalesians.tsa.utils as utils
 
-def isviewof(arg1, arg2):
+def is_view_of(arg1, arg2):
     if not isinstance(arg1, np.ndarray) or not isinstance(arg2, np.ndarray):
         return False
     return arg1.base is arg2
 
-def areviewsofsame(arg1, arg2):
+def are_views_of_same(arg1, arg2):
     if not isinstance(arg1, np.ndarray) or not isinstance(arg2, np.ndarray):
         return False
     return (arg1.base is arg2) or (arg2.base is arg1) or ((arg1.base is arg2.base) and arg1.base is not None)
@@ -19,55 +19,55 @@ def nrow(arg):
 def ncol(arg):
     return np.shape(arg)[1]
 
-def toscalar(arg):
+def to_scalar(arg):
     if isinstance(arg, float): return arg
     elif isinstance(arg, np.ndarray): return np.asscalar(arg)
     else: return np.asscalar(np.array(arg))
 
-def tondim1(arg, copy=False):
+def to_ndim_1(arg, copy=False):
     r = np.reshape(arg, (np.size(arg),))
     if r.base is arg and copy: r = np.copy(r)
     return r
 
-def tondim2(arg, ndim1tocol=False, copy=False):
+def to_ndim_2(arg, ndim_1_to_col=False, copy=False):
     r = np.ndim(arg)
     if r == 0: arg = np.array(((arg,),))
     elif r == 1:
         arg = np.array((arg,))
-        if ndim1tocol: arg = arg.T
+        if ndim_1_to_col: arg = arg.T
     return np.array(arg, copy=copy)
 
 def row(*args):
-    return tondim2(args, ndim1tocol=False)
+    return to_ndim_2(args, ndim_1_to_col=False)
 
 def col(*args):
-    return tondim2(args, ndim1tocol=True)
+    return to_ndim_2(args, ndim_1_to_col=True)
 
 def matrix(ncol, *args):
     return np.array(utils.batch(ncol, args))
 
-def matrixof(nrow, ncol, val):
+def matrix_of(nrow, ncol, val):
     r = np.empty((nrow, ncol))
     r.fill(val)
     return r
 
-def rowof(n, val):
-    return matrixof(1, n, val)
+def row_of(n, val):
+    return matrix_of(1, n, val)
 
-def colof(n, val):
-    return matrixof(n, 1, val)
+def col_of(n, val):
+    return matrix_of(n, 1, val)
 
-def ndim1of(n, val):
+def ndim_1_of(n, val):
     r = np.empty((n,))
     r.fill(val)
     return r
 
-def makeimmutable(arg):
-    checks.checkinstance(arg, np.ndarray)
+def make_immutable(arg):
+    checks.check_instance(arg, np.ndarray)
     arg.flags.writeable = False
     return arg
 
-def immutablecopyof(arg):
+def immutable_copy_of(arg):
     if isinstance(arg, np.ndarray):
         result = np.copy(arg) if arg.flags.writeable else arg
     else:
@@ -75,32 +75,32 @@ def immutablecopyof(arg):
     result.flags.writeable = False
     return result
         
-def lowertosymmetric(a, copy=False):
+def lower_to_symmetric(a, copy=False):
     a = np.copy(a) if copy else a
     idxs = np.triu_indices_from(a)
     a[idxs] = a[(idxs[1], idxs[0])]
     return a
 
-def uppertosymmetric(a, copy=False):
+def upper_to_symmetric(a, copy=False):
     a = np.copy(a) if copy else a
     idxs = np.triu_indices_from(a)
     a[(idxs[1], idxs[0])] = a[idxs]
     return a
 
-def kronsum(arg1, arg2):
+def kron_sum(arg1, arg2):
     return np.kron(arg1, np.eye(nrow(arg2))) + np.kron(np.eye(nrow(arg1)), arg2)
 
 def vec(arg):
-    return np.resize(tondim2(arg, ndim1tocol=True, copy=False).T, (np.size(arg), 1))
+    return np.resize(to_ndim_2(arg, ndim_1_to_col=True, copy=False).T, (np.size(arg), 1))
 
 def unvec(arg, nrow):
-    return np.resize(tondim1(arg, copy=False), (np.size(arg) // nrow, nrow)).T
+    return np.resize(to_ndim_1(arg, copy=False), (np.size(arg) // nrow, nrow)).T
 
 def vectorised(func):
     func.__dict__['vectorised'] = True
     return func
 
-def isvectorised(func):
+def is_vectorised(func):
     res = False
     if hasattr(func, '__call__'):
         if hasattr(func.__call__, '__dict__'):

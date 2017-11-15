@@ -9,194 +9,194 @@ from thalesians.tsa.numpyutils import vectorised
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers)
 
 class TestNumPyUtils(unittest.TestCase):
-    def testnrow(self):
+    def test_nrow(self):
         r = npu.row(429., 5., 2., 14.)
         self.assertEqual(npu.nrow(r), 1)
         c = npu.col(429., 5., 2., 14.)
         self.assertEqual(npu.nrow(c), 4)
-        m = npu.matrixof(3, 5, 0.)
+        m = npu.matrix_of(3, 5, 0.)
         self.assertEqual(npu.nrow(m), 3)
     
-    def testncol(self):
+    def test_ncol(self):
         r = npu.row(429., 5., 2., 14.)
         self.assertEqual(npu.ncol(r), 4)
         c = npu.col(429., 5., 2., 14.)
         self.assertEqual(npu.ncol(c), 1)
-        m = npu.matrixof(3, 5, 0.)
+        m = npu.matrix_of(3, 5, 0.)
         self.assertEqual(npu.ncol(m), 5)
         
-    def testisviewof(self):
+    def test_is_view_of(self):
         a = np.array([[429., 5.], [2., 14.]])
-        b = npu.tondim1(a, copy=False)
-        self.assertTrue(npu.isviewof(b, a))
-        self.assertFalse(npu.isviewof(a, b))
+        b = npu.to_ndim_1(a, copy=False)
+        self.assertTrue(npu.is_view_of(b, a))
+        self.assertFalse(npu.is_view_of(a, b))
         b = a.T
-        self.assertTrue(npu.isviewof(b, a))
-        self.assertFalse(npu.isviewof(a, b))
-        b = npu.tondim1(a, copy=True)
-        self.assertFalse(npu.isviewof(b, a))
-        self.assertFalse(npu.isviewof(a, b))
+        self.assertTrue(npu.is_view_of(b, a))
+        self.assertFalse(npu.is_view_of(a, b))
+        b = npu.to_ndim_1(a, copy=True)
+        self.assertFalse(npu.is_view_of(b, a))
+        self.assertFalse(npu.is_view_of(a, b))
     
-    def testareviewsofsame(self):
+    def test_are_views_of_same(self):
         a = np.array([[429., 5.], [2., 14.]])
-        b = npu.tondim1(a, copy=False)
-        self.assertTrue(npu.areviewsofsame(b, a))
-        self.assertTrue(npu.areviewsofsame(a, b))
+        b = npu.to_ndim_1(a, copy=False)
+        self.assertTrue(npu.are_views_of_same(b, a))
+        self.assertTrue(npu.are_views_of_same(a, b))
         b = a.T
-        self.assertTrue(npu.areviewsofsame(b, a))
-        self.assertTrue(npu.areviewsofsame(a, b))
-        b = npu.tondim1(a, copy=True)
-        self.assertFalse(npu.areviewsofsame(b, a))
-        self.assertFalse(npu.areviewsofsame(a, b))
+        self.assertTrue(npu.are_views_of_same(b, a))
+        self.assertTrue(npu.are_views_of_same(a, b))
+        b = npu.to_ndim_1(a, copy=True)
+        self.assertFalse(npu.are_views_of_same(b, a))
+        self.assertFalse(npu.are_views_of_same(a, b))
     
-    def testtoscalar(self):
+    def test_to_scalar(self):
         for v in [ 429., [429.], [[429.]], np.array(429.), np.array([429.]), np.array([[429.]]) ]:
-            r = npu.toscalar(v)
+            r = npu.to_scalar(v)
             self.assertIsInstance(r, float)
             npt.assert_almost_equal(r, 429.)
         
-        self.assertIsNone(npu.toscalar(None))
+        self.assertIsNone(npu.to_scalar(None))
             
-    def testtondim1(self):
+    def test_to_ndim_1(self):
         for v in [ 429., [429.], [[429.]], np.array(429.), np.array([429.]), np.array([[429.]]) ]:
-            r = npu.tondim1(v)
+            r = npu.to_ndim_1(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (1,))
             npt.assert_almost_equal(r, np.array([429.]))
         
         for v in [[429., 5.], [[429., 5.]], [[[429.], [5.]]], np.array([429., 5.]), np.array([[429., 5.]]), np.array([[[429.], [5.]]])]:
-            r = npu.tondim1(v)
+            r = npu.to_ndim_1(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (2,))
             npt.assert_almost_equal(r, np.array([429., 5.]))
         
         for v in [ [429., 5., 2., 14.], [[429., 5., 2., 14.]], [[429., 5.], [2., 14.]], [[429.], [5.], [2.], [14.]], np.array([429., 5., 2., 14.]), np.array([[429., 5., 2., 14.]]), np.array([[429., 5.], [2., 14.]]), np.array([[[429.], [5.], [2.], [14.]]]) ]:
-            r = npu.tondim1(v)
+            r = npu.to_ndim_1(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (4,))
             npt.assert_almost_equal(r, np.array([429., 5., 2., 14.]))
         
-        npt.assert_equal(npu.tondim1(None), np.array([None]))
+        npt.assert_equal(npu.to_ndim_1(None), np.array([None]))
     
         a = np.array([2., 14.])
-        b = npu.tondim1(a, copy=False)
+        b = npu.to_ndim_1(a, copy=False)
         b[1] = 42.
         npt.assert_almost_equal(b, np.array([2., 42.]))
         npt.assert_almost_equal(a, np.array([2., 42.]))
     
         a = [2., 14.]
-        b = npu.tondim1(a, copy=False)
+        b = npu.to_ndim_1(a, copy=False)
         b[1] = 42.
         npt.assert_almost_equal(b, np.array([2., 42.]))
         npt.assert_almost_equal(a, np.array([2., 14.]))
 
         a = [2., 14.]
-        b = npu.tondim1(a, copy=True)
+        b = npu.to_ndim_1(a, copy=True)
         b[1] = 42.
         npt.assert_almost_equal(b, np.array([2., 42.]))
         npt.assert_almost_equal(a, np.array([2., 14.]))
 
-    def testtondim2(self):
+    def test_to_ndim_2(self):
         for v in [ 429., [429.], [[429.]], np.array(429.), np.array([429.]), np.array([[429.]]) ]:
-            r = npu.tondim2(v)
+            r = npu.to_ndim_2(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (1, 1))
             npt.assert_almost_equal(r, np.array([[429.]]))
         
         for v in [ [429., 5.], [[429., 5.]], np.array([429., 5.]), np.array([[429., 5.]]) ]:
-            r = npu.tondim2(v)
+            r = npu.to_ndim_2(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (1, 2))
             npt.assert_almost_equal(r, np.array([[429., 5.]]))
         
         for v in [ [[429.], [5.]], np.array([[429.], [5.]]) ]:
-            r = npu.tondim2(v)
+            r = npu.to_ndim_2(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (2, 1))
             npt.assert_almost_equal(r, np.array([[429.], [5.]]))
         
         for v in [ [429., 5., 2., 14.], [[429., 5., 2., 14.]], np.array([429., 5., 2., 14.]), np.array([[429., 5., 2., 14.]]) ]:
-            r = npu.tondim2(v)
+            r = npu.to_ndim_2(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (1, 4))
             npt.assert_almost_equal(r, np.array([[429., 5., 2., 14.]]))
         
         for v in [ [[429., 5.], [2., 14.]], np.array([[429., 5.], [2., 14.]]) ]:
-            r = npu.tondim2(v)
+            r = npu.to_ndim_2(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (2, 2))
             npt.assert_almost_equal(r, np.array([[429., 5.], [2., 14.]]))
         
         for v in [ [[429.], [5.], [2.], [14.]], np.array([[429.], [5.], [2.], [14.]]) ]:
-            r = npu.tondim2(v)
+            r = npu.to_ndim_2(v)
             self.assertIsInstance(r, np.ndarray)
             self.assertEqual(np.shape(r), (4, 1))
             npt.assert_almost_equal(r, np.array([[429.], [5.], [2.], [14.]]))
         
-        npt.assert_equal(npu.tondim2(None), np.array([[None]]))
+        npt.assert_equal(npu.to_ndim_2(None), np.array([[None]]))
         
         a = np.array([[429., 5.], [2., 14.]])
-        b = npu.tondim2(a, copy=False)
+        b = npu.to_ndim_2(a, copy=False)
         b[1, 1] = 42.
         npt.assert_almost_equal(b, np.array([[429., 5.], [2., 42.]]))
         npt.assert_almost_equal(a, np.array([[429., 5.], [2., 42.]]))
     
         a = [[429., 5.], [2., 14.]]
-        b = npu.tondim2(a, copy=False)
+        b = npu.to_ndim_2(a, copy=False)
         b[1, 1] = 42.
         npt.assert_almost_equal(b, np.array([[429., 5.], [2., 42.]]))
         npt.assert_almost_equal(a, np.array([[429., 5.], [2., 14.]]))
 
         a = np.array([[429., 5.], [2., 14.]])
-        b = npu.tondim2(a, copy=True)
+        b = npu.to_ndim_2(a, copy=True)
         b[1, 1] = 42.
         npt.assert_almost_equal(b, np.array([[429., 5.], [2., 42.]]))
         npt.assert_almost_equal(a, np.array([[429., 5.], [2., 14.]]))
 
-    def testrow(self):
+    def test_row(self):
         row = npu.row(1., 1., 2., 5., 14.)
         npt.assert_almost_equal(row, np.array([[1., 1., 2., 5., 14.]]))
         
-    def testcol(self):
+    def test_col(self):
         col = npu.col(1., 1., 2., 5., 14.)
         npt.assert_almost_equal(col, np.array(([[1.], [1.], [2.], [5.], [14.]])))
         
-    def testmatrix(self):
+    def test_matrix(self):
         matrix = npu.matrix(3, 429., 5., 2., 14., 42., 132.)
         npt.assert_almost_equal(matrix, np.array([[429., 5., 2.], [14., 42., 132.]]))
         
-    def testmatrixof(self):
-        matrix = npu.matrixof(2, 3, 429.)
+    def test_matrix_of(self):
+        matrix = npu.matrix_of(2, 3, 429.)
         npt.assert_almost_equal(matrix, np.array([[429., 429., 429.], [429., 429., 429.]]))
         
-    def testrowof(self):
-        row = npu.rowof(5, 429.)
+    def test_row_of(self):
+        row = npu.row_of(5, 429.)
         npt.assert_almost_equal(row, np.array([[429., 429., 429., 429., 429.]]))
         
-    def testcolof(self):
-        col = npu.colof(5, 429.)
+    def test_col_of(self):
+        col = npu.col_of(5, 429.)
         npt.assert_almost_equal(col, np.array([[429.], [429.], [429.], [429.], [429.]]))
         
-    def testndim1of(self):
-        ndim1 = npu.ndim1of(5, 429.)
+    def test_ndim_1_of(self):
+        ndim1 = npu.ndim_1_of(5, 429.)
         npt.assert_almost_equal(ndim1, np.array([429., 429., 429., 429., 429.]))
         
-    def testmakeimmutable(self):
+    def test_make_immutable(self):
         a = np.array([[429., 5.], [2., 14.]])
         a[1, 1] = 42.
-        b = npu.makeimmutable(a)
+        b = npu.make_immutable(a)
         self.assertIs(b, a)
         npt.assert_almost_equal(b[1, 1], 42.)
         with self.assertRaises(ValueError):
             b[1, 1] = 132.
         npt.assert_almost_equal(b[1, 1], 42.)
     
-    def testimmutablecopyof(self):
+    def test_immutable_copy_of(self):
         a = np.array([[429., 5.], [2., 14.]])
         npt.assert_almost_equal(a, np.array([[429., 5.], [2., 14.]]))
         a[1, 1] = 42.
         npt.assert_almost_equal(a, np.array([[429., 5.], [2., 42.]]))
-        b = npu.immutablecopyof(a)
+        b = npu.immutable_copy_of(a)
         npt.assert_almost_equal(b, np.array([[429., 5.], [2., 42.]]))
         with self.assertRaises(ValueError):
             b[1, 1] = 132.
@@ -204,29 +204,29 @@ class TestNumPyUtils(unittest.TestCase):
         a[1, 1] = 132.
         npt.assert_almost_equal(b, np.array([[429., 5.], [2., 42.]]))
         
-    def testlowertosymmetric(self):
+    def test_lower_to_symmetric(self):
         a = npu.matrix(3, 429., 0., 0., 5., 2., 0., 42., 1., 1.)
-        b = npu.lowertosymmetric(a)
+        b = npu.lower_to_symmetric(a)
         npt.assert_almost_equal(a, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))
         npt.assert_almost_equal(b, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))
         
         a = npu.matrix(3, 429., 0., 0., 5., 2., 0., 42., 1., 1.)
-        b = npu.lowertosymmetric(a, copy=True)
+        b = npu.lower_to_symmetric(a, copy=True)
         npt.assert_almost_equal(a, npu.matrix(3, 429., 0., 0., 5., 2., 0., 42., 1., 1.))
         npt.assert_almost_equal(b, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))        
     
-    def testuppertosymmetric(self):
+    def test_upper_to_symmetric(self):
         a = npu.matrix(3, 429., 5., 42., 0., 2., 1., 0., 0., 1.)
-        b = npu.uppertosymmetric(a)
+        b = npu.upper_to_symmetric(a)
         npt.assert_almost_equal(a, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))
         npt.assert_almost_equal(b, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))
         
         a = npu.matrix(3, 429., 5., 42., 0., 2., 1., 0., 0., 1.)
-        b = npu.uppertosymmetric(a, copy=True)
+        b = npu.upper_to_symmetric(a, copy=True)
         npt.assert_almost_equal(a, npu.matrix(3, 429., 5., 42., 0., 2., 1., 0., 0., 1.))
         npt.assert_almost_equal(b, npu.matrix(3, 429., 5., 42., 5., 2., 1., 42., 1., 1.))
         
-    def testkron(self):
+    def test_kron(self):
         a = np.array([[  5., 1.,   14., 2., 42.],
                       [132., 2.,  429., 1.,  1.],
                       [  1., 2., 1430., 2.,  2.]])
@@ -246,23 +246,23 @@ class TestNumPyUtils(unittest.TestCase):
             for j in range(p):
                 npt.assert_almost_equal(c[i*m:(i+1)*m, j*q:(j+1)*q], a[i, j] * b)
 
-    def testkronsum(self):
+    def test_kron_sum(self):
         a = np.array([[5., 1.],
                       [2., 5.]])
         b = np.array([[ 14., 42.,  1.],
                       [132., 14.,  2.],
                       [  5.,  2., 42.]])
-        c = npu.kronsum(a, b)
+        c = npu.kron_sum(a, b)
         
         m = npu.nrow(a)
         self.assertEqual(npu.ncol(a), m)
         n = npu.nrow(b)
         self.assertEqual(npu.ncol(b), n)
         
-        knownkronsum = np.kron(a, np.eye(n)) + np.kron(np.eye(m), b)
-        npt.assert_almost_equal(c, knownkronsum)
+        known_kron_sum = np.kron(a, np.eye(n)) + np.kron(np.eye(m), b)
+        npt.assert_almost_equal(c, known_kron_sum)
         
-    def testvecandunvec(self):
+    def test_vec_and_unvec(self):
         a = np.array([[  5., 1.,   14., 2., 42.],
                       [132., 2.,  429., 1.,  1.],
                       [  1., 2., 1430., 2.,  2.]])
@@ -270,24 +270,24 @@ class TestNumPyUtils(unittest.TestCase):
         npt.assert_almost_equal(npu.vec(a), b)
         npt.assert_almost_equal(npu.unvec(b, 3), a)
 
-    def testvectorised(self):
-        funccallcount = 0
+    def test_vectorised(self):
+        func_call_count = 0
 
         def func(a, b):
-            nonlocal funccallcount
-            funccallcount += 1
+            nonlocal func_call_count
+            func_call_count += 1
             return a + b
         
-        funcvcallcount = 0
+        funcv_call_count = 0
         
         @vectorised
         def funcv(a, b):
-            nonlocal funcvcallcount
-            funcvcallcount += 1
+            nonlocal funcv_call_count
+            funcv_call_count += 1
             return a + b
         
         def solver(a, b, f):
-            if npu.isvectorised(f):
+            if npu.is_vectorised(f):
                 return f(a, b)
             else:
                 rc = np.shape(a)[0]
@@ -296,16 +296,16 @@ class TestNumPyUtils(unittest.TestCase):
                     r[i] = f(a[i], b[i])
                 return r
             
-        self.assertFalse(npu.isvectorised(func))
-        self.assertTrue(npu.isvectorised(funcv))
+        self.assertFalse(npu.is_vectorised(func))
+        self.assertTrue(npu.is_vectorised(funcv))
         a = npu.col(14., 2., 429.)
         b = npu.col(42., 1., 5.)
         r = solver(a, b, func)
         npt.assert_almost_equal(r, np.array([[56.], [3.], [434.]]))
-        self.assertEqual(funccallcount, 3)
+        self.assertEqual(func_call_count, 3)
         r = solver(a, b, funcv)
         npt.assert_almost_equal(r, np.array([[56.], [3.], [434.]]))
-        self.assertEqual(funcvcallcount, 1)
+        self.assertEqual(funcv_call_count, 1)
         
 if __name__ == '__main__':
     unittest.main()

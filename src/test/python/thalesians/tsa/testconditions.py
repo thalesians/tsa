@@ -3,29 +3,29 @@ import unittest
 from thalesians.tsa.conditions import precondition, postcondition
 
 class TestConditions(unittest.TestCase):
-    def testunaryfunctionprecondition(self):
+    def test_unary_function_precondition(self):
         @precondition(lambda arg: arg >= 0,
                 'arg must be greater than or equal to 0')
-        def plusone(arg):
+        def plus_one(arg):
             return arg + 1
-        self.assertEqual(plusone(1), 2)        
+        self.assertEqual(plus_one(1), 2)        
         with self.assertRaises(AssertionError) as ae:
-            plusone(-1)
+            plus_one(-1)
         self.assertEqual(ae.exception.args[0],
                 'arg must be greater than or equal to 0')
         
-    def testunaryfunctionpreconditionleveltoolow(self):
+    def test_unary_function_precondition_level_too_low(self):
         @precondition(lambda arg: arg >= 0,
                 'arg must be greater than or equal to 0',
                 level=0)
-        def plusone(arg):
+        def plus_one(arg):
             return arg + 1
-        self.assertEqual(plusone(1), 2)
+        self.assertEqual(plus_one(1), 2)
         # Even though the precondition is violated, its level is less than
         # settings.MIN_PRECONDITION_LEVEL, so it is not checked:
-        self.assertEqual(plusone(-1), 0)
+        self.assertEqual(plus_one(-1), 0)
         
-    def testbinaryfunctionprecondition(self):
+    def test_binary_function_precondition(self):
         @precondition(lambda arg1, arg2: arg1 >= 0 and arg2 >= 0,
                 'both arguments must be greater than or equal to 0')
         def add(arg1, arg2):
@@ -36,7 +36,7 @@ class TestConditions(unittest.TestCase):
         self.assertEqual(ae.exception.args[0],
                 'both arguments must be greater than or equal to 0')
              
-    def testbinaryfunctionpreconditioncomposition(self):
+    def test_binary_function_precondition_composition(self):
         @precondition(lambda arg1, arg2: arg1 >= 0,
                 'arg1 must be greater than or equal to 0')
         @precondition(lambda arg1, arg2: arg2 >= 0,
@@ -49,7 +49,7 @@ class TestConditions(unittest.TestCase):
         self.assertEqual(ae.exception.args[0],
                 'arg2 must be greater than or equal to 0')
                 
-    def testbinaryfunctionwithdefaultargsprecondition(self):
+    def test_binary_function_with_default_args_precondition(self):
         @precondition(lambda arg1, arg2=0: arg1 >= 0 and arg2 >= 0,
                 'both arguments must be greater than or equal to 0')
         def add(arg1, arg2=0):
@@ -61,57 +61,57 @@ class TestConditions(unittest.TestCase):
         self.assertEqual(ae.exception.args[0],
                 'both arguments must be greater than or equal to 0')
                 
-    def testmethodprecondition(self):
+    def test_method_precondition(self):
         class Adder(object):
             @precondition(lambda self, arg: arg >= 0,
                     'arg must be greater than or equal to 0')
-            def plusone(self, arg):
+            def plus_one(self, arg):
                 return arg + 1
         adder = Adder()
-        self.assertEqual(adder.plusone(1), 2)
+        self.assertEqual(adder.plus_one(1), 2)
         with self.assertRaises(AssertionError) as ae:
-            adder.plusone(-1)
+            adder.plus_one(-1)
         self.assertEqual(ae.exception.args[0],
                 'arg must be greater than or equal to 0')
         
-    def testfunctionpostcondition(self):
+    def test_function_postcondition(self):
         @postcondition(lambda result: result >= 0,
                 'result must be greater than or equal to 0')
-        def plusone(arg):
+        def plus_one(arg):
             return arg + 1
-        self.assertEqual(plusone(1), 2)
-        self.assertEqual(plusone(-1), 0)
+        self.assertEqual(plus_one(1), 2)
+        self.assertEqual(plus_one(-1), 0)
         with self.assertRaises(AssertionError) as ae:
-            plusone(-2)
+            plus_one(-2)
         self.assertEqual(ae.exception.args[0],
                 'result must be greater than or equal to 0')
             
-    def testfunctionpostconditionleveltoolow(self):
+    def test_function_postcondition_level_too_low(self):
         @postcondition(lambda result: result >= 0,
                 'result must be greater than or equal to 0', level=0)
-        def plusone(arg):
+        def plus_one(arg):
             return arg + 1
-        self.assertEqual(plusone(1), 2)
-        self.assertEqual(plusone(-1), 0)
+        self.assertEqual(plus_one(1), 2)
+        self.assertEqual(plus_one(-1), 0)
         # Even though the postcondition is violated, its level is less than
         # settings.MIN_POSTCONDITION_LEVEL, so it is not checked:
-        self.assertEqual(plusone(-2), -1)
+        self.assertEqual(plus_one(-2), -1)
             
-    def testmethodpostcondition(self):
+    def test_method_postcondition(self):
         class Adder(object):
             @postcondition(lambda result: result >= 0,
                     'result must be greater than or equal to 0')
-            def plusone(self, arg):
+            def plus_one(self, arg):
                 return arg + 1
         adder = Adder()
-        self.assertEqual(adder.plusone(1), 2)
-        self.assertEqual(adder.plusone(-1), 0)
+        self.assertEqual(adder.plus_one(1), 2)
+        self.assertEqual(adder.plus_one(-1), 0)
         with self.assertRaises(AssertionError) as ae:
-            adder.plusone(-2)
+            adder.plus_one(-2)
         self.assertEqual(ae.exception.args[0],
                 'result must be greater than or equal to 0')
             
-    def testmethodpreandpostcondition1order1(self):
+    def test_method_pre_and_postcondition_1_order_1(self):
         # Preconditions, then postcondition
         class Subtractor(object):
             @precondition(lambda self, arg1, arg2: arg1 >= 0,
@@ -141,7 +141,7 @@ class TestConditions(unittest.TestCase):
         self.assertEqual(ae.exception.args[0],
                 'result must be greater than or equal to 0')
         
-    def testmethodpreandpostcondition1order2(self):
+    def test_method_pre_and_postcondition_1_order_2(self):
         # Putting the postcondition before the preconditions makes no observable
         # difference
         class Subtractor(object):
@@ -172,7 +172,7 @@ class TestConditions(unittest.TestCase):
         self.assertEqual(ae.exception.args[0],
                 'result must be greater than or equal to 0')
 
-    def testmethodpreandpostcondition1order3(self):
+    def test_method_pre_and_postcondition_1_order_3(self):
         # Reordering the preconditions makes an observable difference
         class Subtractor(object):
             @precondition(lambda self, arg1, arg2: arg2 >= 0,

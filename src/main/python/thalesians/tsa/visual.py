@@ -7,7 +7,7 @@ import pandas as pd
 def bar_chart_from_dict(d, fig=None, ax=None, title=None):
     if fig is None: fig = plt.figure()
     if ax is None: ax = fig.add_subplot(111)
-    ax.bar(range(len(d)), values, align='center')
+    ax.bar(range(len(d)), d.values(), align='center')
     ax.set_xticks(range(len(d)))
     ax.set_xticklabels(d.keys(), rotation=90)
     if title is not None: ax.set_title(title)

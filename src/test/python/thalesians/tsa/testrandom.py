@@ -10,18 +10,18 @@ import thalesians.tsa.random as rnd
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers)
 
 class TestRandom(unittest.TestCase):
-    def testrandomstate(self):
+    def test_random_state(self):
         rs = np.random.RandomState(seed=42)
-        rnd.randomstate(rs, force=True)
-        self.assertEqual(rnd.randomstate(), rs)
+        rnd.random_state(rs, force=True)
+        self.assertEqual(rnd.random_state(), rs)
         with self.assertRaises(exc.NumericError):
-            rnd.randomstate(rs)
+            rnd.random_state(rs)
         rs = np.random.RandomState(seed=132)
-        rnd.randomstate(rs, force=True)
-        self.assertEqual(rnd.randomstate(), rs)
+        rnd.random_state(rs, force=True)
+        self.assertEqual(rnd.random_state(), rs)
             
-    def testexponential(self):
-        rnd.randomstate(np.random.RandomState(seed=42), force=True)
+    def test_exponential(self):
+        rnd.random_state(np.random.RandomState(seed=42), force=True)
 
         values = rnd.exponential(.25, size=5)
         npt.assert_almost_equal(values, np.array([ 0.117317 ,  0.7525304,  0.3291864,  0.2282356,  0.0424062]))

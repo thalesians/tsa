@@ -10,7 +10,7 @@ import thalesians.tsa.random as rnd
 import thalesians.tsa.utils as utils
 
 def xtimes(start, stop=None, step=None):
-    checks.checknotnone(start)
+    checks.check_not_none(start)
     
     if step is None:
         if isinstance(start, (dt.date, dt.time, dt.datetime)) or isinstance(stop, (dt.date, dt.time, dt.datetime)):
@@ -29,7 +29,7 @@ def xtimes(start, stop=None, step=None):
         stop = dt.datetime.combine(dt.datetime(1,1,1,0,0,0), stop) if stop is not None else None
         resultwrap = lambda x: x.time()
 
-    stepfunc = step if checks.iscallable(step) else lambda x: step
+    stepfunc = step if checks.is_callable(step) else lambda x: step
     s = stepfunc(start)
     checks.check(utils.sign(s) != 0, 'Step must be positive or negative, not zero')
     
@@ -48,39 +48,39 @@ def times(start, stop=None, step=None):
     return list(xtimes(start, stop, step))
 
 class EulerMaruyama(object):
-    def __init__(self, process, initialvalue=None, times=None, variates=None, timeunit=dt.timedelta(days=1), flatten=False):
-        checks.checkinstance(process, proc.ItoProcess)
+    def __init__(self, process, initial_value=None, times=None, variates=None, time_unit=dt.timedelta(days=1), flatten=False):
+        checks.check_instance(process, proc.ItoProcess)
         self.__process = process
-        self.__value = npu.tondim2(initialvalue, ndim1tocol=True, copy=True) if initialvalue is not None else npu.colof(process.processdim, 0.)
+        self.__value = npu.to_ndim_2(initial_value, ndim_1_to_col=True, copy=True) if initial_value is not None else npu.col_of(process.process_dim, 0.)
         self.__times = times if times is not None else xtimes(0., None, 1.)
-        self.__variates = variates if variates is not None else rnd.multivatiate_normals(ndim=process.noisedim)
-        self.__time = None
-        self.__timeunit = timeunit
+        self.__variates = variates if variates is not None else rnd.multivatiate_normals(ndim=process.noise_dim)
+        self._time = None
+        self._time_unit = time_unit
         self.__flatten = flatten
 
     def __next__(self):
-        if self.__time is None:
-            self.__time = next(self.__times)
+        if self._time is None:
+            self._time = next(self.__times)
         else:
             newtime = next(self.__times)
-            timedelta = newtime - self.__time
-            if isinstance(timedelta, dt.timedelta):
-                timedelta = timedelta.total_seconds() / self.__timeunit.total_seconds()
-            npu.colof(self.__process.noisedim, 0.)
-            variatedelta = np.sqrt(timedelta) * npu.tondim2(next(self.__variates), ndim1tocol=True, copy=False)
-            drift = npu.tondim2(self.__process.drift(self.__time, self.__value), ndim1tocol=True, copy=False)
-            diffusion = npu.tondim2(self.__process.diffusion(self.__time, self.__value), ndim1tocol=True, copy=False)
-            self.__value += drift * timedelta + diffusion.dot(variatedelta)
-            self.__time = newtime
+            time_delta = newtime - self._time
+            if isinstance(time_delta, dt.timedelta):
+                time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
+            npu.col_of(self.__process.noise_dim, 0.)
+            variatedelta = np.sqrt(time_delta) * npu.to_ndim_2(next(self.__variates), ndim_1_to_col=True, copy=False)
+            drift = npu.to_ndim_2(self.__process.drift(self._time, self.__value), ndim_1_to_col=True, copy=False)
+            diffusion = npu.to_ndim_2(self.__process.diffusion(self._time, self.__value), ndim_1_to_col=True, copy=False)
+            self.__value += drift * time_delta + diffusion.dot(variatedelta)
+            self._time = newtime
         v = np.copy(self.__value)
         if self.__flatten: v = v.flatten()
-        return self.__time, v
+        return self._time, v
     
     def __iter__(self):
         return self
 
-def run(sim, nstep=None, lasttime=None):
-    checks.checkatmostonenotnone(nstep, lasttime)
+def run(sim, nstep=None, last_time=None):
+    checks.check_at_most_one_not_none(nstep, last_time)
     ts, vs = [], []
     if nstep is not None:
         for i in range(nstep):
@@ -89,14 +89,14 @@ def run(sim, nstep=None, lasttime=None):
             except StopIteration: break
             ts.append(t)
             vs.append(v.flatten())
-    elif lasttime is not None:
+    elif last_time is not None:
         while True:
             try:
                 t, v = next(sim)
             except StopIteration: break
             ts.append(t)
             vs.append(v.flatten())
-            if t >= lasttime: break
+            if t >= last_time: break
     else:
         for t, v in sim:
             ts.append(t)

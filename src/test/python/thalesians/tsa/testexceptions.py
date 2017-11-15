@@ -4,7 +4,7 @@ import thalesians.tsa.exceptions as exc
 
 class TestExceptions(unittest.TestCase):
         
-    def testNumericError(self):
+    def test_numeric_error(self):
         with self.assertRaises(exc.NumericError):
             raise exc.NumericError('Failed to converge')
         
