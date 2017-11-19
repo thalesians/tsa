@@ -5,6 +5,7 @@ import pandas as pd
 
 import thalesians.tsa.checks as checks
 import thalesians.tsa.times as times
+import thalesians.tsa.utils as utils
 
 def numpy_datetime64_to_python_datetime(x):
     if isinstance(x, np.datetime64):
@@ -41,32 +42,53 @@ def to_python_datetime(x, *args, **kwargs):
     elif checks.is_string(x): return str_to_datetime(x, *args, **kwargs)
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
-def str_to_int(s, none_values=[''], none_result=None, raise_value_error=True):
+def str_to_x(s, none_values, none_result, raise_value_error, x_name, conv):
     s = s.strip()
     if s in none_values: return none_result
-    try: return int(s)
+    try: return conv(s)
     except:
-        if raise_value_error: raise ValueError('Unexpected int string: "%s"' % str(s))
+        if raise_value_error: raise ValueError('Unexpected %s string: "%s"' % (x_name, str(s)))
         return none_result
+
+def _strs_to_x(ss, none_values, none_result, raise_value_error, min_success_rate, str_to_x):
+    success_count = 0
+    total_count = 0
+    results = []
+    for s in ss:
+        try:
+            result = str_to_x(s, none_values, none_result, raise_value_error=True)
+            success_count += 1
+        except:
+            result = none_result
+        total_count += 1
+        results.append(result)
+    if float(success_count) / total_count < min_success_rate:
+        if raise_value_error: raise ValueError('Unable to parse strings')
+        results = None
+    return results
+
+def str_to_int(s, none_values=[''], none_result=None, raise_value_error=True):
+    return str_to_x(s, none_values, none_result, raise_value_error, 'int', int)
+            
+def strs_to_int(ss, none_values=[''], none_result=None, raise_value_error=True):
+    return _strs_to_x(ss, none_values, none_result, raise_value_error, str_to_int)
             
 def str_to_float(s, none_values=[''], none_result=float('nan'), raise_value_error=True):
-    s = s.strip()
-    if s in none_values: return none_result
-    try: return float(s)
-    except:
-        if raise_value_error: raise ValueError('Unexpected float string: "%s"' % str(s))
-        return none_result
+    return str_to_x(s, none_values, none_result, raise_value_error, 'float', float)
+
+def strs_to_float(ss, none_values=[''], none_result=float('nan'), raise_value_error=True):
+    return _strs_to_x(ss, none_values, none_result, raise_value_error, str_to_float)
             
-def _str_to_x_return(obj, x_format, x_format_idx, return_extra_info):
+def _str_to_x_1_return(obj, x_format, x_format_idx, return_extra_info):
     if return_extra_info:
         return obj, x_format, x_format_idx
     else:
         return obj
     
-def _str_to_x(s, x_format, none_values, none_result, raise_value_error, return_extra_info, x_name, conv):
+def _str_to_x_1(s, x_format, none_values, none_result, raise_value_error, return_extra_info, x_name, conv):
     if checks.is_string(x_format): x_format = [x_format]
     s = s.strip()
-    if (s in none_values): return _str_to_x_return(none_result, None, None, return_extra_info)
+    if (s in none_values): return _str_to_x_1_return(none_result, None, None, return_extra_info)
     result = None
     for x_format_idx, x_format in enumerate(x_format):
         try:
@@ -75,22 +97,56 @@ def _str_to_x(s, x_format, none_values, none_result, raise_value_error, return_e
         except: pass
     if result is None:
         if raise_value_error: raise ValueError('Unexpected %s string: "%s"' % (x_name, str(s)))
-        return _str_to_x_return(none_result, None, None, return_extra_info)
-    return _str_to_x_return(result, x_format, x_format_idx, return_extra_info)
+        return _str_to_x_1_return(none_result, None, None, return_extra_info)
+    return _str_to_x_1_return(result, x_format, x_format_idx, return_extra_info)
+
+def _strs_to_x_1(ss, x_format, none_values, none_result, raise_value_error, return_extra_info, min_success_rate, str_to_x_1):
+    if checks.is_string(x_format): x_format = [x_format]
+    success_count = 0
+    total_count = 0
+    results = []
+    x_format_idxs = []
+    for s in ss:
+        try:
+            result, x_format, x_format_idx = \
+                    str_to_x_1(s, x_format, none_values, none_result, raise_value_error=True, return_extra_info=True)
+            success_count += 1
+        except:
+            result, x_format, x_format_idx = none_result, None, None
+        total_count += 1
+        results.append(result)
+        x_format_idxs.append(x_format_idx)
+    if float(success_count) / total_count >= min_success_rate:
+        most_common_x_format_idx = utils.most_common(x_format_idxs)
+        most_common_x_format = x_format[most_common_x_format_idx]
+    else:
+        if raise_value_error: raise ValueError('Unable to parse strings')
+        results, most_common_x_format, most_common_x_format_idx = None, None, None
+    return (results, most_common_x_format, most_common_x_format_idx) if return_extra_info else results
 
 _date_formats = ['%Y.%m.%d', '%Y-%m-%d', '%Y/%m/%d', '%Y%m%d']
 
 def str_to_date(s, date_format=_date_formats, none_values=[''], none_result=None,
                 raise_value_error=True, return_extra_info=False):
-    return _str_to_x(s, date_format, none_values, none_result, raise_value_error, return_extra_info, 'date',
+    return _str_to_x_1(s, date_format, none_values, none_result, raise_value_error, return_extra_info, 'date',
                      lambda s, f: dt.datetime.strptime(s, f).date())
     
+def strs_to_date(ss, date_format=_date_formats, none_values=[''], none_result=None,
+                 raise_value_error=True, return_extra_info=False, min_success_rate=0.5):
+    return _strs_to_x_1(ss, date_format, none_values, none_result, raise_value_error, return_extra_info, min_success_rate,
+                      str_to_date)
+
 _time_formats = ['%H:%M:%S.%f', '%H:%M:%S', '%H:%M']
     
 def str_to_time(s, time_format=_time_formats, none_values=[''], none_result=None,
                 raise_value_error=True, return_extra_info=False):
-    return _str_to_x(s, time_format, none_values, none_result, raise_value_error, return_extra_info, 'time',
+    return _str_to_x_1(s, time_format, none_values, none_result, raise_value_error, return_extra_info, 'time',
                      lambda s, f: dt.datetime.strptime(s, f).time())
+
+def strs_to_time(ss, time_format=_time_formats, none_values=[''], none_result=None,
+                 raise_value_error=True, return_extra_info=False, min_success_rate=0.5):
+    return _strs_to_x_1(ss, time_format, none_values, none_result, raise_value_error, return_extra_info, min_success_rate,
+                      str_to_time)
 
 _datetime_formats = []
 
@@ -100,6 +156,11 @@ for df in _date_formats:
         _datetime_formats.append('%sT%s' % (df, tf))
     
 def str_to_datetime(s, datetime_format=_datetime_formats, none_values=[''], none_result=None,
-                raise_value_error=True, return_extra_info=False):
-    return _str_to_x(s, datetime_format, none_values, none_result, raise_value_error, return_extra_info, 'datetime',
+                    raise_value_error=True, return_extra_info=False):
+    return _str_to_x_1(s, datetime_format, none_values, none_result, raise_value_error, return_extra_info, 'datetime',
                      lambda s, f: dt.datetime.strptime(s, f))
+
+def strs_to_datetime(ss, datetime_format=_datetime_formats, none_values=[''], none_result=None,
+                     raise_value_error=True, return_extra_info=False, min_success_rate=0.5):
+    return _strs_to_x_1(ss, datetime_format, none_values, none_result, raise_value_error, return_extra_info, min_success_rate,
+                      str_to_datetime)

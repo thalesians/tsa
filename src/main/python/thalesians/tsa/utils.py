@@ -13,6 +13,19 @@ def sign(arg):
         arg = np.vectorize(lambda x: x.total_seconds())(arg)
     return np.sign(arg)
 
+def most_common(iterable):
+    sorted_iterable = sorted((x, i) for i, x in enumerate(iterable))
+    groups = itertools.groupby(sorted_iterable, key=operator.itemgetter(0))
+    def _auxfun(g):
+        _, it = g
+        count = 0
+        min_index = len(iterable)
+        for _, where in it:
+            count += 1
+            min_index = min(min_index, where)
+        return count, -min_index
+    return max(groups, key=_auxfun)[0]
+
 def xbatch(size, iterable):
     l = len(iterable)
     for i in range(0, l, size):

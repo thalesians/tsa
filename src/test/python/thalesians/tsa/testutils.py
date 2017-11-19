@@ -30,6 +30,10 @@ class TestUtils(unittest.TestCase):
                 utils.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 27))
                 ])), np.array([-1.,  0.,  1.]))
         
+    def test_most_common(self):
+        self.assertEqual(utils.most_common(['foo', 'bar', 'bar', 'foo', 'bar']), 'bar')
+        self.assertEqual(utils.most_common(['foo', 'bar', 'bar', 'foo']), 'foo')
+        
     def test_xbatch(self):
         self.assertSequenceEqual(list(utils.xbatch(2, range(10))),
                 [range(0, 2), range(2, 4), range(4, 6), range(6, 8), range(8, 10)])

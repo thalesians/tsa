@@ -42,6 +42,11 @@ def load_df_from_zipped_csv(path, predicates=[], pre_funs=[], post_funs=[], **kw
     df.index = range(len(df))
     return df
 
+def detect_df_column_types(df):
+    for c in df.columns:
+        print(c)
+    return None
+
 def convert_df_columns(df, conversions, in_place=False):
     if not in_place: df = df.copy()
     conversion_columns = set(conversions.keys())
