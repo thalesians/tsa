@@ -2,8 +2,8 @@ import unittest
 
 import thalesians.tsa.times as times
 
-class TestUtils(unittest.TestCase):
-    def test_times(self):
+class TestTimes(unittest.TestCase):
+    def test_units(self):
         self.assertEqual(times.NANOSECONDS_PER_MICROSECOND, 1000)
         
         self.assertEqual(times.MICROSECONDS_PER_MILLISECOND, 1000)
