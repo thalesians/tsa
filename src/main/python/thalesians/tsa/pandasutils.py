@@ -55,6 +55,14 @@ def detect_df_column_types(df, none_values=conv.default_none_values, min_success
     if not in_place: df = df.copy()
     types = {}
     for c in df.columns:
+        if df[c].dtype != object:
+            types[c] = df[c].dtype
+            continue
+        
+        if len(df) == 0 or not checks.is_string(df[c].values[0]):
+            types[c] = object
+            continue
+        
         float_results, float_success_count, _ = conv.strs_to_float(df[c].values, none_values=none_values,
                 none_result=float('nan'), raise_value_error=False, return_extra_info=True,
                 min_success_rate=min_success_rate)
@@ -103,11 +111,8 @@ def convert_df_columns(df, conversions, in_place=False):
     conversion_columns = set(conversions.keys())
     unfamiliar_columns = conversion_columns.difference(df.columns)
     assert len(unfamiliar_columns) == 0, 'Unfamiliar columns: %s' % str(unfamiliar_columns)
-    for column, conversion in conversions:
-        df[column] = conversion(df[column])
-    return df
-    for col, conversion in conversions:
-        df[col] = df[col].apply(conversion)
+    for column, conversion in conversions.items():
+        df[column] = df[column].apply(conversion)
     return df
 
 def detect_df_categorical_columns(df):
