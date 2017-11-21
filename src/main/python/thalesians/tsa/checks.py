@@ -6,6 +6,7 @@ import thalesians.tsa.utils as utils
 
 def check(arg, message='Check failed', level=1):
     if settings.MIN_POSTCONDITION_LEVEL <= level:
+        if is_callable(arg): arg = arg()
         if not arg:
             if is_callable(message):
                 message = message()
