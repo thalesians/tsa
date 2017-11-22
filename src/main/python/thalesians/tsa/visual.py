@@ -168,6 +168,9 @@ class LivePlot(object):
     
     def _update_lim(self, lim, points):
         return (np.min([np.min(points), lim[0]]), np.max([np.max(points), lim[1]]))
+    
+    def refresh(self):
+        self._fig.canvas.draw()
         
     def append(self, x, y):
         x = np.array(x)
@@ -182,5 +185,6 @@ class LivePlot(object):
         self._ax.set_xlim(new_xlim)
         new_ylim = self._update_lim(self._ax.get_ylim(), y)
         self._ax.set_ylim(new_ylim)
-            
-        self._fig.canvas.draw()
+        
+        self.refresh()
+        
