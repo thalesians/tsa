@@ -146,3 +146,41 @@ def visualise_sized_point_series(time_ser, value_ser, size_ser, scaling=None, fi
 
 def visualise_df_sized_point_series(df, time_column, value_column, size_column, scaling=None, fig=None, ax=None, **kwargs):
     return visualise_sized_point_series(df[time_column], df[value_column], df[size_column], scaling, fig, ax, **kwargs)
+
+class LivePlot(object):
+    def __init__(self, fig=None, ax=None):
+        self._fig, self._ax = get_figure_and_axes(fig, ax)
+        
+    @property
+    def fig(self):
+        return self._fig
+    
+    @property
+    def ax(self):
+        return self._ax
+        
+    def _append_data_point(self, data, point):
+        data_shape = np.shape(data)
+        new_data_shape = list(data_shape)
+        new_data_shape[-1] += np.size(point)
+        new_data_shape = tuple(new_data_shape)
+        return np.reshape(np.append(data, point), new_data_shape)
+    
+    def _update_lim(self, lim, points):
+        return (np.min([np.min(points), lim[0]]), np.max([np.max(points), lim[1]]))
+        
+    def append(self, x, y):
+        x = np.array(x)
+        y = np.array(y)
+        for i, line in enumerate(self._ax.lines):
+            new_xdata = self._append_data_point(line.get_xdata(), x[i] if np.size(x) > 1 else x)
+            line.set_xdata(new_xdata)
+            new_ydata = self._append_data_point(line.get_ydata(), y[i] if np.size(y) > 1 else y)
+            line.set_ydata(new_ydata)
+            
+        new_xlim = self._update_lim(self._ax.get_xlim(), x)
+        self._ax.set_xlim(new_xlim)
+        new_ylim = self._update_lim(self._ax.get_ylim(), y)
+        self._ax.set_ylim(new_ylim)
+            
+        self._fig.canvas.draw()
