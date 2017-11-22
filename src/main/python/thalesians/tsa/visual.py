@@ -148,8 +148,9 @@ def visualise_df_sized_point_series(df, time_column, value_column, size_column, 
     return visualise_sized_point_series(df[time_column], df[value_column], df[size_column], scaling, fig, ax, **kwargs)
 
 class LivePlot(object):
-    def __init__(self, fig=None, ax=None):
+    def __init__(self, fig=None, ax=None, keep_last_points=None):
         self._fig, self._ax = get_figure_and_axes(fig, ax)
+        self._keep_last_points = keep_last_points
         
     @property
     def fig(self):
@@ -159,15 +160,26 @@ class LivePlot(object):
     def ax(self):
         return self._ax
         
-    def _append_data_point(self, data, point):
+    def _append_point(self, data, point, keep_last_points):
         data_shape = np.shape(data)
+        point_size = np.size(point)
+        if keep_last_points is not None:
+            old_size = len(data)
+            data = np.ravel(data)[-(keep_last_points * point_size):]
+            removed_point_count = (old_size - np.size(data)) // point_size
+        else: removed_point_count = 0
         new_data_shape = list(data_shape)
-        new_data_shape[-1] += np.size(point)
+        new_data_shape[-1] += (1 - removed_point_count) * point_size
         new_data_shape = tuple(new_data_shape)
         return np.reshape(np.append(data, point), new_data_shape)
     
     def _update_lim(self, lim, points):
-        return (np.min([np.min(points), lim[0]]), np.max([np.max(points), lim[1]]))
+        return [np.min([np.min(points), lim[0]]), np.max([np.max(points), lim[1]])]
+    
+    def _fix_lim_if_broken(self, lim):
+        if lim[0] == lim[1]:
+            if lim[0] == 0: lim[0] = -1; lim[1] = 1
+            else: lim[0] -= 0.1 * lim[0]; lim[1] += 0.1 * lim[1]
     
     def refresh(self):
         self._fig.canvas.draw()
@@ -175,15 +187,27 @@ class LivePlot(object):
     def append(self, x, y):
         x = np.array(x)
         y = np.array(y)
+        
+        min_x, max_x, min_y, max_y = None, None, None, None
         for i, line in enumerate(self._ax.lines):
-            new_xdata = self._append_data_point(line.get_xdata(), x[i] if np.size(x) > 1 else x)
+            new_xdata = self._append_point(line.get_xdata(), x[i] if np.size(x) > 1 else x,
+                                                self._keep_last_points)
             line.set_xdata(new_xdata)
-            new_ydata = self._append_data_point(line.get_ydata(), y[i] if np.size(y) > 1 else y)
+            new_ydata = self._append_point(line.get_ydata(), y[i] if np.size(y) > 1 else y,
+                                                self._keep_last_points)
             line.set_ydata(new_ydata)
             
-        new_xlim = self._update_lim(self._ax.get_xlim(), x)
+            min_x = np.min(new_xdata) if min_x is None else np.min([min_x, np.min(new_xdata)])
+            max_x = np.max(new_xdata) if max_x is None else np.max([max_x, np.max(new_xdata)])
+            min_y = np.min(new_ydata) if min_y is None else np.min([min_y, np.min(new_ydata)])
+            max_y = np.max(new_ydata) if max_y is None else np.max([max_y, np.max(new_ydata)])
+        
+        shrink_to_data = self._keep_last_points is not None
+        new_xlim = [min_x, max_x] if shrink_to_data else self._update_lim(self._ax.get_xlim(), x)
+        new_ylim = [min_y, max_y] if shrink_to_data else self._update_lim(self._ax.get_ylim(), y)
+        self._fix_lim_if_broken(new_xlim)
+        self._fix_lim_if_broken(new_ylim)
         self._ax.set_xlim(new_xlim)
-        new_ylim = self._update_lim(self._ax.get_ylim(), y)
         self._ax.set_ylim(new_ylim)
         
         self.refresh()
