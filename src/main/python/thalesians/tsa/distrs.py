@@ -2,10 +2,12 @@ import numpy as np
 
 import thalesians.tsa.numpychecks as npc
 import thalesians.tsa.numpyutils as npu
+from thalesians.tsa.strings import ToStringHelper
 
 class Distr(object):
     def __init__(self):
-        pass
+        self._to_string_helper_Distr = None
+        self._str_Distr = None
 
     @property
     def dim(self):
@@ -18,6 +20,15 @@ class Distr(object):
     @property
     def cov(self):
         raise NotImplementedError()
+    
+    def to_string_helper(self):
+        if self._to_string_helper_Distr is None:
+            self._to_string_helper_Distr = ToStringHelper(self)
+        return self._to_string_helper_Distr
+    
+    def __str__(self):
+        if self._str_Distr is None: self._str_Distr = self.to_string_helper().to_string()
+        return self._str_Distr
     
 class NormalDistr(Distr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
@@ -57,6 +68,9 @@ class NormalDistr(Distr):
         npu.make_immutable(self._mean)
         if self._cov is not None: npu.make_immutable(self._cov)
         if self._vol is not None: npu.make_immutable(self._vol)
+        
+        self._to_string_helper_NormalDistr = None
+        self._str_NormalDistr = None
         
         super(NormalDistr, self).__init__()
         
@@ -111,6 +125,18 @@ class NormalDistr(Distr):
     def __ne__(self, other):
         return not self.__eq__(other)
     
+    def to_string_helper(self):
+        if self._to_string_helper_NormalDistr is None:
+            self._to_string_helper_NormalDistr = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('mean', self._mean) \
+                    .add('cov', self._cov)
+        return self._to_string_helper_NormalDistr 
+    
     def __str__(self):
-        return 'Normal(mean=%s, cov=%s)' % (str(self._mean), str(self._cov))
+        if self._str_NormalDistr is None: self._str_NormalDistr = self.to_string_helper().to_string()
+        return self._str_NormalDistr
+    
+    def __repr__(self):
+        return str(self)
     

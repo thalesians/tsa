@@ -10,26 +10,6 @@ import thalesians.tsa.utils as utils
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers).
 
 class TestUtils(unittest.TestCase):
-    def test_sign(self):
-        self.assertEqual(utils.sign(-10), -1)
-        self.assertEqual(utils.sign(0), 0)
-        self.assertEqual(utils.sign(10), 1)
-        self.assertEqual(utils.sign(-10.), -1.)
-        self.assertEqual(utils.sign(0.), 0.)
-        self.assertEqual(utils.sign(10.), 1.)
-        self.assertEqual(utils.sign(dt.date(2017, 11, 7) - dt.date(2017, 11, 8)), -1.)
-        self.assertEqual(utils.sign(dt.date(2017, 11, 8) - dt.date(2017, 11, 8)), 0.)
-        self.assertEqual(utils.sign(dt.date(2017, 11, 8) - dt.date(2017, 11, 7)), 1.)
-        self.assertEqual(utils.sign(dt.datetime(2017, 11, 8, 17, 27) - dt.datetime(2017, 11, 8, 17, 28)), -1.)
-        self.assertEqual(utils.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 28)), 0.)
-        self.assertEqual(utils.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 27)), 1.)
-        npt.assert_almost_equal(utils.sign([-10., 0., 10.]), np.array([-1.,  0.,  1.]))
-        npt.assert_almost_equal(utils.sign(np.array([
-                utils.sign(dt.datetime(2017, 11, 8, 17, 27) - dt.datetime(2017, 11, 8, 17, 28)),
-                utils.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 28)),
-                utils.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 27))
-                ])), np.array([-1.,  0.,  1.]))
-        
     def test_most_common(self):
         self.assertEqual(utils.most_common(['foo', 'bar', 'bar', 'foo', 'bar']), 'bar')
         self.assertEqual(utils.most_common(['foo', 'bar', 'bar', 'foo']), 'foo')

@@ -7,13 +7,29 @@ import thalesians.tsa.checks as checks
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.numpychecks as npc
+from thalesians.tsa.strings import ToStringHelper
 
 class Process(object):
     def __init__(self, **kwargs):
+        self._to_string_helper_Process = None
+        self._str_Process = None
+        
         try:
             super(Process, self).__init__(**kwargs)
         except TypeError:
             super(Process, self).__init__()
+            
+    def to_string_helper(self):
+        if self._to_string_helper_Process is None:
+            self._to_string_helper_Process = ToStringHelper(self)
+        return self._to_string_helper_Process
+    
+    def __str__(self):
+        if self._str_Process is None: self._str_Process = self.to_string_helper().to_string()
+        return self._str_Process
+    
+    def __repr__(self):
+        return str(self)
 
 class ItoProcess(Process):
     def __init__(self, process_dim=1, noise_dim=None, drift=None, diffusion=None, **kwargs):
@@ -22,6 +38,9 @@ class ItoProcess(Process):
         # Note: the brackets around the lambdas below are essential, otherwise the result of the parsing will not be what we need:
         self._drift = (lambda t, x: npu.row_of(self._process_dim, 0.)) if drift is None else drift
         self._diffusion = (lambda t, x: npu.matrix_of(self._process_dim, self._noise_dim, 0.)) if diffusion is None else diffusion
+        self._to_string_helper_ItoProcess = None
+        self._str_ItoProcess = None
+        
         super(ItoProcess, self).__init__(process_dim=self._process_dim, noise_dim=self._noise_dim, drift=self._drift, diffusion=self._diffusion, **kwargs)
         
     @property
@@ -40,18 +59,42 @@ class ItoProcess(Process):
     def diffusion(self):
         return self._diffusion
     
+    def to_string_helper(self):
+        if self._to_string_helper_ItoProcess is None:
+            self._to_string_helper_ItoProcess = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('process_dim', self._process_dim) \
+                    .add('noise_dim', self._noise_dim)
+        return self._to_string_helper_ItoProcess
+    
     def __str__(self):
-        return 'ItoProcess(process_dim=%d, noise_dim=%d)' % (self._process_dim, self._noise_dim)
+        if self._str_ItoProcess is None: self._str_ItoProcess = self.to_string_helper().to_string()
+        return self._str_ItoProcess
+    
+    def __repr__(self):
+        return str(self)
     
 class SolvedItoProcess(ItoProcess):
     def __init__(self, process_dim=1, noise_dim=None, drift=None, diffusion=None, **kwargs):
+        self._to_string_helper_SolvedItoProcess = None
+        self._str_SolvedItoProcess = None
+
         super(SolvedItoProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=drift, diffusion=diffusion, **kwargs)
         
     def propagate(self, time, variate, time0, value0, state0=None):
         raise NotImplementedError()
     
+    def to_string_helper(self):
+        if self._to_string_helper_SolvedItoProcess is None:
+            self._to_string_helper_SolvedItoProcess = super().to_string_helper().set_type(self)
+        return self._to_string_helper_SolvedItoProcess
+    
     def __str__(self):
-        return 'SolvedItoProcess(process_dim=%d, noise_dim=%d)' % (self.process_dim, self.noise_dim)
+        if self._str_SolvedItoProcess is None: self._str_SolvedItoProcess = self.to_string_helper().to_string()
+        return self._str_SolvedItoProcess
+    
+    def __repr__(self):
+        return str(self)
 
 class MarkovProcess(Process):
     def __init__(self, process_dim, time_unit=dt.timedelta(days=1), **kwargs):
@@ -62,6 +105,10 @@ class MarkovProcess(Process):
         self._cached_time0 = None
         self._cached_distr0 = None
         self._cached_distr = None
+        
+        self._to_string_helper_MarkovProcess = None
+        self._str_MarkovProcess = None
+        
         super(MarkovProcess, self).__init__(process_dim=process_dim, **kwargs)
         
     def propagate_distr(self, time, time0, distr0):
@@ -79,11 +126,25 @@ class MarkovProcess(Process):
     def _propagate_distr_impl(self, time_delta, distr0):
         raise NotImplementedError()
     
+    def to_string_helper(self):
+        if self._to_string_helper_MarkovProcess:
+            self._to_string_helper_MarkovProcess = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('process_dim', self._process_dim)
+        return self._to_string_helper_MarkovProcess
+    
     def __str__(self):
-        return 'MarkovProcess(process_dim=%d)' % self._process_dim
+        if self._str_MarkovProcess is None: self._str_MarkovProcess = self.to_string_helper().to_string()
+        return self._str_MarkovProcess
+    
+    def __repr__(self):
+        return str(self)
     
 class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
     def __init__(self, process_dim=1, noise_dim=None, drift=None, diffusion=None, **kwargs):
+        self._to_string_helper_SolvedItoMarkovProcess = None
+        self._str_SolvedItoMarkovProcess = None
+        
         super(SolvedItoMarkovProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=drift, diffusion=diffusion, **kwargs)
     
     def propagate(self, time, variate, time0, value0, state0=None):
@@ -94,9 +155,21 @@ class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         distr = self.propagate_distr(time, time0, distrs.NormalDistr.create_dirac_delta(value0))
         return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
+    
+    def to_string_helper(self):
+        if self._to_string_helper_SolvedItoMarkovProcess is None:
+            self._to_string_helper_SolvedItoMarkovProcess = ToStringHelper(self) \
+                    .add('process_dim', self.process_dim) \
+                    .add('noise_dim', self.noise_dim)
+        return self._to_string_helper_SolvedItoMarkovProcess
 
     def __str__(self):
-        return 'SolvedItoMarkovProcess(process_dim=%d, noise_dim=%d)' % (self.process_dim, self.noise_dim)
+        if self.str_SolvedItoMarkovProcess is None:
+            self.str_SolvedItoMarkovProcess = self.to_string_helper().to_string()
+        return self.str_SolvedItoMarkovProcess
+    
+    def __repr__(self):
+        return str(self)
 
 # TODO To be implemented
 class KalmanProcess(MarkovProcess):
@@ -130,6 +203,9 @@ class WienerProcess(SolvedItoMarkovProcess):
         npu.make_immutable(self._mean)
         npu.make_immutable(self._vol)
         npu.make_immutable(self._cov)
+        
+        self._to_string_helper_WienerProcess = None
+        self._str_WienerProcess = None
         
         super(WienerProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=lambda t, x: self._mean, diffusion=lambda t, x: self._vol)
         
@@ -172,9 +248,21 @@ class WienerProcess(SolvedItoMarkovProcess):
     
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def to_string_helper(self):
+        if self._to_string_helper_WienerProcess is None:
+            self._to_string_helper_WienerProcess = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('mean', self._mean) \
+                    .add('vol', self._vol)
+        return self._to_string_helper_WienerProcess
 
     def __str__(self):
-        return 'WienerProcess(process_dim=%d, noise_dim=%d, mean=%s, vol=%s)' % (self.process_dim, self.noise_dim, str(self._mean), str(self._vol))
+        if self._str_WienerProcess is None: self._str_WienerProcess = self.to_string_helper().to_string()
+        return self._str_WienerProcess
+    
+    def __repr__(self):
+        return str(self)
 
 class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
     def __init__(self, transition=None, mean=None, vol=None):
@@ -222,6 +310,9 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         npu.make_immutable(self._vol)
         npu.make_immutable(self._cov)
         npu.make_immutable(self._cov_vec)
+        
+        self._to_string_helper_OrnsteinUhlenbeckProcess = None
+        self._str_OrnsteinUhlenbeckProcess = None
         
         super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=lambda t, x: -np.dot(self._transition, x - self._mean), diffusion=lambda t, x: self._vol)
         
@@ -281,6 +372,15 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def to_string_helper(self):
+        if self._to_string_helper_OrnsteinUhlenbeckProcess is None:
+            self._to_string_helper_OrnsteinUhlenbeckProcess = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('transition', self._transition) \
+                    .add('mean', self._mean) \
+                    .add('vol', self._vol)
+        return self._to_string_helper_OrnsteinUhlenbeckProcess
+
     def __str__(self):
-        return 'OrnsteinUhlenbeckProcess(process_dim=%d, noise_dim=%d, transition=%s, mean=%s, vol=%s)' % (self.process_dim, self.noise_dim, str(self._transition), str(self._mean), str(self._vol))
-    
+        if self._str_OrnsteinUhlenbeckProcess is None: self._str_OrnsteinUhlenbeckProcess = self.to_string_helper().to_string()
+        return self._str_OrnsteinUhlenbeckProcess

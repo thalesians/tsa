@@ -7,7 +7,6 @@ import thalesians.tsa.checks as checks
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.processes as proc
 import thalesians.tsa.random as rnd
-import thalesians.tsa.utils as utils
 
 def xtimes(start, stop=None, step=None):
     checks.check_not_none(start)
@@ -31,7 +30,7 @@ def xtimes(start, stop=None, step=None):
 
     stepfunc = step if checks.is_callable(step) else lambda x: step
     s = stepfunc(start)
-    checks.check(utils.sign(s) != 0, 'Step must be positive or negative, not zero')
+    checks.check(npu.sign(s) != 0, 'Step must be positive or negative, not zero')
     
     if stop is None:
         while True:
@@ -39,7 +38,7 @@ def xtimes(start, stop=None, step=None):
             start += s
             s = stepfunc(start)
     else:
-        while utils.sign(start - stop) == -utils.sign(s):
+        while npu.sign(start - stop) == -npu.sign(s):
             yield resultwrap(start)
             start += s
             s = stepfunc(start)
@@ -83,7 +82,7 @@ def run(sim, nstep=None, last_time=None):
     checks.check_at_most_one_not_none(nstep, last_time)
     ts, vs = [], []
     if nstep is not None:
-        for i in range(nstep):
+        for _ in range(nstep):
             try:
                 t, v = next(sim)
             except StopIteration: break

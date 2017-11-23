@@ -7,6 +7,7 @@ import zlib
 import zmq
 
 import thalesians.tsa.checks as checks
+from thalesians.tsa.strings import ToStringHelper 
 
 class Direction(enum.Enum):
     INCOMING = 1
@@ -44,6 +45,9 @@ class Pype(object):
             raise ValueError('Unexpected direction: %s' % str(direction))
         self._direction = direction
         self._closed = False
+        
+        self._to_string_helper_Pype = None
+        self._str_Pype = None
         
     def close(self):
         if not self._closed:
@@ -111,8 +115,18 @@ class Pype(object):
     def closed(self):
         return self._closed
     
-    def __str__(self):
-        return 'Pype(name="%s", direction=%s, host="%s", port=%d)' % (self._name, self._direction, self._host, self._port)
+    def to_string_helper(self):
+        if self._to_string_helper_Pype is None:
+            self._to_string_helper_Pype = ToStringHelper(self) \
+                    .add('name', self._name) \
+                    .add('direction', self._direction) \
+                    .add('host', self._host) \
+                    .add('port', self._port)
+        return self._to_string_helper_Pype
     
+    def __str__(self):
+        if self._str_Pype is None: self._str_Pype = self.to_string_helper().to_string()
+        return self._str_Pype 
+
     def __repr__(self):
         return str(self)

@@ -53,6 +53,14 @@ def check_float(arg, allow_none=False, message='Argument "%(string)" is not a fl
     check(is_float(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
+def is_numpy_array(arg, allow_none=False):
+    import numpy as np
+    return is_instance(arg, np.ndarray, allow_none)
+
+def check_numpy_array(arg, allow_none=False, message='Argument "%(string)" is not a NumPy array, but of type %(actual)s', level=1):
+    check(is_numpy_array(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
 def is_string(arg, allow_none=False):
     return is_instance(arg, str, allow_none)
 
@@ -121,3 +129,6 @@ def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=Fals
     result, iterable = is_iterable_over_instances(arg, types, allow_none, allow_empty)
     check(result, lambda: message % {'expected': types}, level)
     return iterable
+
+def is_type(arg, allow_none=False):
+    return is_instance(arg, type, allow_none)

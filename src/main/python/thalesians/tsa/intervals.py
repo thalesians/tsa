@@ -1,9 +1,12 @@
+import io
+
 class Interval:
     def __init__(self, left, right, left_closed=False, right_closed=False):
         self._left = left
         self._right = right
         self._left_closed = left_closed
         self._right_closed = right_closed
+        self._str_Interval = None
         
     @property
     def left(self):
@@ -34,10 +37,15 @@ class Interval:
             self._left_closed == other.left_closed and self._right_closed == other.right_closed
     
     def __str__(self):
-        return ('[' if self._left_closed else '(') + \
-                str(self._left) + ', ' + str(self._right) + \
-                (']' if self._right_closed else ')')
+        if self._str_Interval is None:
+            s = io.StringIO()
+            s.write('[' if self._left_closed else '(')
+            s.write(str(self._left))
+            s.write(', ')
+            s.write(str(self._right))
+            s.write(']' if self._right_closed else ')')
+            self._str_Interval = s.getvalue()
+        return self._str_Interval
                 
     def __repr__(self):
         return str(self)
-    

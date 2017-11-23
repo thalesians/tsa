@@ -1,14 +1,36 @@
+import datetime as dt
 import unittest
 
 import numpy as np
 import numpy.testing as npt
 
+import thalesians.tsa.checks as checks
 import thalesians.tsa.numpyutils as npu
 from thalesians.tsa.numpyutils import vectorised
 
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers)
 
 class TestNumPyUtils(unittest.TestCase):
+    def test_sign(self):
+        self.assertEqual(npu.sign(-10), -1)
+        self.assertEqual(npu.sign(0), 0)
+        self.assertEqual(npu.sign(10), 1)
+        self.assertEqual(npu.sign(-10.), -1.)
+        self.assertEqual(npu.sign(0.), 0.)
+        self.assertEqual(npu.sign(10.), 1.)
+        self.assertEqual(npu.sign(dt.date(2017, 11, 7) - dt.date(2017, 11, 8)), -1.)
+        self.assertEqual(npu.sign(dt.date(2017, 11, 8) - dt.date(2017, 11, 8)), 0.)
+        self.assertEqual(npu.sign(dt.date(2017, 11, 8) - dt.date(2017, 11, 7)), 1.)
+        self.assertEqual(npu.sign(dt.datetime(2017, 11, 8, 17, 27) - dt.datetime(2017, 11, 8, 17, 28)), -1.)
+        self.assertEqual(npu.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 28)), 0.)
+        self.assertEqual(npu.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 27)), 1.)
+        npt.assert_almost_equal(npu.sign([-10., 0., 10.]), np.array([-1.,  0.,  1.]))
+        npt.assert_almost_equal(npu.sign(np.array([
+                npu.sign(dt.datetime(2017, 11, 8, 17, 27) - dt.datetime(2017, 11, 8, 17, 28)),
+                npu.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 28)),
+                npu.sign(dt.datetime(2017, 11, 8, 17, 28) - dt.datetime(2017, 11, 8, 17, 27))
+                ])), np.array([-1.,  0.,  1.]))
+        
     def test_nrow(self):
         r = npu.row(429., 5., 2., 14.)
         self.assertEqual(npu.nrow(r), 1)
@@ -60,19 +82,19 @@ class TestNumPyUtils(unittest.TestCase):
     def test_to_ndim_1(self):
         for v in [ 429., [429.], [[429.]], np.array(429.), np.array([429.]), np.array([[429.]]) ]:
             r = npu.to_ndim_1(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (1,))
             npt.assert_almost_equal(r, np.array([429.]))
         
         for v in [[429., 5.], [[429., 5.]], [[[429.], [5.]]], np.array([429., 5.]), np.array([[429., 5.]]), np.array([[[429.], [5.]]])]:
             r = npu.to_ndim_1(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (2,))
             npt.assert_almost_equal(r, np.array([429., 5.]))
         
         for v in [ [429., 5., 2., 14.], [[429., 5., 2., 14.]], [[429., 5.], [2., 14.]], [[429.], [5.], [2.], [14.]], np.array([429., 5., 2., 14.]), np.array([[429., 5., 2., 14.]]), np.array([[429., 5.], [2., 14.]]), np.array([[[429.], [5.], [2.], [14.]]]) ]:
             r = npu.to_ndim_1(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (4,))
             npt.assert_almost_equal(r, np.array([429., 5., 2., 14.]))
         
@@ -99,37 +121,37 @@ class TestNumPyUtils(unittest.TestCase):
     def test_to_ndim_2(self):
         for v in [ 429., [429.], [[429.]], np.array(429.), np.array([429.]), np.array([[429.]]) ]:
             r = npu.to_ndim_2(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (1, 1))
             npt.assert_almost_equal(r, np.array([[429.]]))
         
         for v in [ [429., 5.], [[429., 5.]], np.array([429., 5.]), np.array([[429., 5.]]) ]:
             r = npu.to_ndim_2(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (1, 2))
             npt.assert_almost_equal(r, np.array([[429., 5.]]))
         
         for v in [ [[429.], [5.]], np.array([[429.], [5.]]) ]:
             r = npu.to_ndim_2(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (2, 1))
             npt.assert_almost_equal(r, np.array([[429.], [5.]]))
         
         for v in [ [429., 5., 2., 14.], [[429., 5., 2., 14.]], np.array([429., 5., 2., 14.]), np.array([[429., 5., 2., 14.]]) ]:
             r = npu.to_ndim_2(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (1, 4))
             npt.assert_almost_equal(r, np.array([[429., 5., 2., 14.]]))
         
         for v in [ [[429., 5.], [2., 14.]], np.array([[429., 5.], [2., 14.]]) ]:
             r = npu.to_ndim_2(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (2, 2))
             npt.assert_almost_equal(r, np.array([[429., 5.], [2., 14.]]))
         
         for v in [ [[429.], [5.], [2.], [14.]], np.array([[429.], [5.], [2.], [14.]]) ]:
             r = npu.to_ndim_2(v)
-            self.assertIsInstance(r, np.ndarray)
+            self.assertTrue(checks.is_numpy_array(r))
             self.assertEqual(np.shape(r), (4, 1))
             npt.assert_almost_equal(r, np.array([[429.], [5.], [2.], [14.]]))
         

@@ -1,17 +1,7 @@
-import datetime as dt
 import itertools
 import operator
 
-import numpy as np
-
 import thalesians.tsa.intervals as intervals
-
-def sign(arg):
-    if isinstance(arg, dt.timedelta):
-        arg = arg.total_seconds()
-    elif isinstance(arg, np.ndarray) and arg.dtype == object and np.size(arg) > 0 and isinstance(arg.item(0), dt.timedelta):
-        arg = np.vectorize(lambda x: x.total_seconds())(arg)
-    return np.sign(arg)
 
 def most_common(iterable):
     sorted_iterable = sorted((x, i) for i, x in enumerate(iterable))
@@ -44,16 +34,19 @@ def peek(iterable, size=1):
         objs.append(obj)
     return objs, itertools.chain(objs, iterable)
 
-class Bracket:
+class Bracket(object):
     def __init__(self, interval, interval_offset):
         self.interval = interval
         self.interval_offset = interval_offset
+        self._str_Bracket = None
         
     def __eq__(self, other):
         return self.interval == other.interval and self.interval_offset == other.interval_offset
         
     def __str__(self):
-        return '{' + str(self.interval) + ', ' + str(self.interval_offset) + '}'
+        if self._str_Bracket is None:
+            self._str_Bracket = '{' + str(self.interval) + ', ' + str(self.interval_offset) + '}'
+        return self._str_Bracket
     
     def __repr__(self):
         return str(self)

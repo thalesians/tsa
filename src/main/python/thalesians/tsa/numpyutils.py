@@ -1,15 +1,24 @@
+import datetime as dt
+
 import numpy as np
 
 import thalesians.tsa.checks as checks
 import thalesians.tsa.utils as utils
 
+def sign(arg):
+    if isinstance(arg, dt.timedelta):
+        arg = arg.total_seconds()
+    elif checks.is_numpy_array(arg) and arg.dtype == object and np.size(arg) > 0 and isinstance(arg.item(0), dt.timedelta):
+        arg = np.vectorize(lambda x: x.total_seconds())(arg)
+    return np.sign(arg)
+
 def is_view_of(arg1, arg2):
-    if not isinstance(arg1, np.ndarray) or not isinstance(arg2, np.ndarray):
+    if not checks.is_numpy_array(arg1) or not checks.is_numpy_array(arg2):
         return False
     return arg1.base is arg2
 
 def are_views_of_same(arg1, arg2):
-    if not isinstance(arg1, np.ndarray) or not isinstance(arg2, np.ndarray):
+    if not checks.is_numpy_array(arg1) or not checks.is_numpy_array(arg2):
         return False
     return (arg1.base is arg2) or (arg2.base is arg1) or ((arg1.base is arg2.base) and arg1.base is not None)
     
@@ -20,8 +29,8 @@ def ncol(arg):
     return np.shape(arg)[1]
 
 def to_scalar(arg):
-    if isinstance(arg, float): return arg
-    elif isinstance(arg, np.ndarray): return np.asscalar(arg)
+    if checks.is_float(arg): return arg
+    elif checks.is_numpy_array(arg): return np.asscalar(arg)
     else: return np.asscalar(np.array(arg))
 
 def to_ndim_1(arg, copy=False):
@@ -63,12 +72,12 @@ def ndim_1_of(n, val):
     return r
 
 def make_immutable(arg):
-    checks.check_instance(arg, np.ndarray)
+    checks.check_numpy_array(arg)
     arg.flags.writeable = False
     return arg
 
 def immutable_copy_of(arg):
-    if isinstance(arg, np.ndarray):
+    if checks.is_numpy_array(arg):
         result = np.copy(arg) if arg.flags.writeable else arg
     else:
         result = np.array(arg)
