@@ -11,6 +11,7 @@ import thalesians.tsa.objects as objects
 import thalesians.tsa.processes as proc
 from thalesians.tsa.strings import ToStringHelper
 import thalesians.tsa.utils as utils
+from docutils.writers.odf_odt import ToString
 
 class Obs(object):
     def __init__(self, observable, time, distr):
@@ -155,9 +156,8 @@ class ObsResult(object):
     def __repr__(self):
         return str(self)
     
-class ObsModel(objects.Named):
-    def __init__(self, name=None):
-        super().__init__(name)
+class ObsModel(object):
+    def __init__(self):
         self._to_string_helper_ObsModel = None
         self._str_ObsModel = None
     
@@ -165,9 +165,7 @@ class ObsModel(objects.Named):
         raise NotImplementedError()
     
     def to_string_helper(self):
-        if self._to_string_helper_ObsModel is None:
-            self._to_string_helper_ObsModel = super().to_string_helper() \
-                    .set_type(self)
+        if self._to_string_helper_ObsModel is None: self._to_string_helper_ObsModel = ToStringHelper(self)
         return self._to_string_helper_ObsModel
         
     def __str__(self):

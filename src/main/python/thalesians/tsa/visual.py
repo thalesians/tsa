@@ -228,7 +228,10 @@ class LivePlot(object):
             
     def _update_lim(self):
         if self._update_xlim:
-            new_xlim = [np.min(self._minx), np.max(self._maxx)]
+            new_xlim = [
+                np.min([x for x in self._minx if x is not None]),
+                np.max([x for x in self._maxx if x is not None])
+                ]
             if self._pad_left is not None: new_xlim[0] -= self._pad_left
             if self._pad_right is not None: new_xlim[1] += self._pad_right
             if self._never_shrink_xlim_left: new_xlim[0] = np.min([new_xlim[0], self._ax.get_xlim()[0]])
@@ -237,7 +240,10 @@ class LivePlot(object):
             self._ax.set_xlim(new_xlim)
 
         if self._update_ylim:
-            new_ylim = [np.min(self._miny), np.max(self._maxy)]
+            new_ylim = [
+                np.min([y for y in self._miny if y is not None]),
+                np.max([y for y in self._maxy if y is not None])
+                ]
             if self._pad_bottom is not None: new_ylim[0] -= self._pad_bottom
             if self._pad_top is not None: new_ylim[1] += self._pad_top
             if self._never_shrink_ylim_bottom: new_ylim[0] = np.min([new_ylim[0], self._ax.get_ylim()[0]])

@@ -34,8 +34,8 @@ class KalmanObsResult(filtering.ObsResult):
         return str(self)
     
 class KalmanFilterObsModel(filtering.ObsModel):
-    def __init__(self, obs_matrix, name=None):
-        super().__init__(name)
+    def __init__(self, obs_matrix):
+        super().__init__()
         if not checks.is_numpy_array(obs_matrix) and not checks.is_iterable(obs_matrix):
             obs_matrix = (obs_matrix,)
         self._obs_matrix = npu.make_immutable(
@@ -140,8 +140,8 @@ class KalmanFilter(objects.Named):
         self._state_distr = state._state_distr
 
     class KalmanObservable(filtering.Observable):
-        def __init__(self, filter, obs_model, observed_processes, *args, **kwargs):  # @ReservedAssignment
-            super().__init__(filter, *args, **kwargs)
+        def __init__(self, filter, name, obs_model, observed_processes, *args, **kwargs):  # @ReservedAssignment
+            super().__init__(filter, name)
             if not checks.is_iterable(observed_processes): observed_processes = [observed_processes]
             observed_processes = checks.check_iterable_over_instances(observed_processes, proc.MarkovProcess)
             self._obs_model = obs_model
@@ -178,8 +178,8 @@ class KalmanFilter(objects.Named):
         def _sub_state_distr(self, state_distr):
             return N(mean=self._sub_state_mean(state_distr.mean), cov=self._sub_state_cov(state_distr.cov), copy=False)
         
-        def predict(self, time):
-            self.filter.predict(time)
+        def predict(self, time, true_value=None):
+            self.filter.predict(time, true_value)
             predicted_obs = self._obs_model.predict_obs(time, self._sub_state_distr(self.filter._state_distr), self)
             
             cc = predicted_obs.cross_cov
@@ -199,15 +199,20 @@ class KalmanFilter(objects.Named):
         
         def observe(self, time, obs_distr, true_value=None):
             if true_value is not None: true_value = npu.to_ndim_2(true_value)
-            predicted_obs = self.predict(time)
+            predicted_obs = self.predict(time, true_value)
             return self.filter.observe(obs_distr, predicted_obs, true_value)
     
-    def create_observable(self, obs_model, *args, **kwargs):
-        return KalmanFilter.KalmanObservable(self, obs_model, *args, **kwargs)
+    def create_observable(self, obs_model, *args):
+        return KalmanFilter.KalmanObservable(self, None, obs_model, args)
     
-    def predict(self, time):
+    def create_named_observable(self, name, obs_model, *args):
+        return KalmanFilter.KalmanObservable(self, name, obs_model, *args)
+    
+    def predict(self, time, true_value=None):
         if time < self._time:
             raise ValueError('Predicting the past (current time=%s, prediction time=%s)' % (self._time, time))
+        if true_value is not None and filtering.FilterPypeOptions.TRUE_VALUE in self._pype_options:
+            self._pype.send(filtering.TrueValue(self, self._time, true_value))
         if time == self._time: return
         state_distrs = []
         row = 0
@@ -225,6 +230,8 @@ class KalmanFilter(objects.Named):
         if filtering.FilterPypeOptions.PRIOR_STATE in self._pype_options: self._pype.send(self.state)
         
     def observe(self, obs_distr, predicted_obs, true_value):
+        if true_value is not None and filtering.FilterPypeOptions.TRUE_VALUE in self._pype_options:
+            self._pype.send(filtering.TrueValue(self, self._time, true_value))
         innov = obs_distr.mean - predicted_obs.distr.mean
         innov_cov = predicted_obs.distr.cov + obs_distr.cov
         innov_cov_inv = np.linalg.inv(innov_cov)
@@ -234,8 +241,6 @@ class KalmanFilter(objects.Named):
         self._state_distr = N(mean=m, cov=c, copy=False)
         self._is_posterior = True
         if filtering.FilterPypeOptions.POSTERIOR_STATE in self._pype_options: self._pype.send(self.state)
-        if filtering.FilterPypeOptions.TRUE_VALUE in self._pype_options:
-            if true_value is not None: self._pype.send(filtering.TrueValue(self, self._time, true_value))
         log_likelihood = -.5 * (obs_distr.dim * KalmanFilter.LN_2PI + np.log(np.linalg.det(innov_cov)) + \
                 np.dot(np.dot(innov.T, innov_cov_inv), innov))
         obs = filtering.Obs(predicted_obs.observable, self._time, obs_distr)
