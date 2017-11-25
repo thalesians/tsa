@@ -14,7 +14,7 @@ class Direction(enum.Enum):
     OUTGOING = 2
 
 class Pype(object):
-    def __init__(self, direction, name=None, host=None, port=22184):
+    def __init__(self, direction, name=None, host=None, port=22184, zipped=False):
         if name is None: name = random.choice(string.ascii_uppercase) + \
                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(3))
         checks.check_string(name, allow_none=False)
@@ -46,6 +46,8 @@ class Pype(object):
         self._direction = direction
         self._closed = False
         
+        self._zipped = zipped
+        
         self._to_string_helper_Pype = None
         self._str_Pype = None
         
@@ -60,28 +62,28 @@ class Pype(object):
     def __enter__(self):
         return self
     
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value, traceback):  # @UnusedVariable @ReservedAssignment
         self.close()
         
     def send(self, obj):
         if self._closed: raise ValueError('I/O operation on closed pype')
         ba = bytearray(self._main_topic_bytes)
         p = pickle.dumps(obj, protocol=-1)
-        z = zlib.compress(p)
-        ba.extend(z)
+        if self._zipped: p = zlib.compress(p)
+        ba.extend(p)
         return self._socket.send(ba, flags=0)
     
     def receive(self, notify_of_eof=False):
         if self._closed: raise ValueError('I/O operation on closed pype')
         s = self._socket.recv()
-        topic, data = s.split(b' ', 1)
+        topic, p = s.split(b' ', 1)
         topic = topic.decode("utf-8")
         if topic == self._eof_topic:
             o = None
             eof = True
             self.close()
         else:
-            p = zlib.decompress(data)
+            if self._zipped: p = zlib.decompress(p)
             o = pickle.loads(p)
             eof = False
         return (o, eof) if notify_of_eof else o

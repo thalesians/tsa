@@ -11,7 +11,7 @@ import thalesians.tsa.processes as proc
 class KalmanObsResult(filtering.ObsResult):
     def __init__(self, accepted, obs, predicted_obs, innov_distr, log_likelihood, gain):
         super().__init__(accepted, obs, predicted_obs, innov_distr, log_likelihood)
-        self._gain = gain
+        ##self._gain = gain
         self._to_string_helper_KalmanObsResult = None
         self._str_KalmanObsResult = None
         
@@ -22,8 +22,8 @@ class KalmanObsResult(filtering.ObsResult):
     def to_string_helper(self):
         if self._to_string_helper_KalmanObsResult is None:
             self._to_string_helper_KalmanObsResult = super().to_string_helper() \
-                    .set_type(self) \
-                    .add('gain', self._gain)
+                    .set_type(self) ##\
+                    ##.add('gain', self._gain)
             return self._to_string_helper_KalmanObsResult
         
     def __str__(self):
@@ -79,6 +79,15 @@ class KalmanFilterState(filtering.FilterState):
         self._to_string_helper_KalmanFilterState = None
         self._str_KalmanFilterState = None
     
+    def __getstate__(self):
+        state = {
+                '_state_distr': self._state_distr,
+                '_to_string_helper_KalmanFilterState': None,
+                '_str_KalmanFilterState': None
+            }
+        state.update(super().__getstate__())
+        return state
+        
     @property
     def state_distr(self):
         return self._state_distr
@@ -100,10 +109,11 @@ class KalmanFilterState(filtering.FilterState):
 class KalmanFilter(objects.Named):
     LN_2PI = np.log(2. * np.pi)
     
-    def __init__(self, time, state_distr, process, name=None, pype=None, pype_options=None):
+    def __init__(self, time, state_distr, process, name=None, pype=None,
+                 pype_options=frozenset(filtering.FilterPypeOptions)):
         super().__init__(name)
         self._pype = pype
-        self._pype_options = frozenset() if pype_options is None else frozenset(pype_options)
+        self._pype_options = frozenset() if (pype_options is None or pype is None) else frozenset(pype_options)
         if not checks.is_iterable(process): process = (process,)
         checks.check_instance(state_distr, N)
         process = checks.check_iterable_over_instances(process, proc.MarkovProcess)
@@ -114,6 +124,10 @@ class KalmanFilter(objects.Named):
         self._to_string_helper_KalmanFilter = None
         self._str_KalmanFilter = None
         if filtering.FilterPypeOptions.PRIOR_STATE in self._pype_options: self._pype.send(self.state)
+    
+    @property
+    def time(self):
+        return self._time
     
     @property
     def state(self):
@@ -183,9 +197,10 @@ class KalmanFilter(objects.Named):
             
             return filtering.PredictedObs(self, time, predicted_obs.distr, cross_cov)
         
-        def observe(self, time, obs_distr):
+        def observe(self, time, obs_distr, true_value=None):
+            if true_value is not None: true_value = npu.to_ndim_2(true_value)
             predicted_obs = self.predict(time)
-            return self.filter.observe(obs_distr, predicted_obs)
+            return self.filter.observe(obs_distr, predicted_obs, true_value)
     
     def create_observable(self, obs_model, *args):
         return KalmanFilter.KalmanObservable(self, obs_model, args)
@@ -209,7 +224,7 @@ class KalmanFilter(objects.Named):
         self._time = time
         if filtering.FilterPypeOptions.PRIOR_STATE in self._pype_options: self._pype.send(self.state)
         
-    def observe(self, obs_distr, predicted_obs):
+    def observe(self, obs_distr, predicted_obs, true_value):
         innov = obs_distr.mean - predicted_obs.distr.mean
         innov_cov = predicted_obs.distr.cov + obs_distr.cov
         innov_cov_inv = np.linalg.inv(innov_cov)
@@ -219,9 +234,11 @@ class KalmanFilter(objects.Named):
         self._state_distr = N(mean=m, cov=c, copy=False)
         self._is_posterior = True
         if filtering.FilterPypeOptions.POSTERIOR_STATE in self._pype_options: self._pype.send(self.state)
+        if filtering.FilterPypeOptions.TRUE_VALUE in self._pype_options:
+            if true_value is not None: self._pype.send(filtering.TrueValue(self, self._time, true_value))
         log_likelihood = -.5 * (obs_distr.dim * KalmanFilter.LN_2PI + np.log(np.linalg.det(innov_cov)) + \
                 np.dot(np.dot(innov.T, innov_cov_inv), innov))
-        obs = filtering.Obs(predicted_obs.observable, predicted_obs.time, obs_distr)
+        obs = filtering.Obs(predicted_obs.observable, self._time, obs_distr)
         obs_result = KalmanObsResult(True, obs, predicted_obs, N(mean=innov, cov=innov_cov, copy=False), log_likelihood, gain)
         if filtering.FilterPypeOptions.OBS_RESULT in self._pype_options: self._pype.send(obs_result)
         return obs_result

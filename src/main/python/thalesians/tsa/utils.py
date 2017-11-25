@@ -1,3 +1,5 @@
+import collections as col
+import copy
 import itertools
 import operator
 
@@ -15,6 +17,49 @@ def most_common(iterable):
             min_index = min(min_index, where)
         return count, -min_index
     return max(groups, key=_auxfun)[0]
+
+def prepend(collection, to_prepend, in_place=False):
+    if not in_place: collection = copy.copy(collection)
+    collection[0:0] = to_prepend
+    return collection
+
+def _pad_on_left_with_callable(collection, new_len, padding=None):
+    return prepend(collection, [padding() for _ in range(new_len - len(collection))], in_place=True)
+
+def _pad_on_left_with_noncallable(collection, new_len, padding=None):
+    return prepend(collection, [padding for _ in range(new_len - len(collection))], in_place=True)
+
+def pad_on_left(collection, new_len, padding=None, in_place=False):
+    if not in_place: collection = copy.copy(collection)
+    if hasattr(padding, '__call__') or isinstance(padding, col.Callable):
+        return _pad_on_left_with_callable(collection, new_len, padding)
+    else:
+        return _pad_on_left_with_noncallable(collection, new_len, padding)
+
+def _pad_on_right_with_callable(collection, new_len, padding=None):
+    collection.extend([padding() for _ in range(new_len - len(collection))])
+    return collection
+
+def _pad_on_right_with_noncallable(collection, new_len, padding=None):
+    collection.extend([padding for _ in range(new_len - len(collection))])
+    return collection
+
+def pad_on_right(collection, new_len, padding=None, in_place=False):
+    if not in_place: collection = copy.copy(collection)
+    if hasattr(padding, '__call__') or isinstance(padding, col.Callable):
+        return _pad_on_right_with_callable(collection, new_len, padding)
+    else:
+        return _pad_on_right_with_noncallable(collection, new_len, padding)
+
+def trim_on_left(collection, new_len, in_place=False):
+    if not in_place: collection = copy.copy(collection)
+    del collection[:max(len(collection) - new_len, 0)]
+    return collection
+
+def trim_on_right(collection, new_len, in_place=False):
+    if not in_place: collection = copy.copy(collection)
+    del collection[new_len:]
+    return collection
 
 def xbatch(size, iterable):
     l = len(iterable)

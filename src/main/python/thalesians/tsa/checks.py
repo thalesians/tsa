@@ -32,6 +32,32 @@ def check_at_most_one_not_none(*args, **kwargs):
     level = kwargs['level'] if 'level' in kwargs else 1
     check(is_at_most_one_not_none(*args), message, level)
     
+def is_same_len(*args):
+    if len(args) == 0: return True
+    len0 = len(args[0])
+    return all([len(x) == len0 for x in args])
+
+def is_same_len_or_none(*args):
+    the_len = None
+    for x in args:
+        if x is not None:
+            if the_len is None: the_len = len(x)
+            elif the_len != len(x): return False
+    return True
+
+def is_same_len_or_all_none(*args):
+    seen_none = False
+    the_len = None
+    for x in args:
+        if x is None:
+            if the_len is not None: return False
+            seen_none = True
+        else:
+            if seen_none: return False
+            if the_len is None: the_len = len(x)
+            elif the_len != len(x): return False
+    return True
+
 def is_instance(arg, types, allow_none=False):
     return (allow_none and arg is None) or isinstance(arg, types)
     
@@ -107,7 +133,7 @@ def is_iterable_not_string(arg, allow_none=False):
     return (allow_none and arg is None) or ((not is_string(arg)) and is_iterable(arg))
 
 def check_iterable_not_string(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is either not iterable or a string', level=1):
-    check(is_iterable_not_string(arg), allow_none, lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    check(is_iterable_not_string(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
 def is_callable(arg, allow_none=False):

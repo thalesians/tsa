@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +8,7 @@ import pandas as pd
 import thalesians.tsa.checks as checks
 import thalesians.tsa.conversions as conv
 import thalesians.tsa.pandasutils as pdutils
+import thalesians.tsa.utils as utils
 
 def get_figure_and_axes(fig, ax):
     if checks.is_callable(fig): fig = fig()
@@ -148,9 +150,29 @@ def visualise_df_sized_point_series(df, time_column, value_column, size_column, 
     return visualise_sized_point_series(df[time_column], df[value_column], df[size_column], scaling, fig, ax, **kwargs)
 
 class LivePlot(object):
-    def __init__(self, fig=None, ax=None, keep_last_points=None):
+    def __init__(self, fig=None, ax=None, keep_last_points=None, min_refresh_interval=None,
+                 pad_left=None, pad_right=None, pad_bottom=None, pad_top=None,
+                 update_xlim=True, update_ylim=True,
+                 never_shrink_xlim_left=False, never_shrink_xlim_right=False,
+                 never_shrink_ylim_bottom=False, never_shrink_ylim_top=False):
         self._fig, self._ax = get_figure_and_axes(fig, ax)
         self._keep_last_points = keep_last_points
+        self._xs, self._ys = [], []
+        self._minx, self._maxx, self._miny, self._maxy = [], [], [], []
+        self._flush_events_works = True
+        if checks.is_timedelta(min_refresh_interval): min_refresh_interval = min_refresh_interval.total_seconds()
+        self._min_refresh_interval = min_refresh_interval
+        self._last_refresh_time = None
+        self._pad_left = pad_left
+        self._pad_right = pad_right
+        self._pad_bottom = pad_bottom
+        self._pad_top = pad_top
+        self._update_xlim = update_xlim
+        self._update_ylim = update_ylim
+        self._never_shrink_xlim_left = never_shrink_xlim_left
+        self._never_shrink_xlim_right = never_shrink_xlim_right
+        self._never_shrink_ylim_bottom = never_shrink_ylim_bottom
+        self._never_shrink_ylim_top = never_shrink_ylim_top
         
     @property
     def fig(self):
@@ -160,55 +182,80 @@ class LivePlot(object):
     def ax(self):
         return self._ax
         
-    def _append_point(self, data, point, keep_last_points):
-        data_shape = np.shape(data)
-        point_size = np.size(point)
-        if keep_last_points is not None:
-            old_size = len(data)
-            data = np.ravel(data)[-(keep_last_points * point_size):]
-            removed_point_count = (old_size - np.size(data)) // point_size
-        else: removed_point_count = 0
-        new_data_shape = list(data_shape)
-        new_data_shape[-1] += (1 - removed_point_count) * point_size
-        new_data_shape = tuple(new_data_shape)
-        return np.reshape(np.append(data, point), new_data_shape)
-    
-    def _update_lim(self, lim, points):
-        return [np.min([np.min(points), lim[0]]), np.max([np.max(points), lim[1]])]
+    def refresh(self, force=False):
+        current_time = time.monotonic()
+        
+        if (not force) and self._min_refresh_interval is not None:
+            if self._last_refresh_time is not None and current_time - self._last_refresh_time < self._min_refresh_interval:
+                return
+        
+        if self._flush_events_works:
+            self._fig.canvas.draw_idle()
+            try:
+                self._fig.canvas.flush_events()
+            except NotImplementedError:
+                self._flush_events_works = False
+                self._fig.canvas.draw()
+        else:
+            self._fig.canvas.draw()
+        
+        self._last_refresh_time = current_time
+        
+    def _append(self, x, y, plot_index):
+        for col in [self._xs, self._ys]:
+            utils.pad_on_right(col, plot_index + 1, padding=lambda: [], in_place=True)
+        for col in [self._minx, self._maxx, self._miny, self._maxy]:
+            utils.pad_on_right(col, plot_index + 1, padding=None, in_place=True)
+        if self._keep_last_points is not None and len(self._xs[plot_index]) >= self._keep_last_points:
+            utils.trim_on_left(self._xs[plot_index], self._keep_last_points - 1, in_place=True)
+            utils.trim_on_left(self._ys[plot_index], self._keep_last_points - 1, in_place=True)
+            self._minx[plot_index] = np.min(self._xs[plot_index])
+            self._maxx[plot_index] = np.max(self._xs[plot_index])
+            self._miny[plot_index] = np.min(self._ys[plot_index])
+            self._maxy[plot_index] = np.max(self._ys[plot_index])
+        self._xs[plot_index].append(x)
+        self._ys[plot_index].append(y)
+        self._minx[plot_index] = x if self._minx[plot_index] is None else np.min([x, self._minx[plot_index]])
+        self._maxx[plot_index] = x if self._maxx[plot_index] is None else np.max([x, self._maxx[plot_index]])
+        self._miny[plot_index] = y if self._miny[plot_index] is None else np.min([y, self._miny[plot_index]])
+        self._maxy[plot_index] = y if self._maxy[plot_index] is None else np.max([y, self._maxy[plot_index]])
+        self._ax.lines[plot_index].set_data(self._xs[plot_index], self._ys[plot_index])
     
     def _fix_lim_if_broken(self, lim):
         if lim[0] == lim[1]:
             if lim[0] == 0: lim[0] = -1; lim[1] = 1
             else: lim[0] -= 0.1 * lim[0]; lim[1] += 0.1 * lim[1]
-    
-    def refresh(self):
-        self._fig.canvas.draw()
-        
-    def append(self, x, y):
+            
+    def _update_lim(self):
+        if self._update_xlim:
+            new_xlim = [np.min(self._minx), np.max(self._maxx)]
+            if self._pad_left is not None: new_xlim[0] -= self._pad_left
+            if self._pad_right is not None: new_xlim[1] += self._pad_right
+            if self._never_shrink_xlim_left: new_xlim[0] = np.min([new_xlim[0], self._ax.get_xlim()[0]])
+            if self._never_shrink_xlim_right: new_xlim[1] = np.max([new_xlim[1], self._ax.get_xlim()[1]])
+            self._fix_lim_if_broken(new_xlim)
+            self._ax.set_xlim(new_xlim)
+
+        if self._update_ylim:
+            new_ylim = [np.min(self._miny), np.max(self._maxy)]
+            if self._pad_bottom is not None: new_ylim[0] -= self._pad_bottom
+            if self._pad_top is not None: new_ylim[1] += self._pad_top
+            if self._never_shrink_ylim_bottom: new_ylim[0] = np.min([new_ylim[0], self._ax.get_ylim()[0]])
+            if self._never_shrink_ylim_top: new_ylim[1] = np.max([new_ylim[1], self._ax.get_ylim()[1]])
+            self._fix_lim_if_broken(new_ylim)
+            self._ax.set_ylim(new_ylim)
+
+    def append(self, x, y, plot_index=None, refresh=True):
         x = np.array(x)
         y = np.array(y)
+
+        if plot_index is not None:
+            self._append(x, y, plot_index)
+        else:
+            for i in range(len(self._ax.lines)):
+                self._append(x[i] if np.size(x) > 1 else x, y[i] if np.size(y) > 1 else y, i)
+                
+        self._update_lim()        
         
-        min_x, max_x, min_y, max_y = None, None, None, None
-        for i, line in enumerate(self._ax.lines):
-            new_xdata = self._append_point(line.get_xdata(), x[i] if np.size(x) > 1 else x,
-                                                self._keep_last_points)
-            line.set_xdata(new_xdata)
-            new_ydata = self._append_point(line.get_ydata(), y[i] if np.size(y) > 1 else y,
-                                                self._keep_last_points)
-            line.set_ydata(new_ydata)
-            
-            min_x = np.min(new_xdata) if min_x is None else np.min([min_x, np.min(new_xdata)])
-            max_x = np.max(new_xdata) if max_x is None else np.max([max_x, np.max(new_xdata)])
-            min_y = np.min(new_ydata) if min_y is None else np.min([min_y, np.min(new_ydata)])
-            max_y = np.max(new_ydata) if max_y is None else np.max([max_y, np.max(new_ydata)])
-        
-        shrink_to_data = self._keep_last_points is not None
-        new_xlim = [min_x, max_x] if shrink_to_data else self._update_lim(self._ax.get_xlim(), x)
-        new_ylim = [min_y, max_y] if shrink_to_data else self._update_lim(self._ax.get_ylim(), y)
-        self._fix_lim_if_broken(new_xlim)
-        self._fix_lim_if_broken(new_ylim)
-        self._ax.set_xlim(new_xlim)
-        self._ax.set_ylim(new_ylim)
-        
-        self.refresh()
+        if refresh: self.refresh()
         
