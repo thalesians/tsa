@@ -101,6 +101,7 @@ class StatePlot(thalesians.tsa.visual.LivePlot):
             for i in range(np.size(obs.distr.mean)):
                 self._actual_observable_names.append(obs.observable_name)
                 self._actual_obs_indices.append(i)
+                self._actual_obs_labels.append('%s %d' % (obs.observable_name, i))
         
     def _init_obs_plots(self):
         for i in range(len(self._obs_plot_indices), len(self._actual_observable_names)):
@@ -132,7 +133,9 @@ class StatePlot(thalesians.tsa.visual.LivePlot):
             
         self.refresh()
 
-    def _append_obs(self, obs):
+    def _append_obs_result(self, obs_result):
+        obs = obs_result.obs
+        
         if not self._obs_plots_inited:
             self._init_obs_plots_info(obs)
             self._init_obs_plots()
@@ -149,8 +152,8 @@ class StatePlot(thalesians.tsa.visual.LivePlot):
                 if self._is_posterior == obj.is_posterior: self._append_filter_state(obj)
             elif checks.is_instance(obj, filtering.TrueValue) and self._plot_true_values:
                 self._append_true_value(obj)
-            elif checks.is_instance(obj, filtering.Obs) and not checks.is_instance(obj. filtering.PredictedObs):
-                self._append_obs(obj)
+            elif checks.is_instance(obj, filtering.ObsResult):
+                self._append_obs_result(obj)
             elif raise_value_error: raise ValueError('Unable to process a filter object: %s' % str(obj))
         
 class ErrorPlot(thalesians.tsa.visual.LivePlot):

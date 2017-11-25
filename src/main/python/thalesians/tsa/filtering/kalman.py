@@ -140,8 +140,8 @@ class KalmanFilter(objects.Named):
         self._state_distr = state._state_distr
 
     class KalmanObservable(filtering.Observable):
-        def __init__(self, filter, obs_model, observed_processes):  # @ReservedAssignment
-            super().__init__(filter)
+        def __init__(self, filter, obs_model, observed_processes, *args, **kwargs):  # @ReservedAssignment
+            super().__init__(filter, *args, **kwargs)
             if not checks.is_iterable(observed_processes): observed_processes = [observed_processes]
             observed_processes = checks.check_iterable_over_instances(observed_processes, proc.MarkovProcess)
             self._obs_model = obs_model
@@ -202,8 +202,8 @@ class KalmanFilter(objects.Named):
             predicted_obs = self.predict(time)
             return self.filter.observe(obs_distr, predicted_obs, true_value)
     
-    def create_observable(self, obs_model, *args):
-        return KalmanFilter.KalmanObservable(self, obs_model, args)
+    def create_observable(self, obs_model, *args, **kwargs):
+        return KalmanFilter.KalmanObservable(self, obs_model, *args, **kwargs)
     
     def predict(self, time):
         if time < self._time:
