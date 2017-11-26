@@ -10,7 +10,7 @@ _default_true_value_colours = ['#60617f', '#8f91bf', '#bfc2ff', '#303040', '#aca
 _default_obs_colours = ['#900c3f', '#c70039', '#ff5733', '#907163', '#379683', '#5d001e', '#e3e2df', '#e3afbc', '#9a1750', '#ee4c7c']
 
 class FilteringPlot(thalesians.tsa.visual.LivePlot):
-    def __init__(self, fig, ax, title, filter_name,
+    def __init__(self, fig, ax, auto_refresh, title, filter_name,
                  process_prior_filter_states, process_posterior_filter_states, process_true_values, process_obs_results,
                  state_indices=None, state_labels=None, observable_names=None, obs_indices=None, obs_labels=None,
                  state_colours=_default_state_colours, true_value_colours=_default_true_value_colours,
@@ -43,6 +43,8 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
             if not checks.is_iterable(obs_labels): obs_labels = (obs_labels,)
             else: obs_labels = tuple(obs_labels)
         checks.is_same_len_or_none(observable_names, obs_indices, obs_labels)
+        
+        self._auto_refresh = auto_refresh
 
         self._title = title
         
@@ -131,7 +133,7 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
         for plot_offset, state_index in enumerate(self._state_indices):
             self._process_filter_state_for_state_index(filter_state, plot_offset, state_index)
         
-        self.refresh()
+        if self._auto_refresh: self.refresh()
         
     def _process_filter_state_for_state_index(self, filter_state, plot_offset, state_index):
         raise NotImplementedError
@@ -144,7 +146,7 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
         for plot_offset, state_index in enumerate(self._state_indices):
             self._process_true_value_for_state_index(true_value, plot_offset, state_index)
             
-        self.refresh()
+        if self._auto_refresh: self.refresh()
         
     def _process_true_value_for_state_index(self, true_value, plot_offset, state_index):
         raise NotImplementedError
@@ -160,7 +162,7 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
             if obs.observable_name == observable_name:
                 self._process_obs_result_for_obs_index(obs_result, plot_offset, observable_name, obs_index)
                 
-        self.refresh()
+        if self._auto_refresh: self.refresh()
         
     def _process_obs_result_for_obs_index(self, obs_result, plot_offset, observable_name, obs_index):
         obs = obs_result.obs        
@@ -180,7 +182,8 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
             elif raise_value_error: raise ValueError('Unable to process a filter object: %s' % str(obj))
 
 class StatePlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title=None, filter_name=None, is_posterior=False, plot_true_values=True,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title=None, filter_name=None, is_posterior=False, plot_true_values=True,
                  state_indices=None, state_labels=None,
                  observable_names=None, obs_indices=None, obs_labels=None,
                  state_colours=_default_state_colours,
@@ -189,7 +192,7 @@ class StatePlot(FilteringPlot):
                  *args, **kwargs):
         if title is None: title = 'posterior state' if is_posterior else 'prior state'
         
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh, title=title, filter_name=filter_name,
                 process_prior_filter_states=not is_posterior, process_posterior_filter_states=is_posterior,
                 process_true_values=plot_true_values, process_obs_results=True,
                 state_indices=state_indices, state_labels=state_labels,
@@ -233,7 +236,8 @@ class StatePlot(FilteringPlot):
         self.append(obs.time, obs.distr.mean[obs_index], self._obs_plot_indices[plot_offset], refresh=False)
         
 class ErrorPlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title=None, filter_name=None, is_posterior=False, rmse=False,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title=None, filter_name=None, is_posterior=False, rmse=False,
                  state_indices=None, state_labels=None,
                  state_colours=_default_state_colours,
                  *args, **kwargs):
@@ -243,7 +247,7 @@ class ErrorPlot(FilteringPlot):
             else:
                 title = 'posterior error' if is_posterior else 'prior error'
 
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh, title=title, filter_name=filter_name,
                 process_prior_filter_states=not is_posterior, process_posterior_filter_states=is_posterior,
                 process_true_values=True, process_obs_results=False,
                 state_indices=state_indices, state_labels=state_labels,
@@ -273,7 +277,8 @@ class ErrorPlot(FilteringPlot):
         if self._last_true_value is not true_value: self._last_true_value = true_value
         
 class ObsPlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title=None, filter_name=None,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title=None, filter_name=None,
                  plot_actual=True, plot_predicted=True,
                  observable_names=None, obs_indices=None, obs_labels=None,
                  obs_colours=_default_obs_colours, 
@@ -281,7 +286,8 @@ class ObsPlot(FilteringPlot):
         checks.check_at_least_one_not_none(plot_actual, plot_predicted)
         if title is None: title = 'predicted observation' if not plot_actual else 'observation'
         
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh,
+                title=title, filter_name=filter_name,
                 process_prior_filter_states=False, process_posterior_filter_states=False, process_true_values=False,
                 process_obs_results=True,
                 state_indices=[], state_labels=[],
@@ -314,14 +320,16 @@ class ObsPlot(FilteringPlot):
             self.append(predicted_obs.time, predicted_obs.distr.mean[obs_index], self._predicted_obs_plot_indices[plot_offset], refresh=False)
         
 class InnovPlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title=None, filter_name=None,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title=None, filter_name=None,
                  standardise=False,
                  observable_names=None, obs_indices=None, obs_labels=None,
                  obs_colours=_default_obs_colours, 
                  *args, **kwargs):
         if title is None: title = 'standardised innovation' if standardise else 'innovation'
         
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh,
+                title=title, filter_name=filter_name,
                 process_prior_filter_states=False, process_posterior_filter_states=False, process_true_values=False,
                 process_obs_results=True,
                 state_indices=[], state_labels=[],
@@ -352,11 +360,13 @@ class InnovPlot(FilteringPlot):
         self.append(obs_result.obs.time, sd, self._plus_sd_plot_indices[plot_offset], refresh=False)
         
 class CUSUMPlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title='cusum', filter_name=None,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title='cusum', filter_name=None,
                  observable_names=None, obs_indices=None, obs_labels=None,
                  obs_colours=_default_obs_colours, 
                  *args, **kwargs):        
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh,
+                title=title, filter_name=filter_name,
                 process_prior_filter_states=False, process_posterior_filter_states=False, process_true_values=False,
                 process_obs_results=True,
                 state_indices=[], state_labels=[],
@@ -381,7 +391,8 @@ class CUSUMPlot(FilteringPlot):
         self.append(obs_result.obs.time, self._cusums[plot_offset], self._cusum_plot_indices[plot_offset], refresh=False)
         
 class LogLikelihoodPlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title='log-likelihood', filter_name=None, cumulative=True,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title='log-likelihood', filter_name=None, cumulative=True,
                  observable_names=None, obs_colours=_default_obs_colours, 
                  *args, **kwargs):
         
@@ -392,7 +403,8 @@ class LogLikelihoodPlot(FilteringPlot):
             obs_indices = None
             obs_labels = None
         
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh,
+                title=title, filter_name=filter_name,
                 process_prior_filter_states=False, process_posterior_filter_states=False, process_true_values=False,
                 process_obs_results=True,
                 state_indices=[], state_labels=[],
@@ -421,7 +433,8 @@ class LogLikelihoodPlot(FilteringPlot):
             self._last_obs_result = obs_result
         
 class GainPlot(FilteringPlot):
-    def __init__(self, fig=None, ax=None, title='gain', filter_name=None,
+    def __init__(self, fig=None, ax=None, auto_refresh=True,
+                 title='gain', filter_name=None,
                  observable_names=None, obs_colours=_default_obs_colours, 
                  *args, **kwargs):
         
@@ -432,7 +445,8 @@ class GainPlot(FilteringPlot):
             obs_indices = None
             obs_labels = None
         
-        super().__init__(fig=fig, ax=ax, title=title, filter_name=filter_name,
+        super().__init__(fig=fig, ax=ax, title=title, auto_refresh=auto_refresh,
+                filter_name=filter_name,
                 process_prior_filter_states=False, process_posterior_filter_states=False, process_true_values=False,
                 process_obs_results=True,
                 state_indices=[], state_labels=[],

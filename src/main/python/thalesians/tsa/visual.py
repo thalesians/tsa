@@ -150,6 +150,8 @@ def visualise_df_sized_point_series(df, time_column, value_column, size_column, 
     return visualise_sized_point_series(df[time_column], df[value_column], df[size_column], scaling, fig, ax, **kwargs)
 
 class LivePlot(object):
+    _figure_refresh_times = {}
+    
     def __init__(self, fig=None, ax=None, keep_last_points=None, min_refresh_interval=None,
                  pad_left=None, pad_right=None, pad_bottom=None, pad_top=None,
                  update_xlim=True, update_ylim=True,
@@ -162,7 +164,6 @@ class LivePlot(object):
         self._flush_events_works = True
         if checks.is_timedelta(min_refresh_interval): min_refresh_interval = min_refresh_interval.total_seconds()
         self._min_refresh_interval = min_refresh_interval
-        self._last_refresh_time = None
         self._pad_left = pad_left
         self._pad_right = pad_right
         self._pad_bottom = pad_bottom
@@ -186,8 +187,9 @@ class LivePlot(object):
         current_time = time.monotonic()
         
         if (not force) and self._min_refresh_interval is not None:
-            if self._last_refresh_time is not None and current_time - self._last_refresh_time < self._min_refresh_interval:
-                return
+            if id(self._fig) in LivePlot._figure_refresh_times:
+                last_refresh_time = LivePlot._figure_refresh_times[id(self._fig)]
+                if current_time - last_refresh_time < self._min_refresh_interval: return
         
         if self._flush_events_works:
             self._fig.canvas.draw_idle()
@@ -199,7 +201,7 @@ class LivePlot(object):
         else:
             self._fig.canvas.draw()
         
-        self._last_refresh_time = current_time
+        LivePlot._figure_refresh_times[id(self._fig)] = current_time
         
     def _append(self, x, y, plot_index):
         for col in [self._xs, self._ys]:
