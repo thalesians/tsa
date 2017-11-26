@@ -24,6 +24,14 @@ def check_exactly_one_not_none(*args, **kwargs):
     level = kwargs['level'] if 'level' in kwargs else 1
     check(is_exactly_one_not_none(*args), message, level)
     
+def is_at_least_one_not_none(*args):
+    return args.count(None) < len(args)
+    
+def check_at_least_one_not_none(*args, **kwargs):
+    message = kwargs['message'] if 'message' in kwargs else 'The number of non-None arguments is 0'
+    level = kwargs['level'] if 'level' in kwargs else 1
+    check(is_at_least_one_not_none(*args), message, level)
+    
 def is_at_most_one_not_none(*args):
     return args.count(None) >= len(args) - 1
 

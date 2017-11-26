@@ -21,25 +21,30 @@ def cor_to_cov(cors, vars=None, sds=None, copy=True):  # @ReservedAssignment
 def cholesky_sqrt_2d(sd1, sd2, cor):
     return np.array(((sd1, 0.), (sd2 * cor, sd2 * np.sqrt(1. - cor * cor))))
 
-class OnlineMeanAndVarCalculator(object):
-    def __init__(self):
-        self.reset()
+class OnlineStatsCalculator(object):
+    def __init__(self, zero=0.0):
+        self.reset(zero)
         
-    def reset(self):
+    def reset(self, zero):
         self.__n = 0
-        self.__mean = 0.0
-        self.__mean_sq = 0.0
-        self.__M2 = 0.0
+        self.__sum = zero
+        self.__mean = zero
+        self.__mean_sq = zero
+        self.__M2 = zero
     
-    @property    
+    @property
     def count(self):
         return self.__n
+    
+    @property
+    def sum(self):
+        return self.__sum
 
     @property    
     def mean(self):
         return self.__mean
 
-    @property    
+    @property
     def mean_sq(self):
         return self.__mean_sq
     
@@ -65,6 +70,7 @@ class OnlineMeanAndVarCalculator(object):
     
     def add(self, x):
         self.__n += 1
+        self.__sum += x
         delta = x - self.__mean
         self.__mean += delta / self.__n
         deltasq = x * x - self.__mean_sq

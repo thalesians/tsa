@@ -11,7 +11,7 @@ import thalesians.tsa.processes as proc
 class KalmanObsResult(filtering.ObsResult):
     def __init__(self, accepted, obs, predicted_obs, innov_distr, log_likelihood, gain):
         super().__init__(accepted, obs, predicted_obs, innov_distr, log_likelihood)
-        ##self._gain = gain
+        self._gain = gain
         self._to_string_helper_KalmanObsResult = None
         self._str_KalmanObsResult = None
         
@@ -22,8 +22,8 @@ class KalmanObsResult(filtering.ObsResult):
     def to_string_helper(self):
         if self._to_string_helper_KalmanObsResult is None:
             self._to_string_helper_KalmanObsResult = super().to_string_helper() \
-                    .set_type(self) ##\
-                    ##.add('gain', self._gain)
+                    .set_type(self) \
+                    .add('gain', self._gain)
             return self._to_string_helper_KalmanObsResult
         
     def __str__(self):
@@ -241,6 +241,7 @@ class KalmanFilter(objects.Named):
         self._state_distr = N(mean=m, cov=c, copy=False)
         self._is_posterior = True
         if filtering.FilterPypeOptions.POSTERIOR_STATE in self._pype_options: self._pype.send(self.state)
+
         log_likelihood = -.5 * (obs_distr.dim * KalmanFilter.LN_2PI + np.log(np.linalg.det(innov_cov)) + \
                 np.dot(np.dot(innov.T, innov_cov_inv), innov))
         obs = filtering.Obs(predicted_obs.observable, self._time, obs_distr)
