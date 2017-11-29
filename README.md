@@ -41,7 +41,8 @@ Currently, the following functionality is implemented and is being expanded:
 * visualisation, including interactive visualisation for Jupyter,
 * pre-, post-condition, and invariant checking,
 * utilities for dealing with Pandas dataframes, especially large ones,
-* native Python, NumPy, and Pandas type conversions.
+* native Python, NumPy, and Pandas type conversions,
+* interoperability with kdb+/q.
 
 ## Teaching
 
