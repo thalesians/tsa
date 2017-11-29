@@ -62,6 +62,9 @@ def trim_on_right(collection, new_len, in_place=False):
     del collection[new_len:]
     return collection
 
+def xconst(value):
+    while True: yield value
+
 def xbatch(size, iterable):
     l = len(iterable)
     for i in range(0, l, size):

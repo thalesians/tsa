@@ -12,9 +12,29 @@ def check(arg, message='Check failed', level=1):
                 message = message()
             raise AssertionError(message)
         
+def check_none(arg, message='Argument is not None', level=1):
+    check(arg is None, message, level)
+    return arg
+        
 def check_not_none(arg, message='Argument is None', level=1):
     check(arg is not None, message, level)
     return arg
+
+def are_all_not_none(*args):
+    return args.count(None) == 0
+
+def check_all_not_none(*args, **kwargs):
+    message = kwargs['message'] if 'message' in kwargs else 'At least one of the arguments is None'
+    level = kwargs['level'] if 'level' in kwargs else 1
+    check(are_all_not_none(*args), message, level)
+
+def are_all_none(*args):
+    return args.count(None) == len(args)
+
+def check_all_none(*args, **kwargs):
+    message = kwargs['message'] if 'message' in kwargs else 'At least one of the arguments is not None'
+    level = kwargs['level'] if 'level' in kwargs else 1
+    check(are_all_none(*args), message, level)
 
 def is_exactly_one_not_none(*args):
     return args.count(None) == len(args) - 1
@@ -80,11 +100,64 @@ def check_int(arg, allow_none=False, message='Argument "%(string)" is not an int
     check(is_int(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
+def is_some_numpy_int(arg, allow_none=False):
+    import numpy as np
+    return is_instance(arg, (np.int, np.int0, np.int8, np.int16, np.int32, np.int64), allow_none)
+
+def check_some_numpy_int(arg, allow_none=False, message='Argument "%(string)" is not a NumPy int*, but of type %(actual)s', level=1):
+    check(is_some_numpy_int(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_numpy_uint(arg, allow_none=False):
+    import numpy as np
+    return is_instance(arg, (np.uint, np.uint0, np.uint8, np.uint16, np.uint32, np.uint64), allow_none)
+
+def check_some_numpy_uint(arg, allow_none=False, message='Argument "%(string)" is not a NumPy uint*, but of type %(actual)s', level=1):
+    check(is_some_numpy_uint(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_int(arg, allow_none=False):
+    return is_int(arg, allow_none) or is_some_numpy_int(arg, allow_none) or is_some_numpy_uint(arg, allow_none)
+
+def check_some_int(arg, allow_none=False, message='Argument "%(string)" is not some (u)int*, but of type %(actual)s', level=1):
+    check(is_some_int(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
 def is_float(arg, allow_none=False):
     return is_instance(arg, float, allow_none)
 
 def check_float(arg, allow_none=False, message='Argument "%(string)" is not a float, but of type %(actual)s', level=1):
     check(is_float(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_numpy_float(arg, allow_none=False):
+    import numpy as np
+    return is_instance(arg, (np.float, np.float16, np.float32, np.float64), allow_none)
+
+def check_some_numpy_float(arg, allow_none=False, message='Argument "%(string)" is not a NumPy float*, but of type %(actual)s', level=1):
+    check(is_some_numpy_float(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_numpy_double(arg, allow_none=False):
+    import numpy as np
+    return is_instance(arg, (np.double, np.longdouble), allow_none)
+
+def check_some_numpy_double(arg, allow_none=False, message='Argument "%(string)" is not a NumPy double/longdouble, but of type %(actual)s', level=1):
+    check(is_some_numpy_double(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_float(arg, allow_none=False):
+    return is_float(arg, allow_none) or is_some_numpy_float(arg, allow_none) or is_some_numpy_double(arg, allow_none)
+
+def check_some_float(arg, allow_none=False, message='Argument "%(string)" is not some float*/double/longdouble, but of type %(actual)s', level=1):
+    check(is_some_float(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_number(arg, allow_none=False):
+    return is_some_int(arg, allow_none) or is_some_float(arg, allow_none)
+
+def check_some_number(arg, allow_none=False, message='Argument "%(string)" is not some number, but of type %(actual)s', level=1):
+    check(is_some_number(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
 def is_numpy_array(arg, allow_none=False):
@@ -130,6 +203,11 @@ def check_timedelta(arg, allow_none=False, message='Argument "%(string)" of type
     check(is_timedelta(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
+def is_some_timedelta(arg, allow_none=False):
+    import numpy as np
+    import pandas as pd
+    return is_instance(arg, (dt.timedelta, np.timedelta64, pd.Timedelta), allow_none)
+
 def is_iterable(arg, allow_none=False):
     return is_instance(arg, col.Iterable, allow_none)
 
@@ -142,6 +220,20 @@ def is_iterable_not_string(arg, allow_none=False):
 
 def check_iterable_not_string(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is either not iterable or a string', level=1):
     check(is_iterable_not_string(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_dict(arg, allow_none=False):
+    return is_instance(arg, dict, allow_none)
+
+def check_dict(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not a dict', level=1):
+    check(is_dict(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_dict(arg, allow_none=False):
+    return (allow_none and arg is None) or hasattr(arg, 'keys')
+
+def check_some_dict(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not a dictionary', level=1):
+    check(is_some_dict(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
 def is_callable(arg, allow_none=False):

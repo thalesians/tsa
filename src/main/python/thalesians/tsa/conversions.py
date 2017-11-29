@@ -1,13 +1,11 @@
 import datetime as dt
 
-import numpy as np
-import pandas as pd
-
 import thalesians.tsa.checks as checks
-import thalesians.tsa.times as times
+import thalesians.tsa.timeconsts as tc
 import thalesians.tsa.utils as utils
 
-def numpy_datetime64_to_python_datetime(x):
+def numpy_datetime64_to_python_datetime(x, allow_none=False):
+    import numpy as np
     if isinstance(x, np.datetime64):
         # For some reason, the following doesn't always work. Instead of a Python datetime, an int may be returned. This
         # may be due to a bug in NumPy. This function detects this issue and employs an alternative strategy to convert
@@ -20,43 +18,69 @@ def numpy_datetime64_to_python_datetime(x):
         days = (x - xm) / np.timedelta64(1, 'D')
         timeindays = days - int(days)
         day = int(days) + 1
-        hour = int(timeindays * times.HOURS_PER_DAY)
-        timeindays -= hour / times.HOURS_PER_DAY
-        minute = int(timeindays * times.MINUTES_PER_DAY)
-        timeindays -= minute / times.MINUTES_PER_DAY
-        second = int(timeindays * times.SECONDS_PER_DAY)
-        timeindays -= second / times.SECONDS_PER_DAY
-        microsecond = int(timeindays * times.MICROSECONDS_PER_DAY)
+        hour = int(timeindays * tc.HOURS_PER_DAY)
+        timeindays -= hour / tc.HOURS_PER_DAY
+        minute = int(timeindays * tc.MINUTES_PER_DAY)
+        timeindays -= minute / tc.MINUTES_PER_DAY
+        second = int(timeindays * tc.SECONDS_PER_DAY)
+        timeindays -= second / tc.SECONDS_PER_DAY
+        microsecond = int(timeindays * tc.MICROSECONDS_PER_DAY)
         r = dt.datetime(year, month, day, hour, minute, second, microsecond)
         if microsecond % 10 == 9: r += dt.timedelta(microseconds=1)
         return r
     elif checks.is_iterable(x): return [numpy_datetime64_to_python_datetime(e) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
-def pandas_timestamp_to_python_datetime(x):
+def pandas_timestamp_to_python_datetime(x, allow_none=False):
+    import pandas as pd
     if isinstance(x, pd.Timestamp): return x.to_pydatetime()
     elif checks.is_iterable(x): return [pandas_timestamp_to_python_datetime(e) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
+
+def numpy_timedelta64_to_python_timedelta(x, allow_none=False):
+    import numpy as np
+    import pandas as pd
+    if isinstance(x, np.timedelta64): return pd.to_timedelta(x, errors='coerce', box=True).to_pytimedelta()
+    elif checks.is_iterable(x): return [numpy_timedelta64_to_python_timedelta(e) for e in x]
+    elif allow_none and x is None: return None
+    raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
+
+def pandas_timedelta_to_python_timedelta(x, allow_none=False):
+    import pandas as pd
+    if isinstance(x, pd.Timedelta): return x.to_pytimedelta()
+    elif checks.is_iterable(x): return [pandas_timedelta_to_python_timedelta(e) for e in x]
+    elif allow_none and x is None: return None
+    raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
     
-def to_python_date(x, allow_datetimes=True, *args, **kwargs):
+def to_python_date(x, allow_datetimes=True, allow_none=False, *args, **kwargs):
+    import numpy as np
+    import pandas as pd
     if isinstance(x, dt.date): return x
     elif allow_datetimes and isinstance(x, dt.datetime): return x.date()
     elif allow_datetimes and isinstance(x, np.datetime64): return numpy_datetime64_to_python_datetime(x, *args, **kwargs).date()
     elif allow_datetimes and isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs).date()
     elif checks.is_string(x): return str_to_date(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_date(e, allow_datetimes, *args, **kwargs) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python date' % str(x))
 
-def to_python_time(x, allow_datetimes=True, *args, **kwargs):
+def to_python_time(x, allow_datetimes=True, allow_none=False, *args, **kwargs):
+    import numpy as np
+    import pandas as pd
     if isinstance(x, dt.time): return x
     elif allow_datetimes and isinstance(x, dt.datetime): return x.time()
     elif allow_datetimes and isinstance(x, np.datetime64): return numpy_datetime64_to_python_datetime(x, *args, **kwargs).time()
     elif allow_datetimes and isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs).time()
     elif checks.is_string(x): return str_to_time(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_time(e, allow_datetimes, *args, **kwargs) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python time' % str(x))
 
-def to_python_datetime(x, allow_dates=True, date_for_times=dt.date.today(), *args, **kwargs):
+def to_python_datetime(x, allow_dates=True, date_for_times=dt.date.today(), allow_none=False, *args, **kwargs):
+    import numpy as np
+    import pandas as pd
     if isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs)
     elif isinstance(x, np.datetime64): return numpy_datetime64_to_python_datetime(x, *args, **kwargs)
     elif isinstance(x, dt.datetime): return x
@@ -64,18 +88,38 @@ def to_python_datetime(x, allow_dates=True, date_for_times=dt.date.today(), *arg
     elif allow_dates and isinstance(x, dt.date): return dt.datetime.combine(x, dt.time())
     elif checks.is_string(x): return str_to_datetime(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_datetime(e, allow_dates, date_for_times, *args, **kwargs) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
-def to_python_int(x, *args, **kwargs):
-    if isinstance(x, (int, np.int, np.int0, np.int8, np.int16, np.int32, np.int64, np.uint, np.uint0, np.uint8, np.uint16, np.uint32, np.uint64)): return int(x)
+def to_python_timedelta(x, allow_none=False):
+    import numpy as np
+    import pandas as pd
+    if isinstance(x, np.timedelta64):
+        return numpy_timedelta64_to_python_timedelta(x, allow_none)
+    elif isinstance(x, pd.Timedelta):
+        return pandas_timedelta_to_python_timedelta(x, allow_none)
+    elif isinstance(x, dt.timedelta):
+        return x
+    elif allow_none and x is None: return None
+    else:
+        try: return dt.timedelta(seconds=x)
+        except: pass
+    raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
+
+def to_python_int(x, allow_none=False, allow_floats=False, *args, **kwargs):
+    if checks.is_some_int(x, allow_none): return int(x)
+    elif allow_floats and checks.is_some_float(x, allow_none): return int(to_python_float(x))
     elif checks.is_string(x): return str_to_int(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_int(e, *args, **kwargs) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python int' % str(x))
 
-def to_python_float(x, *args, **kwargs):
-    if isinstance(x, (float, np.float, np.float16, np.float32, np.float64, np.double, np.longdouble)): return float(x)
+def to_python_float(x, allow_none=False, allow_ints=False, *args, **kwargs):
+    if checks.is_some_float(x, allow_none): return float(x)
+    elif allow_ints and checks.is_some_int(x, allow_none): return float(to_python_int(x))
     elif checks.is_string(x): return str_to_float(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_float(e, *args, **kwargs) for e in x]
+    elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python float' % str(x))
 
 def str_to_x(s, none_values, none_result, raise_value_error, x_name, conv):
@@ -204,7 +248,7 @@ def strs_to_date(ss, date_format=default_date_formats, none_values=default_none_
     return _strs_to_x_1(ss, date_format, none_values, none_result, raise_value_error, return_extra_info, min_success_rate,
                         str_to_date)
 
-default_time_formats = ['%H:%M:%S.%f', '%H:%M:%S', '%H:%M']
+default_time_formats = ['%H:%M:%S.%f', '%H:%M:%S', '%H:%M', '%H%M%S']
     
 def str_to_time(s, time_format=default_time_formats, none_values=default_none_values, none_result=None,
                 raise_value_error=True, return_extra_info=False):

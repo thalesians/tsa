@@ -115,6 +115,8 @@ class MarkovProcess(Process):
         if time == time0: return distr0
         if self._cached_time is None or self._cached_time != time or self._cached_time0 != time0 or self._cached_distr0 != distr0:
             time_delta = time - time0
+            if isinstance(time_delta, np.timedelta64):
+                time_delta = time_delta.item()
             if isinstance(time_delta, dt.timedelta):
                 time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
             self._cached_distr = self._propagate_distr_impl(time_delta, distr0)
@@ -153,7 +155,7 @@ class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
-        distr = self.propagate_distr(time, time0, distrs.NormalDistr.create_dirac_delta(value0))
+        distr = self.propagate_distr(time, time0, distrs.DiracDelta.create(value0))
         return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
     
     def to_string_helper(self):

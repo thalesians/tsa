@@ -26,7 +26,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(prior_predicted_obs1.distr.cov, 250. + 25./24.)
         npt.assert_almost_equal(prior_predicted_obs1.cross_cov, prior_predicted_obs1.distr.cov)
         
-        observable.observe(t1, N(mean=100.35, cov=100.0))
+        observable.observe(time=t1, obs=N(mean=100.35, cov=100.0))
         
         posterior_predicted_obs1 = observable.predict(t1)
         npt.assert_almost_equal(posterior_predicted_obs1.distr.mean, 100.28590504)
@@ -40,7 +40,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(prior_predicted_obs2.distr.cov, 71.513353115 + 2.*25./24.)
         npt.assert_almost_equal(prior_predicted_obs2.cross_cov, prior_predicted_obs2.distr.cov)
         
-        observable.observe(t2, N(mean=100.35, cov=100.0))
+        observable.observe(time=t2, obs=N(mean=100.35, cov=100.0))
 
         posterior_predicted_obs2 = observable.predict(t2)
         npt.assert_almost_equal(posterior_predicted_obs2.distr.mean, 100.45709020)
@@ -58,7 +58,7 @@ class TestFiltering(unittest.TestCase):
         
         t1 = t0 + dt.timedelta(hours=1)
         
-        observable.observe(t1, N(mean=100.35, cov=100.0))
+        observable.observe(time=t1, obs=N(mean=100.35, cov=100.0))
 
         posterior_predicted_obs1 = observable.predict(t1)
         npt.assert_almost_equal(posterior_predicted_obs1.distr.mean, 100.28590504)
@@ -67,7 +67,7 @@ class TestFiltering(unittest.TestCase):
         
         t2 = t1 + dt.timedelta(hours=2)
         
-        observable.observe(t2, N(mean=100.35, cov=100.0))
+        observable.observe(time=t2, obs=N(mean=100.35, cov=100.0))
         
         posterior_predicted_obs2 = observable.predict(t2)
         npt.assert_almost_equal(posterior_predicted_obs2.distr.mean, 100.45709020)
@@ -85,7 +85,7 @@ class TestFiltering(unittest.TestCase):
         
         t1 = t0 + dt.timedelta(hours=1)
         
-        observable.observe(t1, N(mean=200., cov=0.0))
+        observable.observe(time=t1, obs=N(mean=200., cov=0.0))
         
         posterior_predicted_obs1 = observable.predict(t1)
         npt.assert_almost_equal(posterior_predicted_obs1.distr.mean, 200.0)
@@ -114,7 +114,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(predicted_obs1_prior.distr.cov, [[250.0 + 25.0/24.0, 0.0, 0.0], [0.0, 360.0 + 36.0/24.0, -9.0/24.0], [0.0, -9.0/24.0, 250 + 25.0/24.0]])
         npt.assert_almost_equal(predicted_obs1_prior.cross_cov, predicted_obs1_prior.distr.cov)
         
-        state_observable.observe(t1, N(mean=[100.35, 121.0, 135.0], cov=[[100.0, 0.0, 0.0], [0.0, 400.0, 0.0], [0.0, 0.0, 100.0]]))
+        state_observable.observe(time=t1, obs=N(mean=[100.35, 121.0, 135.0], cov=[[100.0, 0.0, 0.0], [0.0, 400.0, 0.0], [0.0, 0.0, 100.0]]))
         
         predicted_obs1_posterior = state_observable.predict(t1)
         npt.assert_almost_equal(predicted_obs1_posterior.distr.mean, npu.col(100.285905044, 120.493895183, 133.623010239))
@@ -148,7 +148,7 @@ class TestFiltering(unittest.TestCase):
         
         t2 = t1 + dt.timedelta(minutes=30)
         
-        coord1_observable.observe(t2, N(mean=125.25, cov=4.))
+        coord1_observable.observe(time=t2, obs=N(mean=125.25, cov=4.))
         
         predicted_obs2_1 = coord1_observable.predict(t2)
         npt.assert_almost_equal(predicted_obs2_1.distr.mean, 125.152685704)
@@ -175,7 +175,7 @@ class TestFiltering(unittest.TestCase):
         npt.assert_almost_equal(predicted_obs3_prior2.distr.cov, 72.554699886)
         npt.assert_almost_equal(predicted_obs3_prior2.cross_cov, npu.row(0.0, -0.192506475, 72.554699886))
         
-        sum_observable.observe(t3, N(mean=365.00, cov=9.))
+        sum_observable.observe(time=t3, obs=N(mean=365.00, cov=9.))
         
         predicted_obs3_posterior_sum = sum_observable.predict(t3)
         npt.assert_almost_equal(predicted_obs3_posterior_sum.distr.mean, 364.679994753)

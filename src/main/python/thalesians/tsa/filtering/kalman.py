@@ -143,7 +143,10 @@ class KalmanFilter(objects.Named):
         def __init__(self, filter, name, obs_model, observed_processes, *args, **kwargs):  # @ReservedAssignment
             super().__init__(filter, name)
             if not checks.is_iterable(observed_processes): observed_processes = [observed_processes]
-            observed_processes = checks.check_iterable_over_instances(observed_processes, proc.MarkovProcess)
+            observed_processes = tuple(checks.check_iterable_over_instances(observed_processes, proc.MarkovProcess))
+            if obs_model is None:
+                obs_model = KalmanFilterObsModel.create(
+                    np.eye(sum([p.process_dim for p in observed_processes])))
             self._obs_model = obs_model
             self._state_mean_rects = []
             self._state_cov_diag_rects = []
@@ -197,16 +200,23 @@ class KalmanFilter(objects.Named):
             
             return filtering.PredictedObs(self, time, predicted_obs.distr, cross_cov)
         
-        def observe(self, time, obs_distr, true_value=None):
+        def observe(self, obs, time=None, true_value=None, predicted_obs=None):
+            time, obs_distr = filtering._time_and_obs_distr(obs, time, self.filter.time)
             if true_value is not None: true_value = npu.to_ndim_2(true_value)
-            predicted_obs = self.predict(time, true_value)
+            if predicted_obs is None: predicted_obs = self.predict(time, true_value)
             return self.filter.observe(obs_distr, predicted_obs, true_value)
     
     def create_observable(self, obs_model, *args):
         return KalmanFilter.KalmanObservable(self, None, obs_model, args)
     
+    def create_identity_observable(self, *args):
+        return KalmanFilter.KalmanObservable(self, None, None, args)
+    
     def create_named_observable(self, name, obs_model, *args):
-        return KalmanFilter.KalmanObservable(self, name, obs_model, *args)
+        return KalmanFilter.KalmanObservable(self, name, obs_model, args)
+    
+    def create_named_identity_observable(self, name, *args):
+        return KalmanFilter.KalmanObservable(self, name, None, args)
     
     def predict(self, time, true_value=None):
         if time < self._time:

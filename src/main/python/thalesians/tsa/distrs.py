@@ -32,6 +32,9 @@ class Distr(object):
     
 class NormalDistr(Distr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
+        if mean is not None and dim is not None and np.size(mean) == 1:
+            mean = npu.col_of(dim, npu.to_scalar(mean))
+        
         if mean is None and vol is None and cov is None:
             self._dim = 1 if dim is None else dim
             mean = npu.col_of(self._dim, 0.)
@@ -75,11 +78,6 @@ class NormalDistr(Distr):
         super(NormalDistr, self).__init__()
         
     @staticmethod
-    def create_dirac_delta(value):
-        dim = np.size(value)
-        return NormalDistr(mean=value, cov=np.zeros((dim, dim)))
-
-    @staticmethod
     def make_cov_2d(sd1, sd2, cor):
         offdiag = cor*sd1*sd2
         return np.array([[sd1*sd1, offdiag], [offdiag, sd2*sd2]])
@@ -114,12 +112,10 @@ class NormalDistr(Distr):
         return self._vol
     
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            if self._mean != other._mean: return False
-            if self._cov is None:
-                return self._vol == other.vol
-            else:
-                return self._cov == other.cov
+        if isinstance(other, NormalDistr):
+            if self.dim != other.dim: return False
+            if not np.array_equal(self.mean, other.mean): return False
+            return np.array_equal(self.cov, other.cov)
         return False
     
     def __ne__(self, other):
@@ -139,4 +135,53 @@ class NormalDistr(Distr):
     
     def __repr__(self):
         return str(self)
+
+class DiracDelta(NormalDistr):
+    def __init__(self, mean=None, dim=None, copy=True):
+        if mean is not None and dim is not None and np.size(mean) == 1:
+            mean = npu.col_of(dim, npu.to_scalar(mean))
+        
+        if mean is None:
+            dim = 1 if dim is None else dim
+            mean = npu.col_of(dim, 0.)
+            
+
+        self._mean = npu.to_ndim_2(mean, ndim_1_to_col=True, copy=copy)
+        if dim is None: dim = npu.nrow(self._mean)
+        self._dim = dim
+
+        npc.check_col(self._mean)
+        npc.check_nrow(self._mean, self._dim)
+            
+        npu.make_immutable(self._mean)
+        
+        self._zero_cov = None
+        
+        self._to_string_helper_DiracDelta = None
+        self._str_DiracDelta = None
+        
+    @staticmethod
+    def create(value=None, dim=None):
+        return DiracDelta(value, dim)
+
+    @property
+    def cov(self):
+        if self._zero_cov is None:
+            self._zero_cov = np.zeros((self._dim, self._dim))
+        return self._zero_cov
     
+    @property
+    def vol(self):
+        return self.cov
+    
+    def to_string_helper(self):
+        if self._to_string_helper_DiracDelta is None:
+            self._to_string_helper_DiracDelta = ToStringHelper(self).add('mean', self._mean)
+        return self._to_string_helper_DiracDelta 
+    
+    def __str__(self):
+        if self._str_DiracDelta is None: self._str_DiracDelta = self.to_string_helper().to_string()
+        return self._str_DiracDelta
+    
+    def __repr__(self):
+        return str(self)

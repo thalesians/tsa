@@ -1,31 +1,16 @@
+import datetime as dt
 import pytz
 
-NANOSECONDS_PER_MICROSECOND = 1000
+import thalesians.tsa.conversions as conv
+from thalesians.tsa.timeconsts import *  # @UnusedWildImport
 
-MICROSECONDS_PER_MILLISECOND = 1000
-NANOSECONDS_PER_MILLISECOND = 1000000  
-
-MILLISECONDS_PER_SECOND = 1000
-MICROSECONDS_PER_SECOND = 1000000
-NANOSECONDS_PER_SECOND = 1000000000    
-
-SECONDS_PER_MINUTE = 60
-MILLISECONDS_PER_MINUTE = 60000
-MICROSECONDS_PER_MINUTE = 60000000
-NANOSECONDS_PER_MINUTE = 60000000000
-
-MINUTES_PER_HOUR = 60
-SECONDS_PER_HOUR = 3600
-MILLISECONDS_PER_HOUR = 3600000
-MICROSECONDS_PER_HOUR = 3600000000
-NANOSECONDS_PER_HOUR = 3600000000000
-
-HOURS_PER_DAY = 24
-MINUTES_PER_DAY = 1440
-SECONDS_PER_DAY = 86400
-MILLISECONDS_PER_DAY = 86400000
-MICROSECONDS_PER_DAY = 86400000000
-NANOSECONDS_PER_DAY = 86400000000000
+__all__ = [
+        'NANOSECONDS_PER_MICROSECOND', 'MICROSECONDS_PER_MILLISECOND', 'NANOSECONDS_PER_MILLISECOND',
+        'MILLISECONDS_PER_SECOND', 'MICROSECONDS_PER_SECOND', 'NANOSECONDS_PER_SECOND', 'SECONDS_PER_MINUTE', 
+        'MILLISECONDS_PER_MINUTE', 'MICROSECONDS_PER_MINUTE', 'NANOSECONDS_PER_MINUTE', 'MINUTES_PER_HOUR',
+        'SECONDS_PER_HOUR', 'MILLISECONDS_PER_HOUR', 'MICROSECONDS_PER_HOUR', 'NANOSECONDS_PER_HOUR', 'HOURS_PER_DAY',
+        'MINUTES_PER_DAY', 'SECONDS_PER_DAY', 'MILLISECONDS_PER_DAY', 'MICROSECONDS_PER_DAY', 'NANOSECONDS_PER_DAY'
+    ]
 
 _us_eastern = pytz.timezone('US/Eastern')
 _london = pytz.timezone('Europe/London')
@@ -116,3 +101,19 @@ def tokyo_to_utc(datetime):
 
 def sydney_to_utc(datetime):
     return tz_to_utc(datetime, _sydney)
+
+def time_plus_timedelta(time, timedelta, on_overflow='raise'):
+    date = dt.date(2000, 1, 1)
+    if not isinstance(timedelta, dt.timedelta): timedelta = conv.to_python_timedelta(timedelta)
+    new_datetime = dt.datetime.combine(date, time) + timedelta
+    if new_datetime.date() < date:
+        if on_overflow == 'raise': raise ValueError('Adding the timedelta causes the time to underflow below the date boundary')
+        elif on_overflow == 'allow': return new_datetime.time()
+        elif on_overflow == 'truncate': return dt.time(0)
+        else: raise ValueError('Invalid on_overflow argument: "%s"' % str(on_overflow))
+    elif new_datetime.date() > date:
+        if on_overflow == 'raise': raise ValueError('Adding the timedelta causes the time to overflow above the date boundary')
+        elif on_overflow == 'allow': return new_datetime.time()
+        elif on_overflow == 'truncate': return dt.time(hour=23, minute=59, second=59, microsecond=999999)
+        else: raise ValueError('Invalid on_overflow argument: "%s"' % str(on_overflow))
+    return new_datetime.time()

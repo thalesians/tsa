@@ -28,10 +28,14 @@ def nrow(arg):
 def ncol(arg):
     return np.shape(arg)[1]
 
-def to_scalar(arg):
-    if checks.is_float(arg): return arg
-    elif checks.is_numpy_array(arg): return np.asscalar(arg)
-    else: return np.asscalar(np.array(arg))
+def to_scalar(arg, raise_value_error=True):
+    try:
+        if checks.is_float(arg): return arg
+        elif checks.is_numpy_array(arg): return np.asscalar(arg)
+        else: return np.asscalar(np.array(arg))
+    except:
+        if raise_value_error: raise
+        return arg
 
 def to_ndim_1(arg, copy=False):
     r = np.reshape(arg, (np.size(arg),))

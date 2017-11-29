@@ -170,14 +170,14 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
         
     def process_filter_object(self, obj, raise_value_error=False):
         if self._filter_name is None or self._filter_name == obj.filter_name:
-            if checks.is_instance(obj, filtering.FilterState):
+            if isinstance(obj, filtering.FilterState):
                 if self._process_prior_filter_states and (not obj.is_posterior):
                     self._process_filter_state(obj)
                 elif self._process_posterior_filter_states and obj.is_posterior:
                     self._process_filter_state(obj)
-            elif checks.is_instance(obj, filtering.TrueValue) and self._process_true_values:
+            elif isinstance(obj, filtering.TrueValue) and self._process_true_values:
                 self._process_true_value(obj)
-            elif checks.is_instance(obj, filtering.ObsResult) and self._process_obs_results:
+            elif isinstance(obj, filtering.ObsResult) and self._process_obs_results:
                 self._process_obs_result(obj)
             elif raise_value_error: raise ValueError('Unable to process a filter object: %s' % str(obj))
 
