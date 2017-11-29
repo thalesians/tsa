@@ -1,5 +1,9 @@
 # tsa: The Thalesians' Time Series Analysis library
 
+## Installation
+
+    pip install thalesians.tsa
+
 ## Overview
 
 The Thalesians time series library is a heterogeneous collection of tools for facilitating efficient
