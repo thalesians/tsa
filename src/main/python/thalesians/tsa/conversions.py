@@ -57,8 +57,8 @@ def pandas_timedelta_to_python_timedelta(x, allow_none=False):
 def to_python_date(x, allow_datetimes=True, allow_none=False, *args, **kwargs):
     import numpy as np
     import pandas as pd
-    if isinstance(x, dt.date): return x
-    elif allow_datetimes and isinstance(x, dt.datetime): return x.date()
+    if allow_datetimes and isinstance(x, dt.datetime): return x.date()
+    elif isinstance(x, dt.date): return x
     elif allow_datetimes and isinstance(x, np.datetime64): return numpy_datetime64_to_python_datetime(x, *args, **kwargs).date()
     elif allow_datetimes and isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs).date()
     elif checks.is_string(x): return str_to_date(x, *args, **kwargs)

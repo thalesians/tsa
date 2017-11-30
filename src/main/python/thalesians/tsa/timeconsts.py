@@ -1,3 +1,5 @@
+import datetime as dt
+
 NANOSECONDS_PER_MICROSECOND = 1000
 
 MICROSECONDS_PER_MILLISECOND = 1000
@@ -24,3 +26,9 @@ SECONDS_PER_DAY = 86400
 MILLISECONDS_PER_DAY = 86400000
 MICROSECONDS_PER_DAY = 86400000000
 NANOSECONDS_PER_DAY = 86400000000000
+
+ONE_MICROSECOND = dt.timedelta(microseconds=1)
+ONE_SECOND = dt.timedelta(seconds=1)
+ONE_MINUTE = dt.timedelta(minutes=1)
+ONE_HOUR = dt.timedelta(hours=1)
+ONE_DAY = dt.timedelta(days=1)

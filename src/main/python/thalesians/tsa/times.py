@@ -1,6 +1,7 @@
 import datetime as dt
 import pytz
 
+import thalesians.tsa.checks as checks
 import thalesians.tsa.conversions as conv
 from thalesians.tsa.timeconsts import *  # @UnusedWildImport
 
@@ -9,7 +10,8 @@ __all__ = [
         'MILLISECONDS_PER_SECOND', 'MICROSECONDS_PER_SECOND', 'NANOSECONDS_PER_SECOND', 'SECONDS_PER_MINUTE', 
         'MILLISECONDS_PER_MINUTE', 'MICROSECONDS_PER_MINUTE', 'NANOSECONDS_PER_MINUTE', 'MINUTES_PER_HOUR',
         'SECONDS_PER_HOUR', 'MILLISECONDS_PER_HOUR', 'MICROSECONDS_PER_HOUR', 'NANOSECONDS_PER_HOUR', 'HOURS_PER_DAY',
-        'MINUTES_PER_DAY', 'SECONDS_PER_DAY', 'MILLISECONDS_PER_DAY', 'MICROSECONDS_PER_DAY', 'NANOSECONDS_PER_DAY'
+        'MINUTES_PER_DAY', 'SECONDS_PER_DAY', 'MILLISECONDS_PER_DAY', 'MICROSECONDS_PER_DAY', 'NANOSECONDS_PER_DAY',
+        'ONE_MICROSECOND', 'ONE_SECOND', 'ONE_MINUTE', 'ONE_HOUR', 'ONE_DAY'
     ]
 
 _us_eastern = pytz.timezone('US/Eastern')
@@ -117,3 +119,14 @@ def time_plus_timedelta(time, timedelta, on_overflow='raise'):
         elif on_overflow == 'truncate': return dt.time(hour=23, minute=59, second=59, microsecond=999999)
         else: raise ValueError('Invalid on_overflow argument: "%s"' % str(on_overflow))
     return new_datetime.time()
+
+def plus_timedelta(x, timedelta, on_overflow='raise'):
+    if isinstance(x, dt.time): return time_plus_timedelta(x, timedelta, on_overflow)
+    else: return x + timedelta
+
+def first_day_of_week(date):
+    date = conv.to_python_date(date, allow_datetimes=True)
+    if checks.is_iterable(date): return [first_day_of_week(x) for x in date]
+    week = date.isocalendar()[1]
+    while date.isocalendar()[1] == week: date -= ONE_DAY
+    return date + ONE_DAY
