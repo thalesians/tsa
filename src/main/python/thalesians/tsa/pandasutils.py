@@ -18,10 +18,10 @@ lt = lambda column, value, fun=None: \
 gt = lambda column, value, fun=None: \
     (lambda df: (df[column] if fun is None else df[column].apply(fun)) > value)
     
-leq = lambda column, value, fun=None: \
+le = lambda column, value, fun=None: \
     (lambda df: (df[column] if fun is None else df[column].apply(fun)) <= value)
     
-geq = lambda column, value, fun=None: \
+ge = lambda column, value, fun=None: \
     (lambda df: (df[column] if fun is None else df[column].apply(fun)) >= value)
     
 isin = lambda column, values, fun=None: \
@@ -186,19 +186,19 @@ def mean_or_last(x):
         try: return np.mean(x)
         except: return x[-1] if checks.is_iterable(x) else x
 
-def intraday_to_daily(df, aggregator=mean_or_last,
-                      date=None, time=None, datetime=None,
-                      bucket='date',
-                      new_bucket_column=None,
-                      fix_kind='last', fix_time=None, fix_points=10,
-                      min_fix_point_count=None, max_fix_point_count=None,
-                      min_min_fix_point_time=None, max_min_fix_point_time=None,
-                      min_max_fix_point_time=None, max_max_fix_point_time=None,
-                      already_sorted=False,
-                      aggregators_apply_to_df=False,
-                      exclude_original_temporal_columns=True,
-                      columns_to_exclude=None,
-                      return_extra_info=False):
+def sparsen(df, aggregator=mean_or_last,
+            date=None, time=None, datetime=None,
+            bucket='date',
+            new_bucket_column=None,
+            fix_kind='last', fix_time=None, fix_points=10,
+            min_fix_point_count=None, max_fix_point_count=None,
+            min_min_fix_point_time=None, max_min_fix_point_time=None,
+            min_max_fix_point_time=None, max_max_fix_point_time=None,
+            already_sorted=False,
+            aggregators_apply_to_df=False,
+            exclude_original_temporal_columns=True,
+            columns_to_exclude=None,
+            return_extra_info=False):
     checks.is_at_least_one_not_none(datetime, date, time)
     
     if bucket == 'date': bucket = lambda x: conv.to_python_date(x, allow_datetimes=True)
@@ -212,7 +212,7 @@ def intraday_to_daily(df, aggregator=mean_or_last,
             if exclude_original_temporal_columns: columns_to_exclude.add(datetime)
             if new_bucket_column is None and exclude_original_temporal_columns: new_bucket_column = datetime
             datetime = df[datetime].values
-        temporal_values = datetime
+        temporals = datetime
     else:
         if isinstance(date, str):
             if exclude_original_temporal_columns: columns_to_exclude.add(date)
@@ -224,17 +224,17 @@ def intraday_to_daily(df, aggregator=mean_or_last,
             time = df[time].values
         
         if date is not None and time is not None:
-            temporal_values = [dt.datetime.combine(d, t) for d, t in zip(date, time)]
+            temporals = [dt.datetime.combine(d, t) for d, t in zip(date, time)]
         elif date is not None:
-            temporal_values = date
+            temporals = date
         else: # time is not None
-            temporal_values = time
+            temporals = time
         
     if new_bucket_column is None: new_bucket_column = 'bucket'
     
-    if fix_kind in ('first', 'after'): comparison = 'geq'
+    if fix_kind in ('first', 'after'): comparison = 'ge'
     elif fix_kind == 'after_exclusive': comparison = 'gt'
-    elif fix_kind in ('last', 'before'): comparison = 'leq'
+    elif fix_kind in ('last', 'before'): comparison = 'le'
     elif fix_kind == 'before_exclusive': comparison = 'lt'
     else: raise ValueError('Unfamiliar fix_kind: "%s"' % str(fix_kind))
     
@@ -244,9 +244,9 @@ def intraday_to_daily(df, aggregator=mean_or_last,
     numeric_fix_points = checks.is_some_number(fix_points)
     if not numeric_fix_points: fix_points = conv.to_python_timedelta(fix_points)
     
-    grouping_df = pd.DataFrame({'date': date, 'time': time}, columns=('date', 'time'))
+    grouping_df = pd.DataFrame({'temporals': temporals})
     
-    grouped_df = grouping_df.groupby(bucket(temporal_values))
+    grouped_df = grouping_df.groupby(bucket(temporals))
     
     columns = [new_bucket_column]
     data = {new_bucket_column: []}
@@ -265,32 +265,36 @@ def intraday_to_daily(df, aggregator=mean_or_last,
     dates_with_fix_point_limits_breached = col.OrderedDict()
     fix_point_counts = col.OrderedDict()
     
-    for next_date, group_df in grouped_df:
-        if len(group_df) == 0: dates_with_no_points.append(next_date)
+    for bucket, group_df in grouped_df:
+        if len(group_df) == 0: dates_with_no_points.append(bucket)
         if not already_sorted:
             group_df = group_df.copy()
-            group_df.sort_values('time', inplace=True)
-        if fix_kind == 'first': fix_time = group_df['time'].values[0]
-        elif fix_kind == 'last': fix_time = group_df['time'].values[-1]
+            group_df.sort_values('temporals', inplace=True)
+        if fix_kind == 'first': fix_time = group_df['temporals'].values[0]
+        elif fix_kind == 'last': fix_time = group_df['temporals'].values[-1]
         
         if numeric_fix_points:
-            if comparison == 'geq':
-                fix_point_indices = group_df.index[group_df['time'] >= fix_time][0:fix_points]
+            if comparison == 'ge':
+                fix_point_indices = group_df.index[tsatimes.temporal_ge(group_df['temporals'], fix_time)][0:fix_points]
             elif comparison == 'gt':
-                fix_point_indices = group_df.index[group_df['time'] > fix_time][0:fix_points]
-            elif comparison == 'leq':
-                fix_point_indices = group_df.index[group_df['time'] <= fix_time][-fix_points:]
-            else: # comparison == 'le'
-                fix_point_indices = group_df.index[group_df['time'] < fix_time][-fix_points:]
+                fix_point_indices = group_df.index[tsatimes.temporal_gt(group_df['temporals'], fix_time)][0:fix_points]
+            elif comparison == 'le':
+                fix_point_indices = group_df.index[tsatimes.temporal_le(group_df['temporals'], fix_time)][-fix_points:]
+            else: # comparison == 'lt'
+                fix_point_indices = group_df.index[tsatimes.temporal_lt(group_df['temporals'], fix_time)][-fix_points:]
         else:
-            if comparison == 'geq':
-                fix_point_indices = group_df.index[(group_df['time'] >= fix_time) & (group_df['time'] <= tsatimes.plus_timedelta(fix_time, fix_points))]
+            if comparison == 'ge':
+                fix_point_indices = group_df.index[(tsatimes.temporal_ge(group_df['temporals'], fix_time)) & \
+                                                   (tsatimes.temporal_le(group_df['temporals'], tsatimes.plus_timedelta(fix_time, fix_points)))]
             elif comparison == 'gt':
-                fix_point_indices = group_df.index[(group_df['time'] > fix_time) & (group_df['time'] <= tsatimes.plus_timedelta(fix_time, fix_points))]
-            elif comparison == 'leq':
-                fix_point_indices = group_df.index[(group_df['time'] <= fix_time) & (group_df['time'] >= tsatimes.plus_timedelta(fix_time, -fix_points))]
-            else: # comparison == 'le':
-                fix_point_indices = group_df.index[(group_df['time'] < fix_time) & (group_df['time'] >= tsatimes.plus_timedelta(fix_time, -fix_points))]
+                fix_point_indices = group_df.index[(tsatimes.temporal_gt(group_df['temporals'], fix_time)) & \
+                                                   (tsatimes.temporal_le(group_df['temporals'], tsatimes.plus_timedelta(fix_time, fix_points)))]
+            elif comparison == 'le':
+                fix_point_indices = group_df.index[(tsatimes.temporal_le(group_df['temporals'], fix_time)) & \
+                                                   (tsatimes.temporal_ge(group_df['temporals'], tsatimes.plus_timedelta(fix_time, -fix_points)))]
+            else: # comparison == 'lt':
+                fix_point_indices = group_df.index[(tsatimes.temporal_lt(group_df['temporals'], fix_time)) & \
+                                                   (tsatimes.temporal_ge(group_df['temporals'], tsatimes.plus_timedelta(fix_time, -fix_points)))]
                 
         fix_point_limits_breached = set()
 
@@ -300,38 +304,38 @@ def intraday_to_daily(df, aggregator=mean_or_last,
             fix_point_limits_breached.add('max_fix_point_count')
         if min_min_fix_point_time is not None:
             if checks.is_some_timedelta(min_min_fix_point_time):
-                the_min_min_fix_point_time = fix_time + min_min_fix_point_time if comparison in ('geq', 'gt') else fix_time - min_min_fix_point_time
+                the_min_min_fix_point_time = fix_time + min_min_fix_point_time if comparison in ('ge', 'gt') else fix_time - min_min_fix_point_time
             else: the_min_min_fix_point_time = min_min_fix_point_time
-            if min(grouping_df['time'].values[fix_point_indices]) < the_min_min_fix_point_time:
+            if tsatimes.temporal_lt(min(grouping_df['temporals'].values[fix_point_indices]), the_min_min_fix_point_time):
                 fix_point_limits_breached.add('min_min_fix_point_time')
         if max_min_fix_point_time is not None:
             if checks.is_some_timedelta(max_min_fix_point_time):
-                the_max_min_fix_point_time = fix_time + max_min_fix_point_time if comparison in ('geq', 'gt') else fix_time - max_min_fix_point_time
+                the_max_min_fix_point_time = fix_time + max_min_fix_point_time if comparison in ('ge', 'gt') else fix_time - max_min_fix_point_time
             else: the_max_min_fix_point_time = max_min_fix_point_time
-            if min(grouping_df['time'].values[fix_point_indices]) > the_max_min_fix_point_time:
+            if tsatimes.temporal_gt(min(grouping_df['temporals'].values[fix_point_indices]), the_max_min_fix_point_time):
                 fix_point_limits_breached.add('max_min_fix_point_time')
         if min_max_fix_point_time is not None:
             if checks.is_some_timedelta(min_max_fix_point_time):
-                the_min_max_fix_point_time = fix_time + min_max_fix_point_time if comparison in ('geq', 'gt') else fix_time - min_max_fix_point_time
+                the_min_max_fix_point_time = fix_time + min_max_fix_point_time if comparison in ('ge', 'gt') else fix_time - min_max_fix_point_time
             else: the_min_max_fix_point_time = min_max_fix_point_time
-            if max(grouping_df['time'].values[fix_point_indices]) < the_min_max_fix_point_time:
+            if tsatimes.temporal_lt(max(grouping_df['temporals'].values[fix_point_indices]), the_min_max_fix_point_time):
                 fix_point_limits_breached.add('min_max_fix_point_time')
         if max_max_fix_point_time is not None:
             if checks.is_some_timedelta(max_max_fix_point_time):
-                the_max_max_fix_point_time = fix_time + max_max_fix_point_time if comparison in ('geq', 'gt') else fix_time - max_max_fix_point_time
+                the_max_max_fix_point_time = fix_time + max_max_fix_point_time if comparison in ('ge', 'gt') else fix_time - max_max_fix_point_time
             else: the_max_max_fix_point_time = max_max_fix_point_time
-            if max(grouping_df['time'].values[fix_point_indices]) > the_max_max_fix_point_time:
+            if tsatimes.temporal_gt(max(grouping_df['temporals'].values[fix_point_indices]), the_max_max_fix_point_time):
                 fix_point_limits_breached.add('max_max_fix_point_time')
                 
         if len(fix_point_limits_breached) > 0:
-            dates_with_fix_point_limits_breached[next_date] = fix_point_limits_breached
+            dates_with_fix_point_limits_breached[bucket] = fix_point_limits_breached
         else:
-            data[new_bucket_column].append(next_date)
+            data[new_bucket_column].append(bucket)
             for column in columns[1:]:
                 if column not in columns_to_exclude:
                     arg = df.iloc[fix_point_indices] if aggregators_apply_to_df else df.iloc[fix_point_indices][column].values
                     data[column].append(aggs[column](arg))
-            fix_point_counts[next_date] = len(fix_point_indices)
+            fix_point_counts[bucket] = len(fix_point_indices)
     
     df = pd.DataFrame(data, columns=columns)
             

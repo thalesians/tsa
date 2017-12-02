@@ -182,6 +182,13 @@ def check_date(arg, message='Argument "%(string)" of type %(actual)s is not a da
     check(is_date(arg), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
+def is_some_date(arg, allow_none=False):
+    return is_date(arg, allow_none)
+
+def check_some_date(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not a date', level=1):
+    check(is_some_date(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
 def is_time(arg, allow_none=False):
     return is_instance(arg, dt.time, allow_none)
 
@@ -189,11 +196,27 @@ def check_time(arg, allow_none=False, message='Argument "%(string)" of type %(ac
     check(is_time(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
+def is_some_time(arg, allow_none=False):
+    return is_time(arg, allow_none)
+
+def check_some_time(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not a time', level=1):
+    check(is_some_time(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
 def is_datetime(arg, allow_none=False):
     return is_instance(arg, dt.datetime, allow_none)
 
 def check_datetime(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not a datetime', level=1):
     check(is_datetime(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
+
+def is_some_datetime(arg, allow_none=False):
+    import numpy as np
+    import pandas as pd
+    return is_instance(arg, (dt.datetime, np.datetime64, pd.Timestamp), allow_none)
+
+def check_some_datetime(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not some datetime', level=1):
+    check(is_some_datetime(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
 def is_timedelta(arg, allow_none=False):
@@ -207,6 +230,10 @@ def is_some_timedelta(arg, allow_none=False):
     import numpy as np
     import pandas as pd
     return is_instance(arg, (dt.timedelta, np.timedelta64, pd.Timedelta), allow_none)
+
+def check_some_timedelta(arg, allow_none=False, message='Argument "%(string)" of type %(actual)s is not some timedelta', level=1):
+    check(is_some_timedelta(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
 
 def is_iterable(arg, allow_none=False):
     return is_instance(arg, col.Iterable, allow_none)

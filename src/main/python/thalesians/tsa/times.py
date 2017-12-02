@@ -4,6 +4,7 @@ import pytz
 import thalesians.tsa.checks as checks
 import thalesians.tsa.conversions as conv
 from thalesians.tsa.timeconsts import *  # @UnusedWildImport
+import thalesians.tsa.utils as utils
 
 __all__ = [
         'NANOSECONDS_PER_MICROSECOND', 'MICROSECONDS_PER_MILLISECOND', 'NANOSECONDS_PER_MILLISECOND',
@@ -120,9 +121,49 @@ def time_plus_timedelta(time, timedelta, on_overflow='raise'):
         else: raise ValueError('Invalid on_overflow argument: "%s"' % str(on_overflow))
     return new_datetime.time()
 
-def plus_timedelta(x, timedelta, on_overflow='raise'):
+def plus_timedelta(x, timedelta, on_overflow='raise', raise_value_error=True):
     if isinstance(x, dt.time): return time_plus_timedelta(x, timedelta, on_overflow)
-    else: return x + timedelta
+    elif checks.is_some_datetime(x): return conv.to_python_datetime(x, allow_dates=True) + timedelta
+    else:
+        if raise_value_error: raise ValueError('Invalid timedelta: "%s"' % str(timedelta))
+        return None
+
+def _temporal_comparison(x, y, comp, return_pandas_series=True):
+    import pandas as pd
+    if checks.is_iterable_not_string(x):
+        if checks.is_iterable_not_string(y):
+            result = [_temporal_comparison(ex, ey, comp) for ex, ey in zip(x, y)]
+            return pd.Series(result) if return_pandas_series else result
+        else:
+            result = [_temporal_comparison(ex, y, comp) for ex in x]
+            return pd.Series(result) if return_pandas_series else result
+    elif checks.is_iterable_not_string(y):
+        result = [_temporal_comparison(x, ey, comp) for ey in y]
+        return pd.Series(result) if return_pandas_series else result
+    elif checks.is_some_time(x) or checks.is_some_time(y): return comp(conv.to_python_time(x), conv.to_python_time(y))
+    elif checks.is_some_date(x) or checks.is_some_date(y): return comp(conv.to_python_date(x), conv.to_python_date(y))
+    else: return comp(conv.to_python_datetime(x), conv.to_python_datetime(y))
+    
+def temporal_cmp(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: utils.cmp(x1, y1), return_pandas_series)
+    
+def temporal_eq(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: x1 == y1, return_pandas_series)
+
+def temporal_ne(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: x1 != y1, return_pandas_series)
+
+def temporal_lt(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: x1 < y1, return_pandas_series)
+
+def temporal_le(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: x1 <= y1, return_pandas_series)
+
+def temporal_gt(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: x1 > y1, return_pandas_series)
+
+def temporal_ge(x, y, return_pandas_series=True):
+    return _temporal_comparison(x, y, lambda x1, y1: x1 >= y1, return_pandas_series)
 
 def first_day_of_week(date):
     date = conv.to_python_date(date, allow_datetimes=True)

@@ -6,6 +6,9 @@ import operator
 
 import thalesians.tsa.intervals as intervals
 
+def cmp(x, y):
+    return (x > y) - (x < y)
+
 def most_common(iterable):
     sorted_iterable = sorted((x, i) for i, x in enumerate(iterable))
     groups = itertools.groupby(sorted_iterable, key=operator.itemgetter(0))
