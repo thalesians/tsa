@@ -3,6 +3,10 @@
 ## Installation
 
     pip install thalesians.tsa
+    
+## Caveat
+
+Please note that this is a very young library and the interfaces are in flux and may change on short notice. We hope that they will become much more rigid as time progresses.
 
 ## Overview
 
