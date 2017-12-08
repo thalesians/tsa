@@ -8,6 +8,10 @@
 
 Please note that this is a very young library and the interfaces are in flux and may change on short notice. We hope that they will become much more rigid as time progresses.
 
+## Please help us develop and grow thalesians.tsa!
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=H8EVMMSLPVXFN)
+
 ## Overview
 
 The Thalesians time series library is a heterogeneous collection of tools for facilitating efficient
