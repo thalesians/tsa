@@ -1,4 +1,4 @@
-# tsa: The Thalesians' Time Series Analysis library
+# tsa: The Thalesians' Time Series Analysis library (TSA)
 
 ## Installation
 
@@ -11,6 +11,8 @@ Please note that this is a very young library and the interfaces are in flux and
 ## Please help us develop and grow thalesians.tsa!
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=H8EVMMSLPVXFN)
+
+This library is based on the efforts of our staff, members, and volunteers. We are keen to make it serve you and your organisation, increase its scope and improve its quality user-friendliness. This takes a lot of effort. We couldn't do this without you, so we are asking for your help. Please consider making a donation.
 
 ## Overview
 
