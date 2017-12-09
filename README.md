@@ -14,6 +14,17 @@ Please note that this is a very young library and the interfaces are in flux and
 
 This library is based on the efforts of our staff, members, and volunteers. We are keen to make it serve you and your organisation, increase its scope and improve its quality user-friendliness. This takes a lot of effort. We couldn't do this without you, so we are asking for your help. Please consider making a donation. We will use this money to fund the development of this library. Thank you very much in advance on behalf of all the users and developers. To provide ongoing or organisational support, please contact us on info@thalesians.com.
 
+## Dedication
+
+Dedicated to the memory of some of the outstanding mathematicians, on some of whose work this library is based:
+* Leonhard Euler (1707 – 1783)
+* Kiyosi Itô (1915 – 2008)
+* Rudolf Emil Kálmán (1930 – 2016)
+* Andrey Kolmogorov (1903 - 1987)
+* Andrey Markov (1856 – 1922)
+* Gisiro Maruyama (1916 – 1986)
+* Norbert Wiener (1894 – 1964)
+
 ## Overview
 
 The Thalesians time series library is a heterogeneous collection of tools for facilitating efficient
