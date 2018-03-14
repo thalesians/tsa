@@ -3,6 +3,17 @@ import numpy as np
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.utils as utils
 
+def make_cov_2d(sd1, sd2, cor):
+    offdiag = cor*sd1*sd2
+    return np.array([[sd1*sd1, offdiag], [offdiag, sd2*sd2]])
+
+def make_vol_2d(sd1, sd2, cor):
+    return np.array([[sd1, 0.], [cor*sd2, np.sqrt(1. - cor*cor)*sd2]])
+
+def cov_to_vol(cov):
+    cov = npu.to_ndim_2(cov, ndim_1_to_col=True, copy=False)
+    return np.linalg.cholesky(cov)
+    
 def cor_to_cov(cors, vars=None, sds=None, copy=True):  # @ReservedAssignment
     assert (vars is None and sds is not None) or (vars is not None and sds is None)
     sds = np.sqrt(vars) if vars is not None else sds

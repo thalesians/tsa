@@ -7,6 +7,7 @@ import thalesians.tsa.checks as checks
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.numpychecks as npc
+import thalesians.tsa.stats as stats
 from thalesians.tsa.strings import ToStringHelper
 
 class Process(object):
@@ -213,11 +214,12 @@ class WienerProcess(SolvedItoMarkovProcess):
         
     @staticmethod
     def create_2d(mean1, mean2, sd1, sd2, cor):
-        return WienerProcess(npu.col(mean1, mean2), distrs.NormalDistr.make_vol_2d(sd1, sd2, cor))
+        return WienerProcess(npu.col(mean1, mean2), stats.make_vol_2d(sd1, sd2, cor))
     
     @staticmethod
     def create_from_cov(mean, cov):
-        return WienerProcess(mean, distrs.NormalDistr.make_vol_from_cov(cov))
+        vol = None if cov is None else stats.cov_to_vol(cov)
+        return WienerProcess(mean, vol)
     
     @property
     def mean(self):
@@ -316,8 +318,38 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         self._to_string_helper_OrnsteinUhlenbeckProcess = None
         self._str_OrnsteinUhlenbeckProcess = None
         
-        super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=lambda t, x: -np.dot(self._transition, x - self._mean), diffusion=lambda t, x: self._vol)
+        #super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=lambda t, x: -np.dot(self._transition, x - self._mean), diffusion=lambda t, x: self._vol)
+
+        def drft(t, x):
+            return -np.dot(self._transition, x - self._mean)
+
+        super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=drft, diffusion=lambda t, x: self._vol)
         
+    @staticmethod
+    def create_from_cov(transition=None, mean=None, cov=None):
+        vol = None if cov is None else stats.cov_to_vol(cov)
+        return OrnsteinUhlenbeckProcess(transition, mean, vol)
+
+    @staticmethod
+    def create_multiscale_from_vol(transition_vector, mean, vol):
+        transition_vector = npu.to_ndim_2(transition_vector, ndim_1_to_col=True, copy=False)
+        npc.check_col(transition_vector)
+        process_dim = np.size(transition_vector)
+        transition = np.zeros((process_dim, process_dim))
+        checks.check_some_number(mean)
+        mean_vector = np.zeros((process_dim, 1))
+        mean_vector[0, 0] = mean
+        mean_vector[1, 0] = mean
+        for i in range(process_dim):
+            transition[(i, i)] = transition_vector[i]
+            if i < process_dim - 1: transition[(i+1, i)] = -transition_vector[i+1]
+        return OrnsteinUhlenbeckProcess(transition, mean_vector, vol)
+
+    @staticmethod
+    def create_multiscale_from_cov(transition_vector, cov):
+        vol = None if cov is None else stats.cov_to_vol(cov)
+        return create_multiscale_from_vol(transition, mean, vol)
+    
     @property
     def transition(self):
         return self._transition
@@ -343,9 +375,9 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         return self._cached_mean_reversion_factor_squared
         
     def noise_covariance(self, time_delta):
-        mrfsquared = self.mean_reversion_factor_squared(time_delta)
-        eyeminusmrfsquared = np.eye(self.process_dim) - mrfsquared
-        return npu.unvec(np.dot(np.dot(self._transition_x_2_inverse, eyeminusmrfsquared), self._cov_vec), self.process_dim)
+        mrf_squared = self.mean_reversion_factor_squared(time_delta)
+        eye_minus_mrf_squared = np.eye(self.process_dim * self.process_dim) - mrf_squared
+        return npu.unvec(np.dot(np.dot(self._transition_x_2_inverse, eye_minus_mrf_squared), self._cov_vec), self.process_dim)
         
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
@@ -353,16 +385,16 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
         mrf = self.mean_reversion_factor(time_delta)
-        eyeminusmrf = np.eye(self.process_dim) - mrf
-        m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self._mean)
+        eye_minus_mrf = np.eye(self.process_dim) - mrf
+        m = np.dot(mrf, value0) + np.dot(eye_minus_mrf, self._mean)
         c = self.noise_covariance(time_delta)
         return m + np.dot(np.linalg.cholesky(c), variate)
         
     def _propagate_distr_impl(self, time_delta, distr0):
         value0 = distr0.mean
         mrf = self.mean_reversion_factor(time_delta)
-        eyeminusmrf = np.eye(self.process_dim) - mrf
-        m = np.dot(mrf, value0) + np.dot(eyeminusmrf, self._mean)
+        eye_minus_mrf = np.eye(self.process_dim) - mrf
+        m = np.dot(mrf, value0) + np.dot(eye_minus_mrf, self._mean)
         c = np.dot(np.dot(mrf, distr0.cov), mrf.T) + self.noise_covariance(time_delta)
         return distrs.NormalDistr(mean=m, cov=c)
     

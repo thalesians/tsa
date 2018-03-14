@@ -2,6 +2,7 @@ import numpy as np
 
 import thalesians.tsa.numpychecks as npc
 import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.stats as stats
 from thalesians.tsa.strings import ToStringHelper
 
 class Distr(object):
@@ -59,7 +60,6 @@ class NormalDistr(Distr):
         if self._cov is None and self._vol is None:
             self._cov = np.eye(self._dim)
             self._vol = np.eye(self._dim)
-            
         npc.check_col(self._mean)
         npc.check_nrow(self._mean, self._dim)
         if self._cov is not None:
@@ -77,20 +77,6 @@ class NormalDistr(Distr):
         
         super(NormalDistr, self).__init__()
         
-    @staticmethod
-    def make_cov_2d(sd1, sd2, cor):
-        offdiag = cor*sd1*sd2
-        return np.array([[sd1*sd1, offdiag], [offdiag, sd2*sd2]])
-    
-    @staticmethod
-    def make_vol_2d(sd1, sd2, cor):
-        return np.array([[sd1, 0.], [cor*sd2, np.sqrt(1. - cor*cor)*sd2]])
-    
-    @staticmethod
-    def make_vol_from_cov(cov):
-        cov = npu.to_ndim_2(cov, ndim_1_to_col=True, copy=False)
-        return np.linalg.cholesky(cov)
-    
     @property
     def dim(self):
         return self._dim
@@ -108,7 +94,7 @@ class NormalDistr(Distr):
     @property
     def vol(self):
         if self._vol is None:
-            self._vol = NormalDistr.make_vol_from_cov(self._cov)
+            self._vol = stats.cov_to_vol(self._cov)
         return self._vol
     
     def __eq__(self, other):
