@@ -114,7 +114,7 @@ def convert_df_columns(df, conversions, in_place=False):
     unfamiliar_columns = conversion_columns.difference(df.columns)
     assert len(unfamiliar_columns) == 0, 'Unfamiliar columns: %s' % str(unfamiliar_columns)
     for column, conversion in conversions.items():
-        df[column] = df[column].apply(conversion)
+        df[[column]] = df[[column]].apply(conversion)
     return df
 
 def detect_df_categorical_columns(df):
@@ -214,11 +214,11 @@ def sparsen(df, aggregator=mean_or_last,
             datetime = df[datetime].values
         temporals = datetime
     else:
-        if isinstance(date, str):
+        if checks.is_string(date) or checks.is_int(date):
             if exclude_original_temporal_columns: columns_to_exclude.add(date)
             if new_bucket_column is None and exclude_original_temporal_columns: new_bucket_column = date
             date = df[date].values
-        if isinstance(time, str):
+        if checks.is_string(time) or checks.is_int(time):
             if exclude_original_temporal_columns: columns_to_exclude.add(time)
             if new_bucket_column is None and exclude_original_temporal_columns: new_bucket_column = time
             time = df[time].values

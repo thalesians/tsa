@@ -73,8 +73,8 @@ class KalmanFilterObsModel(filtering.ObsModel):
         return str(self)
 
 class KalmanFilterState(filtering.FilterState):
-    def __init__(self, filter, time, is_posterior, state_distr):  # @ReservedAssignment
-        super().__init__(filter, time, is_posterior)
+    def __init__(self, filter, time, is_posterior, state_distr, filter_name=None):  # @ReservedAssignment
+        super().__init__(filter, time, is_posterior, filter_name)
         self._state_distr = state_distr
         self._to_string_helper_KalmanFilterState = None
         self._str_KalmanFilterState = None

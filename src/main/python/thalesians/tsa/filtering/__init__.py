@@ -17,11 +17,14 @@ import thalesians.tsa.utils as utils
 from docutils.writers.odf_odt import ToString
 
 class Obs(object):
-    def __init__(self, observable, time, distr):
+    def __init__(self, observable, time, distr, observable_name=None):
         self._observable = observable
-        self._observable_name = observable.name
-        self._filter = observable.filter
-        self._filter_name = self._filter.name
+        if observable_name is None:
+            self._observable_name = None if observable is None else observable.name
+        else:
+            self._observable_name = observable_name
+        self._filter = None if observable is None else observable.filter
+        self._filter_name = None if self._filter is None else self._filter.name
         self._time = time
         self._distr = distr
         self._to_string_helper_Obs = None
@@ -88,12 +91,12 @@ def _time_and_obs_distr(obs, time=None, filter_time=None):
         obs_distr = distrs.DiracDelta(obs)
         
     if time is None: time = filter_time + 1
-    
+
     return time, obs_distr
 
 class PredictedObs(Obs):
-    def __init__(self, obs_model, time, distr, cross_cov):
-        super().__init__(obs_model, time, distr)
+    def __init__(self, obs_model, time, distr, cross_cov, observable_name=None):
+        super().__init__(obs_model, time, distr, observable_name)
         self._cross_cov = cross_cov
         self._to_string_helper_PredictedObs = None
         self._str_PredictedObs = None
@@ -223,9 +226,12 @@ class Observable(objects.Named):
         return str(self)
     
 class FilterState(object):
-    def __init__(self, filter, time, is_posterior):  # @ReservedAssignment
+    def __init__(self, filter, time, is_posterior, filter_name=None):  # @ReservedAssignment
         self._filter = filter
-        self._filter_name = filter.name
+        if filter_name is None:
+            self._filter_name = None if filter is None else filter.name
+        else:
+            self._filter_name = filter_name
         self._time = time
         self._is_posterior = is_posterior
         self._to_string_helper_FilterState = None
@@ -273,9 +279,12 @@ class FilterState(object):
         return str(self)
     
 class TrueValue(object):
-    def __init__(self, filter, time, value):  # @ReservedAssignment
+    def __init__(self, filter, time, value, filter_name=None):  # @ReservedAssignment
         self._filter = filter
-        self._filter_name = filter.name
+        if filter_name is not None:
+            self._filter_name = None if filter is None else filter.name
+        else:
+            self._filter_name = filter_name
         self._time = time
         self._value = value
         self._to_string_helper_TrueValue = None
@@ -330,13 +339,20 @@ class FilterPypeOptions(enum.Enum):
     
 def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=None, fun=None, return_df=False):
     if df is not None:
-        if obss is not None and checks.is_string(obss):
-            obss = df[obss].values
-        if times is not None and checks.is_string(times):
+        if obss is not None and (checks.is_string(obss) or checks.is_int(obss)):
+            obss = df[obss]
+
+        if times is None:
+            if isinstance(obss, pd.Series): times = obss.index.values
+        elif (checks.is_string(times) or checks.is_int(times)):
             times = df[times].values
-        if obs_covs is not None and checks.is_string(obs_covs):
+
+        if isinstance(obss, pd.Series): obss = obss.values
+
+        if obs_covs is not None and (checks.is_string(obs_covs) or checks.is_int(obs_covs)):
             obs_covs = df[obs_covs].values
-        if true_values is not None and checks.is_string(true_values):
+
+        if true_values is not None and (checks.is_string(true_values) or checks.is_int(true_values)):
             true_values = df[true_values].values
             
     checks.check_not_none(obss)
@@ -351,6 +367,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
     
     if return_df:
         time = []
+        observable_name = []
         accepted = []
         obs_mean = []
         obs_cov = []
@@ -362,9 +379,17 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
         prior_state_cov = []
         posterior_state_mean = []
         posterior_state_cov = []
+        true_value = []
         log_likelihood = []
+
+    last_time = None
         
     for an_observable, an_obs, a_time, an_obs_cov, a_true_value in zip(observable, obss, times, obs_covs, true_values):
+        if a_time is None:
+            if last_time is None: a_time = 0
+            else: a_time = last_time + 1
+        last_time = a_time
+
         if checks.is_callable(an_observable): an_observable = an_observable(an_obs)
         if fun is not None: an_obs = fun(an_obs)
         if an_obs_cov is not None:
@@ -376,6 +401,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             an_initial_state_mean = an_observable.filter.state.state_distr.mean
             an_initial_state_cov = an_observable.filter.state.state_distr.cov
             time.append(an_observable.filter.time)
+            observable_name.append(None)
             accepted.append(None)
             obs_mean.append(None)
             obs_cov.append(None)
@@ -387,6 +413,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             prior_state_cov.append(npu.to_scalar(an_initial_state_cov, raise_value_error=False))
             posterior_state_mean.append(npu.to_scalar(an_initial_state_mean, raise_value_error=False))
             posterior_state_cov.append(npu.to_scalar(an_initial_state_cov, raise_value_error=False))
+            true_value.append(None)
             log_likelihood.append(None)
         
         if isinstance(an_obs, Obs):
@@ -401,6 +428,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
         
         if return_df:
             time.append(obs_result.obs.time)
+            observable_name.append(an_observable.name)
             accepted.append(obs_result.accepted)
             obs_mean.append(npu.to_scalar(obs_result.obs.distr.mean, raise_value_error=False))
             obs_cov.append(npu.to_scalar(obs_result.obs.distr.cov, raise_value_error=False))
@@ -412,11 +440,13 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             prior_state_cov.append(npu.to_scalar(a_prior_state_cov, raise_value_error=False))
             posterior_state_mean.append(npu.to_scalar(a_posterior_state_mean, raise_value_error=False))
             posterior_state_cov.append(npu.to_scalar(a_posterior_state_cov, raise_value_error=False))
+            true_value.append(npu.to_scalar(a_true_value, raise_value_error=False))
             log_likelihood.append(npu.to_scalar(obs_result.log_likelihood, raise_value_error=False))
     
     if return_df:
         return pd.DataFrame({
             'time': time,
+            'observable_name': observable_name,
             'accepted': accepted,
             'obs_mean': obs_mean,
             'obs_cov': obs_cov,
@@ -428,9 +458,10 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             'prior_state_cov': prior_state_cov,
             'posterior_state_mean': prior_state_mean,
             'posterior_state_cov': prior_state_cov,
+            'true_value': true_value,
             'log_likelihood': log_likelihood},
-            columns=('time', 'accepted', 'obs_mean', 'obs_cov', 'predicted_obs_mean', 'predicted_obs_cov', 'innov_mean',
+            columns=('time', 'observable_name', 'accepted', 'obs_mean', 'obs_cov', 'predicted_obs_mean', 'predicted_obs_cov', 'innov_mean',
                      'innov_cov', 'prior_state_mean', 'prior_state_cov', 'posterior_state_mean', 'posterior_state_cov',
-                     'log_likelihood'))
+                     'true_value', 'log_likelihood'))
 
     return obs_result
