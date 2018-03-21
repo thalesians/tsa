@@ -188,7 +188,7 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
         self._auto_refresh = False
 
         try:
-            for i in df.index:
+            for i in range(len(df)):
                 time = df.iloc[i]['time']
                 observable_name = df.iloc[i]['observable_name']
                 accepted = df.iloc[i]['accepted']
