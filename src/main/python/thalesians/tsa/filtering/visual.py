@@ -226,7 +226,8 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
 
 class StatePlot(FilteringPlot):
     def __init__(self, fig=None, ax=None, auto_refresh=True,
-                 title=None, filter_name=None, is_posterior=False, plot_true_values=True,
+                 title=None, filter_name=None, is_posterior=False,
+                 plot_true_values=True, plot_obs_results=True,
                  state_indices=None, state_labels=None,
                  observable_names=None, obs_indices=None, obs_labels=None,
                  state_colours=_default_state_colours,
@@ -237,7 +238,7 @@ class StatePlot(FilteringPlot):
         
         super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh, title=title, filter_name=filter_name,
                 process_prior_filter_states=not is_posterior, process_posterior_filter_states=is_posterior,
-                process_true_values=plot_true_values, process_obs_results=True,
+                process_true_values=plot_true_values, process_obs_results=plot_obs_results,
                 state_indices=state_indices, state_labels=state_labels,
                 observable_names=observable_names, obs_indices=obs_indices, obs_labels=obs_labels,
                 state_colours=state_colours, true_value_colours=true_value_colours, obs_colours=obs_colours,
