@@ -184,38 +184,45 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
             elif raise_value_error: raise ValueError('Unable to process a filter object: %s' % str(obj))
 
     def process_run_df(self, df):
-        for i in df.index:
-            time = df.iloc[i]['time']
-            observable_name = df.iloc[i]['observable_name']
-            accepted = df.iloc[i]['accepted']
-            obs_mean = df.iloc[i]['obs_mean']
-            obs_cov = df.iloc[i]['obs_cov']
-            predicted_obs_mean = df.iloc[i]['predicted_obs_mean']
-            predicted_obs_cov = df.iloc[i]['predicted_obs_cov']
-            innov_mean = df.iloc[i]['innov_mean']
-            innov_cov = df.iloc[i]['innov_cov']
-            prior_state_mean = df.iloc[i]['prior_state_mean']
-            prior_state_cov = df.iloc[i]['prior_state_cov']
-            posterior_state_mean = df.iloc[i]['posterior_state_mean']
-            posterior_state_cov = df.iloc[i]['posterior_state_cov']
-            true_value = df.iloc[i]['true_value']
-            log_likelihood = df.iloc[i]['log_likelihood']
+        auto_refresh = self._auto_refresh
+        self._auto_refresh = False
 
-            # TODO Use an appropriate FilterState, it doesn't have to be KalmanFilterState
-            prior_filter_state_object = kalman.KalmanFilterState(None, time, False, N(prior_state_mean, prior_state_cov), self._filter_name)
-            # TODO Use an appropriate FilterState, it doesn't have to be KalmanFilterState
-            posterior_filter_state_object = kalman.KalmanFilterState(None, time, True, N(posterior_state_mean, posterior_state_cov), self._filter_name)
-            true_value_object = filtering.TrueValue(None, time, true_value, self._filter_name)
-            obs = filtering.Obs(None, time, N(obs_mean, obs_cov), observable_name)
-            # TODO Include cross_cov
-            predicted_obs = filtering.PredictedObs(None, time, N(predicted_obs_mean, predicted_obs_cov), None, observable_name)
-            innov_distr = N(innov_mean, innov_cov)
-            obs_result_object = filtering.ObsResult(accepted, obs, predicted_obs, innov_distr, log_likelihood)
+        try:
+            for i in df.index:
+                time = df.iloc[i]['time']
+                observable_name = df.iloc[i]['observable_name']
+                accepted = df.iloc[i]['accepted']
+                obs_mean = df.iloc[i]['obs_mean']
+                obs_cov = df.iloc[i]['obs_cov']
+                predicted_obs_mean = df.iloc[i]['predicted_obs_mean']
+                predicted_obs_cov = df.iloc[i]['predicted_obs_cov']
+                innov_mean = df.iloc[i]['innov_mean']
+                innov_cov = df.iloc[i]['innov_cov']
+                prior_state_mean = df.iloc[i]['prior_state_mean']
+                prior_state_cov = df.iloc[i]['prior_state_cov']
+                posterior_state_mean = df.iloc[i]['posterior_state_mean']
+                posterior_state_cov = df.iloc[i]['posterior_state_cov']
+                true_value = df.iloc[i]['true_value']
+                log_likelihood = df.iloc[i]['log_likelihood']
 
-            self.process_filter_object(prior_filter_state_object)
-            self.process_filter_object(posterior_filter_state_object)
-            if true_value is not None: self.process_filter_object(true_value_object)
-            if obs_mean is not None: self.process_filter_object(obs_result_object)
+                # TODO Use an appropriate FilterState, it doesn't have to be KalmanFilterState
+                prior_filter_state_object = kalman.KalmanFilterState(None, time, False, N(prior_state_mean, prior_state_cov), self._filter_name)
+                # TODO Use an appropriate FilterState, it doesn't have to be KalmanFilterState
+                posterior_filter_state_object = kalman.KalmanFilterState(None, time, True, N(posterior_state_mean, posterior_state_cov), self._filter_name)
+                true_value_object = filtering.TrueValue(None, time, true_value, self._filter_name)
+                obs = filtering.Obs(None, time, N(obs_mean, obs_cov), observable_name)
+                # TODO Include cross_cov
+                predicted_obs = filtering.PredictedObs(None, time, N(predicted_obs_mean, predicted_obs_cov), None, observable_name)
+                innov_distr = N(innov_mean, innov_cov)
+                obs_result_object = filtering.ObsResult(accepted, obs, predicted_obs, innov_distr, log_likelihood)
+
+                self.process_filter_object(prior_filter_state_object)
+                self.process_filter_object(posterior_filter_state_object)
+                if true_value is not None: self.process_filter_object(true_value_object)
+                if obs_mean is not None: self.process_filter_object(obs_result_object)
+        finally:
+            self.refresh()
+            self._auto_refresh = auto_refresh
 
 class StatePlot(FilteringPlot):
     def __init__(self, fig=None, ax=None, auto_refresh=True,
