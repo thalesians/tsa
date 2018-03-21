@@ -470,7 +470,8 @@ class LogLikelihoodPlot(FilteringPlot):
     def _process_obs_result_for_obs_index(self, obs_result, plot_offset, observable_name, obs_index):
         if self._last_obs_result is not obs_result:
             if self._cumulative:
-                self._log_likelihood += obs_result.log_likelihood
+                if not np.isnan(obs_result.log_likelihood):
+                    self._log_likelihood += obs_result.log_likelihood
             else:
                 self._log_likelihood = obs_result.log_likelihood
             self.append(obs_result.obs.time, self._log_likelihood, self._plot_index, refresh=False)
