@@ -230,9 +230,11 @@ class LivePlot(object):
             
     def _update_lim(self):
         if self._update_xlim:
+            minxs = [x for x in self._minx if (x is not None and not np.isnan(x))]
+            maxxs = [x for x in self._maxx if (x is not None and not np.isnan(x))]
             new_xlim = [
-                np.min([x for x in self._minx if (x is not None and not np.isnan(x))]),
-                np.max([x for x in self._maxx if (x is not None and not np.isnan(x))])
+                np.min(minxs) if len(minxs) > 0 else np.nan,
+                np.max(maxxs) if len(maxxs) > 0 else np.nan
                 ]
             if self._pad_left is not None: new_xlim[0] -= self._pad_left
             if self._pad_right is not None: new_xlim[1] += self._pad_right
@@ -242,9 +244,11 @@ class LivePlot(object):
             self._ax.set_xlim(new_xlim)
 
         if self._update_ylim:
+            minys = [y for y in self._miny if (y is not None and not np.isnan(y))]
+            maxys = [y for y in self._maxy if (y is not None and not np.isnan(y))]
             new_ylim = [
-                np.min([y for y in self._miny if (y is not None and not np.isnan(y))]),
-                np.max([y for y in self._maxy if (y is not None and not np.isnan(y))])
+                np.min(minys) if len(minys) > 0 else np.nan,
+                np.max(maxys) if len(maxys) > 0 else np.nan
                 ]
             if self._pad_bottom is not None: new_ylim[0] -= self._pad_bottom
             if self._pad_top is not None: new_ylim[1] += self._pad_top
