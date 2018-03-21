@@ -90,7 +90,13 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
             self._actual_obs_labels = []
         
     def _post_init_plots(self):
-        if len(self.ax.lines) > 0: self.ax.legend(loc='upper right')
+        labelled_lines_present = False
+        if len(self.ax.lines) > 0:
+            for line in self.ax.lines:
+                label = line.get_label()
+                if label is not None and not label.startswith('_line'):
+                    labelled_lines_present = True
+            if labelled_lines_present: self.ax.legend(loc='upper right')
         self.ax.set_title(self._title)
         
     def _init_state_and_true_value_plots_info(self, value):
