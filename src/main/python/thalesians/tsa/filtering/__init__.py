@@ -367,12 +367,15 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
     
     if return_df:
         time = []
+        filter_name = []
+        filter_type = []
         observable_name = []
         accepted = []
         obs_mean = []
         obs_cov = []
         predicted_obs_mean = []
         predicted_obs_cov = []
+        cross_cov = []
         innov_mean = []
         innov_cov = []
         prior_state_mean = []
@@ -381,6 +384,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
         posterior_state_cov = []
         true_value = []
         log_likelihood = []
+        gain = []
 
     last_time = None
         
@@ -401,12 +405,15 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             an_initial_state_mean = an_observable.filter.state.state_distr.mean
             an_initial_state_cov = an_observable.filter.state.state_distr.cov
             time.append(an_observable.filter.time)
+            filter_name.append(an_observable.filter.name)
+            filter_type.append(type(an_observable.filter))
             observable_name.append(None)
             accepted.append(None)
             obs_mean.append(None)
             obs_cov.append(None)
             predicted_obs_mean.append(None)
             predicted_obs_cov.append(None)
+            cross_cov.append(None)
             innov_mean.append(None)
             innov_cov.append(None)
             prior_state_mean.append(npu.to_scalar(an_initial_state_mean, raise_value_error=False))
@@ -415,6 +422,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             posterior_state_cov.append(npu.to_scalar(an_initial_state_cov, raise_value_error=False))
             true_value.append(None)
             log_likelihood.append(None)
+            gain.append(None)
         
         if isinstance(an_obs, Obs):
             a_time, _ = _time_and_obs_distr(an_obs, a_time, an_observable.filter.time)
@@ -428,12 +436,15 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
         
         if return_df:
             time.append(obs_result.obs.time)
+            filter_name.append(an_observable.filter.name)
+            filter_type.append(type(an_observable.filter))
             observable_name.append(an_observable.name)
             accepted.append(obs_result.accepted)
             obs_mean.append(npu.to_scalar(obs_result.obs.distr.mean, raise_value_error=False))
             obs_cov.append(npu.to_scalar(obs_result.obs.distr.cov, raise_value_error=False))
             predicted_obs_mean.append(npu.to_scalar(obs_result.predicted_obs.distr.mean, raise_value_error=False))
             predicted_obs_cov.append(npu.to_scalar(obs_result.predicted_obs.distr.cov, raise_value_error=False))
+            cross_cov.append(npu.to_scalar(obs_result.predicted_obs.cross_cov, raise_value_error=False))
             innov_mean.append(npu.to_scalar(obs_result.innov_distr.mean, raise_value_error=False))
             innov_cov.append(npu.to_scalar(obs_result.innov_distr.cov, raise_value_error=False))
             prior_state_mean.append(npu.to_scalar(a_prior_state_mean, raise_value_error=False))
@@ -442,16 +453,20 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             posterior_state_cov.append(npu.to_scalar(a_posterior_state_cov, raise_value_error=False))
             true_value.append(npu.to_scalar(a_true_value, raise_value_error=False))
             log_likelihood.append(npu.to_scalar(obs_result.log_likelihood, raise_value_error=False))
+            gain.append(obs_result.gain if hasattr(obs_result, 'gain') else None)
     
     if return_df:
         return pd.DataFrame({
             'time': time,
+            'filter_name': filter_name,
+            'filter_type': filter_type,
             'observable_name': observable_name,
             'accepted': accepted,
             'obs_mean': obs_mean,
             'obs_cov': obs_cov,
             'predicted_obs_mean': predicted_obs_mean,
             'predicted_obs_cov': predicted_obs_cov,
+            'cross_cov': cross_cov,
             'innov_mean': innov_mean,
             'innov_cov': innov_cov,
             'prior_state_mean': prior_state_mean,
@@ -459,9 +474,12 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             'posterior_state_mean': prior_state_mean,
             'posterior_state_cov': prior_state_cov,
             'true_value': true_value,
-            'log_likelihood': log_likelihood},
-            columns=('time', 'observable_name', 'accepted', 'obs_mean', 'obs_cov', 'predicted_obs_mean', 'predicted_obs_cov', 'innov_mean',
-                     'innov_cov', 'prior_state_mean', 'prior_state_cov', 'posterior_state_mean', 'posterior_state_cov',
-                     'true_value', 'log_likelihood'))
+            'log_likelihood': log_likelihood,
+            'gain': gain},
+            columns=('time', 'filter_name', 'filter_type', 'observable_name',
+                     'accepted', 'obs_mean', 'obs_cov', 'predicted_obs_mean', 'predicted_obs_cov', 'cross_cov',
+                     'innov_mean', 'innov_cov',
+                     'prior_state_mean', 'prior_state_cov', 'posterior_state_mean', 'posterior_state_cov',
+                     'true_value', 'log_likelihood', 'gain'))
 
     return obs_result

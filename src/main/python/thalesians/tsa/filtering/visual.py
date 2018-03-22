@@ -215,17 +215,21 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
                 prior_filter_state_object = kalman.KalmanFilterState(None, time, False, N(prior_state_mean, prior_state_cov), self._filter_name)
                 # TODO Use an appropriate FilterState, it doesn't have to be KalmanFilterState
                 posterior_filter_state_object = kalman.KalmanFilterState(None, time, True, N(posterior_state_mean, posterior_state_cov), self._filter_name)
-                true_value_object = filtering.TrueValue(None, time, true_value, self._filter_name)
-                obs = filtering.Obs(None, time, N(obs_mean, obs_cov), observable_name)
-                # TODO Include cross_cov
-                predicted_obs = filtering.PredictedObs(None, time, N(predicted_obs_mean, predicted_obs_cov), None, observable_name)
-                innov_distr = N(innov_mean, innov_cov)
-                obs_result_object = filtering.ObsResult(accepted, obs, predicted_obs, innov_distr, log_likelihood)
 
                 self.process_filter_object(prior_filter_state_object)
                 self.process_filter_object(posterior_filter_state_object)
-                if true_value is not None: self.process_filter_object(true_value_object)
-                if obs_mean is not None: self.process_filter_object(obs_result_object)
+
+                # Need the following check to skip the initial state row, which
+                # may be present in the DataFrame:
+                if not (i == 0 and observable_name is None):
+                    true_value_object = filtering.TrueValue(None, time, true_value, self._filter_name)
+                    obs = filtering.Obs(None, time, N(obs_mean, obs_cov), observable_name)
+                    # TODO Include cross_cov
+                    predicted_obs = filtering.PredictedObs(None, time, N(predicted_obs_mean, predicted_obs_cov), None, observable_name)
+                    innov_distr = N(innov_mean, innov_cov)
+                    obs_result_object = filtering.ObsResult(accepted, obs, predicted_obs, innov_distr, log_likelihood)
+                    if true_value is not None: self.process_filter_object(true_value_object)
+                    if obs_mean is not None: self.process_filter_object(obs_result_object)
         finally:
             self.refresh()
             self._auto_refresh = auto_refresh
@@ -307,6 +311,7 @@ class ErrorPlot(FilteringPlot):
         
         self._rms_calculator = stats.OnlineStatsCalculator() if rmse else None 
 
+        self._last_filter_state = None
         self._last_true_value = None
         
         self._state_error_plot_indices = []
@@ -317,14 +322,22 @@ class ErrorPlot(FilteringPlot):
         
     def _process_filter_state_for_state_index(self, filter_state, plot_offset, state_index):
         if self._last_true_value is not None and self._last_true_value.time == filter_state.time:
-            error = self._last_true_value.value[state_index] - filter_state.state_distr.mean[state_index]
-            if self._rms_calculator is not None:
-                self._rms_calculator.add(error)
-                error = self._rms_calculator.rms
-            self.append(filter_state.time, error, self._state_error_plot_indices[plot_offset], refresh=False)
-        
+            self._process_error_for_state_index(self._last_true_value, filter_state, plot_offset, state_index)
+        else:
+            if self._last_filter_state is not filter_state: self._last_filter_state = filter_state
+
     def _process_true_value_for_state_index(self, true_value, plot_offset, state_index):
-        if self._last_true_value is not true_value: self._last_true_value = true_value
+        if self._last_filter_state is not None and self._last_filter_state.time == true_value.time:
+            self._process_error_for_state_index(true_value, self._last_filter_state, plot_offset, state_index)
+        else:
+            if self._last_true_value is not true_value: self._last_true_value = true_value
+
+    def _process_error_for_state_index(self, true_value, filter_state, plot_offset, state_index):
+        error = true_value.value[state_index] - filter_state.state_distr.mean[state_index]
+        if self._rms_calculator is not None:
+            self._rms_calculator.add(error)
+            error = self._rms_calculator.rms
+        self.append(filter_state.time, error, self._state_error_plot_indices[plot_offset], refresh=False)
         
 class ObsPlot(FilteringPlot):
     def __init__(self, fig=None, ax=None, auto_refresh=True,
