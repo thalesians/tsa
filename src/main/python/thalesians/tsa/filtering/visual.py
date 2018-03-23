@@ -202,6 +202,7 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
                 obs_cov = df.iloc[i]['obs_cov']
                 predicted_obs_mean = df.iloc[i]['predicted_obs_mean']
                 predicted_obs_cov = df.iloc[i]['predicted_obs_cov']
+                cross_cov = df.iloc[i]['cross_cov']
                 innov_mean = df.iloc[i]['innov_mean']
                 innov_cov = df.iloc[i]['innov_cov']
                 prior_state_mean = df.iloc[i]['prior_state_mean']
@@ -210,6 +211,7 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
                 posterior_state_cov = df.iloc[i]['posterior_state_cov']
                 true_value = df.iloc[i]['true_value']
                 log_likelihood = df.iloc[i]['log_likelihood']
+                gain = df.iloc[i]['gain']
 
                 # TODO Use an appropriate FilterState, it doesn't have to be KalmanFilterState
                 prior_filter_state_object = kalman.KalmanFilterState(None, time, False, N(prior_state_mean, prior_state_cov), self._filter_name)
@@ -224,10 +226,10 @@ class FilteringPlot(thalesians.tsa.visual.LivePlot):
                 if not (i == 0 and observable_name is None):
                     true_value_object = filtering.TrueValue(None, time, true_value, self._filter_name)
                     obs = filtering.Obs(None, time, N(obs_mean, obs_cov), observable_name)
-                    # TODO Include cross_cov
-                    predicted_obs = filtering.PredictedObs(None, time, N(predicted_obs_mean, predicted_obs_cov), None, observable_name)
+                    predicted_obs = filtering.PredictedObs(None, time, N(predicted_obs_mean, predicted_obs_cov), cross_cov, observable_name)
                     innov_distr = N(innov_mean, innov_cov)
-                    obs_result_object = filtering.ObsResult(accepted, obs, predicted_obs, innov_distr, log_likelihood)
+                    # TODO Use an appropriate ObsResult, it doesn't have to be KalmanObsResult
+                    obs_result_object = kalman.KalmanObsResult(accepted, obs, predicted_obs, innov_distr, log_likelihood, gain)
                     if true_value is not None: self.process_filter_object(true_value_object)
                     if obs_mean is not None: self.process_filter_object(obs_result_object)
         finally:
@@ -455,7 +457,8 @@ class CUSUMPlot(FilteringPlot):
         
 class LogLikelihoodPlot(FilteringPlot):
     def __init__(self, fig=None, ax=None, auto_refresh=True,
-                 title='log-likelihood', filter_name=None, cumulative=True,
+                 title='log-likelihood', filter_name=None,
+                 cumulative=True,
                  observable_names=None, obs_colours=_default_obs_colours, 
                  *args, **kwargs):
         
@@ -499,7 +502,9 @@ class LogLikelihoodPlot(FilteringPlot):
 class GainPlot(FilteringPlot):
     def __init__(self, fig=None, ax=None, auto_refresh=True,
                  title='gain', filter_name=None,
-                 observable_names=None, obs_colours=_default_obs_colours, 
+                 matrix_norm=False,
+                 state_indices=None, state_labels=None, observable_names=None, obs_indices=None, obs_labels=None,
+                 state_colours=_default_state_colours, obs_colours=_default_obs_colours,
                  *args, **kwargs):
         
         if observable_names is not None:
@@ -509,28 +514,55 @@ class GainPlot(FilteringPlot):
             obs_indices = None
             obs_labels = None
         
-        super().__init__(fig=fig, ax=ax, title=title, auto_refresh=auto_refresh,
+        super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh, title=title,
                 filter_name=filter_name,
-                process_prior_filter_states=False, process_posterior_filter_states=False, process_true_values=False,
+                process_prior_filter_states=True, process_posterior_filter_states=False, process_true_values=False,
                 process_obs_results=True,
-                state_indices=[], state_labels=[],
+                state_indices=state_indices, state_labels=state_labels,
                 observable_names=observable_names, obs_indices=obs_indices, obs_labels=obs_labels,
-                state_colours=None, true_value_colours=None, obs_colours=obs_colours,
+                state_colours=state_colours, true_value_colours=None, obs_colours=obs_colours,
                 *args, **kwargs)
 
-        self._plot_index = None
+        self._matrix_norm = matrix_norm
+
         self._last_obs_result = None
-        
+
+        self._state_plot_properties = []
+        self._obs_plot_indices = []
+        self._plot_index = None
+
+    def _init_state_and_true_value_plots_for_state_index(self, plot_offset, state_index, state_label, state_colour, true_value_colour):
+        if not self._matrix_norm:
+            self._state_plot_properties.append({
+                    'plot_offset': plot_offset,
+                    'state_index': state_index,
+                    'state_label': state_label,
+                    'state_colour': state_colour})
+
     def _init_obs_plots_for_obs_index(self, plot_offset, observable_name, obs_index, obs_label, obs_colour):
-        if self._plot_index is None:
-            self._plot_index = len(self.ax.lines)
-            self.ax.plot([], [], color=obs_colour, linestyle='solid')
-    
+        if not self._matrix_norm:
+            self._obs_plot_indices.append(len(self.ax.lines))
+            for spp in self._state_plot_properties:
+                self.ax.plot([], [], color=spp['state_colour'], linestyle='solid', marker='o', markerfacecolor=obs_colour, label='%s %s' % (obs_label, spp['state_label']))
+        else:
+            if self._plot_index is None:
+                self._plot_index = len(self.ax.lines)
+                self.ax.plot([], [], color=obs_colour, linestyle='solid')
+
+    def _process_filter_state_for_state_index(self, filter_state, plot_offset, state_index):
+        pass
+
     def _process_obs_result_for_obs_index(self, obs_result, plot_offset, observable_name, obs_index):
         if self._last_obs_result is not obs_result:
-            if hasattr(obs_result, 'gain'):
-                gain = np.linalg.norm(obs_result.gain)
-                self.append(obs_result.obs.time, gain, self._plot_index, refresh=False)
+            if hasattr(obs_result, 'gain') and obs_result.gain is not None:
+                if not self._matrix_norm:
+                    obs_plot_index = self._obs_plot_indices[plot_offset]
+                    for spp in self._state_plot_properties:
+                        self.append(obs_result.obs.time, obs_result.gain[spp['state_index'], obs_index], obs_plot_index, refresh=False)
+                        obs_plot_index += 1
+                else:
+                    gain = np.linalg.norm(obs_result.gain)
+                    self.append(obs_result.obs.time, gain, self._plot_index, refresh=False)
                 self._last_obs_result = obs_result
         
 class InnovationQQPlot(thalesians.tsa.visual.LivePlot):
