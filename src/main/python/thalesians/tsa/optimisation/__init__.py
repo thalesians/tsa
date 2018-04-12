@@ -41,8 +41,6 @@ class GridSearchOutput(object):
         self._param_ranges = param_ranges
         self._optimisation_id = optimisation_id
         self._evaluation_statuses = evaluation_statuses
-        self._to_string_helper_GridSearchOutput = None
-        self._str_GridSearchOutput = None
 
     @property
     def param_ranges(self):
@@ -57,16 +55,13 @@ class GridSearchOutput(object):
         return self._evaluation_statuses
 
     def to_string_helper(self):
-        if self._to_string_helper_GridSearchOutput is None:
-            self._to_string_helper_GridSearchOutput = ToStringHelper(self) \
+        return ToStringHelper(self) \
                     .add('param_ranges', self._param_ranges) \
                     .add('optimisation_id', self._optimisation_id) \
                     .add('evaluation_statuses', self._evaluation_statuses)
-        return self._to_string_helper_GridSearchOutput
     
     def __str__(self):
-        if self._str_GridSearchOutput is None: self._str_GridSearchOutput = self.to_string_helper().to_string()
-        return self._str_GridSearchOutput
+        return self.to_string_helper().to_string()
 
     def __repr__(self):
         return str(self)
