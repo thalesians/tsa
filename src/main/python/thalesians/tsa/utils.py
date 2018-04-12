@@ -6,6 +6,9 @@ import operator
 
 import thalesians.tsa.intervals as intervals
 
+def sequence_eq(sequence1, sequence2):
+    return len(sequence1) == len(sequence2) and all(map(operator.eq, sequence1, sequence2))
+
 def cmp(x, y):
     return (x > y) - (x < y)
 
