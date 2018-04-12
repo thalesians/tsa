@@ -1,0 +1,124 @@
+import collections as col
+import copy
+import uuid
+
+import thalesians.tsa.checks as checks
+import thalesians.tsa.evaluation as evaluation
+from thalesians.tsa.strings import ToStringHelper
+import thalesians.tsa.utils as utils
+
+def _param_names_and_values_to_args_and_kwargs(param_names, param_values):
+    args = []
+    kwargs = col.OrderedDict()
+    for pn, pv in zip(param_names, param_values):
+        if checks.is_int(pn):
+            utils.pad_on_right(args, pn + 1, padding=None, in_place=True)
+            args[pn] = pv
+        else:
+            kwargs[pn] = pv
+    return args, kwargs
+
+def _evaluate(func, param_ranges, param_names, param_value_indices,
+        optimisation_id, work_id, call_count, repeat_count, evaluator,
+        pype):
+    param_values = [param_ranges[pn][param_value_indices[i]] for i, pn in enumerate(param_names)]
+    args, kwargs = _param_names_and_values_to_args_and_kwargs(param_names, param_values)
+    info = {
+            'param_ranges': param_ranges,
+            'param_names': param_names,
+            'param_value_indices': param_value_indices,
+            'optimisation_id': optimisation_id,
+            'work_id': work_id
+        }
+    status = evaluation.evaluate(func, args, kwargs,
+            work_id=work_id, call_count=call_count, repeat_count=repeat_count, evaluator=evaluator,
+            info=info)
+    if pype is not None: pype.send(status)
+    return status
+
+class GridSearchOutput(object):
+    def __init__(self, param_ranges, optimisation_id, evaluation_statuses):
+        self._param_ranges = param_ranges
+        self._optimisation_id = optimisation_id
+        self._evaluation_statuses = evaluation_statuses
+        self._to_string_helper_GridSearchOutput = None
+        self._str_GridSearchOutput = None
+
+    @property
+    def param_ranges(self):
+        return self._param_ranges
+
+    @property
+    def optimisation_id(self):
+        return self._optimisation_id
+
+    @property
+    def evaluation_statuses(self):
+        return self._evaluation_statuses
+
+    def to_string_helper(self):
+        if self._to_string_helper_GridSearchOutput is None:
+            self._to_string_helper_GridSearchOutput = ToStringHelper(self) \
+                    .add('param_ranges', self._param_ranges) \
+                    .add('optimisation_id', self._optimisation_id) \
+                    .add('evaluation_statuses', self._evaluation_statuses)
+        return self._to_string_helper_GridSearchOutput
+    
+    def __str__(self):
+        if self._str_GridSearchOutput is None: self._str_GridSearchOutput = self.to_string_helper().to_string()
+        return self._str_GridSearchOutput
+
+    def __repr__(self):
+        return str(self)
+
+def grid_search(func, param_ranges,
+        optimisation_id=None, work_id=None, call_count=1, repeat_count=1, evaluator=None,
+        pype=None):
+    param_ranges = copy.copy(param_ranges)
+    if optimisation_id is None: optimisation_id = uuid.uuid4().hex
+    if work_id is None: work_id = optimisation_id
+    if not checks.is_callable(work_id):
+        last_index = 0
+        def work_id_callable():
+            nonlocal last_index
+            last_index += 1
+            return last_index
+        work_id = work_id_callable
+
+    param_names = list(param_ranges)
+    param_value_indices = [0] * len(param_names)
+
+    evaluation_statuses = []
+
+    status = _evaluate(func, param_ranges, param_names, copy.copy(param_value_indices),
+            optimisation_id=optimisation_id, work_id=work_id(),
+            call_count=call_count, repeat_count=repeat_count,
+            evaluator=evaluator,
+            pype=pype)
+    evaluation_statuses.append(status)
+
+    while True:
+        altered_param = False
+        for param_index in range(len(param_names) - 1, -1, -1):
+            if param_value_indices[param_index] < len(param_ranges[param_names[param_index]]) - 1:
+                param_value_indices[param_index] += 1
+                altered_param = True
+                for param_index1 in range(param_index + 1, len(param_names)):
+                    param_value_indices[param_index1] = 0
+
+                status = _evaluate(func, param_ranges, param_names, copy.copy(param_value_indices),
+                        optimisation_id=optimisation_id, work_id=work_id(),
+                        call_count=call_count, repeat_count=repeat_count,
+                        evaluator=evaluator,
+                        pype=pype)
+                evaluation_statuses.append(status)
+
+                break
+        if not altered_param: break
+
+    output = GridSearchOutput(
+            param_ranges=param_ranges,
+            optimisation_id=optimisation_id,
+            evaluation_statuses=evaluation_statuses)
+
+    return output
