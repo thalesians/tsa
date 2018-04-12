@@ -1,9 +1,19 @@
 import datetime as dt
+import warnings
 
 import numpy as np
 
 import thalesians.tsa.checks as checks
 import thalesians.tsa.utils as utils
+
+def init_warnings():
+    np.warnings.filterwarnings('ignore', message='Mean of empty slice')
+    warnings.filterwarnings('ignore', message='Warning: converting a masked element to nan.')
+
+def apply(func, arg, dtype=np.dtype('float64')):
+    result = np.empty(np.shape(arg), dtype=dtype)
+    result.flat[:] = [func(x) for x in arg.flat[:]]
+    return result
 
 def sign(arg):
     if isinstance(arg, dt.timedelta):
