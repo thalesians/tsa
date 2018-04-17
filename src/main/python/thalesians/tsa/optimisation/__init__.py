@@ -36,7 +36,7 @@ def _evaluate(func, param_ranges, param_names, param_value_indices,
     if pype is not None: pype.send(status)
     return status
 
-class GridSearchOutput(object):
+class GridSearchResult(object):
     def __init__(self, param_ranges, optimisation_id, evaluation_statuses):
         self._param_ranges = param_ranges
         self._optimisation_id = optimisation_id
@@ -111,9 +111,7 @@ def grid_search(func, param_ranges,
                 break
         if not altered_param: break
 
-    output = GridSearchOutput(
+    return GridSearchResult(
             param_ranges=param_ranges,
             optimisation_id=optimisation_id,
             evaluation_statuses=evaluation_statuses)
-
-    return output

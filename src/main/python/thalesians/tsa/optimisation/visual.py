@@ -1,4 +1,5 @@
 import itertools
+import time
 import warnings
 
 import numpy as np
@@ -15,16 +16,16 @@ def _aggregate(aggregate_func, data, empty_aggregate):
     else:
         return npu.apply(aggregate_func, data)
 
-def visualise_grid_search(grid_search_output,
+def visualise_grid_search(grid_search_result,
         aggregate_func=np.nanmean, empty_aggregate='none',
         fig=None, title=None,
         refresh_until_ready=False):
     if fig is None: fig = plt.figure()
 
-    if title is None: title = grid_search_output.optimisation_id
+    if title is None: title = grid_search_result.optimisation_id
     fig.suptitle(title)
 
-    param_names = list(grid_search_output.param_ranges.keys())
+    param_names = list(grid_search_result.param_ranges.keys())
 
     subplots = {}
     heatmaps = {}
@@ -32,10 +33,10 @@ def visualise_grid_search(grid_search_output,
 
     for i1 in range(len(param_names)):
         param_name1 = param_names[i1]
-        param_values1 = grid_search_output.param_ranges[param_name1]
+        param_values1 = grid_search_result.param_ranges[param_name1]
         for i2 in range(i1):
             param_name2 = param_names[i2]
-            param_values2 = grid_search_output.param_ranges[param_name2]
+            param_values2 = grid_search_result.param_ranges[param_name2]
             data = np.empty((len(param_values1), len(param_values2)), dtype=object)
             for i in range(np.size(data)): data.flat[i] = []
             datas[(i1, i2)] = data
@@ -43,9 +44,6 @@ def visualise_grid_search(grid_search_output,
             ax = fig.add_subplot(len(param_names) - 1, len(param_names) - 1, (i1 - 1) * (len(param_names) - 1) + i2 + 1)
             subplots[(i1, i2)] = ax
             
-            #initial_data = np.empty((len(param_values1), len(param_values2)))
-            #initial_data[:] = np.nan
-
             initial_data = _aggregate(aggregate_func, datas[(i1, i2)], empty_aggregate)
 
             heatmaps[(i1, i2)] = ax.matshow(npu.apply(aggregate_func, initial_data), cmap='coolwarm')
@@ -63,7 +61,7 @@ def visualise_grid_search(grid_search_output,
 
     while True:
         all_ready = True
-        for status in grid_search_output.evaluation_statuses:
+        for status in grid_search_result.evaluation_statuses:
             if not status.ready: all_ready = False
             else:
                 checks.check(utils.sequence_eq(param_names, status.work.info['param_names']))
@@ -91,5 +89,6 @@ def visualise_grid_search(grid_search_output,
                 fig.canvas.flush_events()
             except NotImplementedError:
                 fig.canvas.draw()
+            time.sleep(1)
 
     return fig
