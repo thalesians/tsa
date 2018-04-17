@@ -159,12 +159,12 @@ class ObsResult(object):
     
     def to_string_helper(self):
         if self._to_string_helper_ObsResult is None:
-            self._to_string_helper_ObsResult = ToStringHelper(self) ##\
-                    ##.add('accepted', self._accepted) \
-                    ##.add('obs', self._obs) \
-                    ##.add('predicted_obs', self._predicted_obs) \
-                    ##.add('innov_distr', self._innov_distr) \
-                    ##.add('log_likelihood', self._log_likelihood)
+            self._to_string_helper_ObsResult = ToStringHelper(self) \
+                    .add('accepted', self._accepted) \
+                    .add('obs', self._obs) \
+                    .add('predicted_obs', self._predicted_obs) \
+                    .add('innov_distr', self._innov_distr) \
+                    .add('log_likelihood', self._log_likelihood)
             return self._to_string_helper_ObsResult
         
     def __str__(self):
@@ -363,6 +363,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
     if not checks.is_iterable_not_string(true_values): true_values = utils.xconst(true_values)
     
     obs_result = None
+    cumulative_log_likelihood = 0.
     
     if return_df:
         time = []
@@ -430,6 +431,7 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
         a_prior_state_mean = an_observable.filter.state.state_distr.mean
         a_prior_state_cov = an_observable.filter.state.state_distr.cov
         obs_result = an_observable.observe(obs=an_obs, time=a_time, true_value=a_true_value, predicted_obs=predicted_obs)
+        if obs_result.accepted: cumulative_log_likelihood += obs_result.log_likelihood
         a_posterior_state_mean = an_observable.filter.state.state_distr.mean
         a_posterior_state_cov = an_observable.filter.state.state_distr.cov
         
@@ -481,4 +483,4 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
                      'prior_state_mean', 'prior_state_cov', 'posterior_state_mean', 'posterior_state_cov',
                      'true_value', 'log_likelihood', 'gain'))
 
-    return obs_result
+    return obs_result, cumulative_log_likelihood

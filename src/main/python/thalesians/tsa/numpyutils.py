@@ -8,6 +8,7 @@ import thalesians.tsa.utils as utils
 
 def init_warnings():
     np.warnings.filterwarnings('ignore', message='Mean of empty slice')
+    np.warnings.filterwarnings('ignore', message='All-NaN axis encountered')
     warnings.filterwarnings('ignore', message='Warning: converting a masked element to nan.')
 
 def apply(func, arg, dtype=np.dtype('float64')):

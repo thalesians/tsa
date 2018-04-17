@@ -9,7 +9,16 @@ import thalesians.tsa.checks as checks
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.utils as utils
 
-def visualise_grid_search(grid_search_output, aggregate_function=np.nanmean, fig=None, title=None, refresh_until_ready=False):
+def _aggregate(aggregate_func, data, empty_aggregate):
+    if empty_aggregate != 'none':
+        return npu.apply(lambda x: empty_aggregate if len(x) == 0 else aggregate_func(x), data)
+    else:
+        return npu.apply(aggregate_func, data)
+
+def visualise_grid_search(grid_search_output,
+        aggregate_func=np.nanmean, empty_aggregate='none',
+        fig=None, title=None,
+        refresh_until_ready=False):
     if fig is None: fig = plt.figure()
 
     if title is None: title = grid_search_output.optimisation_id
@@ -33,8 +42,13 @@ def visualise_grid_search(grid_search_output, aggregate_function=np.nanmean, fig
 
             ax = fig.add_subplot(len(param_names) - 1, len(param_names) - 1, (i1 - 1) * (len(param_names) - 1) + i2 + 1)
             subplots[(i1, i2)] = ax
-            initial_data = np.empty((len(param_values1), len(param_values2)))
-            heatmaps[(i1, i2)] = ax.matshow(npu.apply(np.nanmean, initial_data), cmap='coolwarm')
+            
+            #initial_data = np.empty((len(param_values1), len(param_values2)))
+            #initial_data[:] = np.nan
+
+            initial_data = _aggregate(aggregate_func, datas[(i1, i2)], empty_aggregate)
+
+            heatmaps[(i1, i2)] = ax.matshow(npu.apply(aggregate_func, initial_data), cmap='coolwarm')
 
             if i2 == i1 - 1:
                 ax.set_xticklabels([np.nan] + [0. if x == 1e-06 else x for x in param_values2], fontsize=6, rotation='vertical', verticalalignment='bottom')
@@ -58,8 +72,14 @@ def visualise_grid_search(grid_search_output, aggregate_function=np.nanmean, fig
                 for i1, i2 in param_value_index_combinations:
                     param_value_index1 = status.work.info['param_value_indices'][i1]
                     param_value_index2 = status.work.info['param_value_indices'][i2]
-                    datas[(i1, i2)][param_value_index1, param_value_index2].append(status.result.result)
-                    new_data = npu.apply(np.nanmean, datas[(i1, i2)])
+                    if status.result.exception is not None:
+                        result = np.nan
+                    elif status.result.result is None:
+                        result = np.nan
+                    else:
+                        result = status.result.result
+                    datas[(i1, i2)][param_value_index1, param_value_index2].append(result)
+                    new_data = _aggregate(aggregate_func, datas[(i1, i2)], empty_aggregate)
                     heatmaps[(i1, i2)].set_data(new_data)
                     heatmaps[(i1, i2)].autoscale()
         if (not refresh_until_ready) or all_ready: break
