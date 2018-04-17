@@ -335,7 +335,42 @@ class FilterPypeOptions(enum.Enum):
     POSTERIOR_STATE = 2
     OBS_RESULT = 3
     TRUE_VALUE = 4
+
+class FilterRunResult(object):
+    def __init__(self, last_obs_result, cumulative_log_likelihood, df):
+        self._last_obs_result = last_obs_result
+        self._cumulative_log_likelihood = cumulative_log_likelihood
+        self._df = df
+        self._to_string_helper_FilterRunResult = None
+        self._str_FilterRunResult = None
+
+    @property
+    def last_obs_result(self):
+        return self._last_obs_result
+
+    @property
+    def cumulative_log_likelihood(self):
+        return self._cumulative_log_likelihood
+
+    @property
+    def df(self):
+        return self._df
+
+    def to_string_helper(self):
+        if self._to_string_helper_FilterRunResult is None:
+            self._to_string_helper_FilterRunResult = ToStringHelper(self) \
+                    .add('last_obs_result', self._last_obs_result) \
+                    .add('cumulative_log_likelihood', self._cumulative_log_likelihood) \
+                    .add('df', self._df)
+        return self._to_string_helper_FilterRunResult
     
+    def __str__(self):
+        if self._str_FilterRunResult is None: self._str_FilterRunResult = self.to_string_helper().to_string()
+        return self._str_FilterRunResult
+    
+    def __repr__(self):
+        return str(self)
+
 def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=None, fun=None, return_df=False):
     if df is not None:
         if obss is not None and (checks.is_string(obss) or checks.is_int(obss)):
@@ -456,8 +491,9 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
             log_likelihood.append(npu.to_scalar(obs_result.log_likelihood, raise_value_error=False))
             gain.append(obs_result.gain if hasattr(obs_result, 'gain') else None)
     
+    df = None
     if return_df:
-        return pd.DataFrame({
+        df = pd.DataFrame({
             'time': time,
             'filter_name': filter_name,
             'filter_type': filter_type,
@@ -483,4 +519,4 @@ def run(observable, obss=None, times=None, obs_covs=None, true_values=None, df=N
                      'prior_state_mean', 'prior_state_cov', 'posterior_state_mean', 'posterior_state_cov',
                      'true_value', 'log_likelihood', 'gain'))
 
-    return obs_result, cumulative_log_likelihood
+    return FilterRunResult(obs_result, cumulative_log_likelihood, df)
