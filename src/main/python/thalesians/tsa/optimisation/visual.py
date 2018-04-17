@@ -79,9 +79,11 @@ def visualise_grid_search(grid_search_output,
                     else:
                         result = status.result.result
                     datas[(i1, i2)][param_value_index1, param_value_index2].append(result)
-                    new_data = _aggregate(aggregate_func, datas[(i1, i2)], empty_aggregate)
-                    heatmaps[(i1, i2)].set_data(new_data)
-                    heatmaps[(i1, i2)].autoscale()
+        for i1 in range(len(param_names)):
+            for i2 in range(i1):
+                new_data = _aggregate(aggregate_func, datas[(i1, i2)], empty_aggregate)
+                heatmaps[(i1, i2)].set_data(new_data)
+                heatmaps[(i1, i2)].autoscale()
         if (not refresh_until_ready) or all_ready: break
         else:
             fig.canvas.draw_idle()
