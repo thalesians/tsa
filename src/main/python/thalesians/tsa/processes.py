@@ -273,7 +273,7 @@ class WienerProcess(SolvedItoMarkovProcess):
         return str(self)
 
 class BrownianBridge(SolvedItoMarkovProcess):
-    def __init__(self, initial_value=None, final_value=None, initial_time=0., final_time=1.):
+    def __init__(self, initial_value=None, final_value=None, initial_time=0., final_time=1., vol=None):
         process_dim = 1
 
         self.__initial_value = None
@@ -288,14 +288,35 @@ class BrownianBridge(SolvedItoMarkovProcess):
             self.__initial_value = npu.col_of(process_dim, 0.)
         if self.__final_value is None:
             self.__final_value = npu.col_of(process_dim, 0.)
-        checks.check(np.size(self.__initial_value) == np.size(self.__final_value))
+
+        self.__vol = None
+        if vol is not None:
+            self.__vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self.__vol)
+        if self.__vol is None: self.__vol = np.eye(process_dim)
 
         self.__initial_time = initial_time
         self.__final_time = final_time
 
-        super(BrownianBridge, self).__init__(process_dim=process_dim, noise_dim=process_dim,
+        npc.check_col(self.__initial_value)
+        npc.check_col(self.__final_value)
+        npc.check_nrow(self.__initial_value, process_dim)
+        npc.check_nrow(self.__final_value, process_dim)
+        
+        noise_dim = npu.ncol(self.__vol)
+        self.__cov = np.dot(self.__vol, self.__vol.T)
+        
+        npu.make_immutable(self.__initial_value)
+        npu.make_immutable(self.__final_value)
+        npu.make_immutable(self.__vol)
+        npu.make_immutable(self.__cov)
+
+        self._to_string_helper_BrownianBridge = None
+        self._str_BrownianBridge = None
+
+        super(BrownianBridge, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
                 drift=lambda t, x: (self.__final_value - x) / (self.__final_time - t),
-                diffusion=lambda t, x: 1.)
+                diffusion=lambda t, x: self.__vol)
 
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
@@ -303,8 +324,9 @@ class BrownianBridge(SolvedItoMarkovProcess):
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
         mean = value0 + time_delta / (self.__final_time - time0) * (self.__final_value - value0)
-        cov = (time - time0) * (self.__final_time - time) / (self.__final_time - time0)
-        vol = np.sqrt(cov)
+        cov_factor = (time - time0) * (self.__final_time - time) / (self.__final_time - time0)
+        vol_factor = np.sqrt(cov_factor)
+        vol = vol_factor * self.__vol
         return mean + np.dot(vol, variate)
 
     def _propagate_distr_impl(self, time_delta, distr0):
@@ -323,16 +345,16 @@ class BrownianBridge(SolvedItoMarkovProcess):
         return not self.__eq__(other)
 
     def to_string_helper(self):
-        if self._to_string_helper_WienerProcess is None:
-            self._to_string_helper_WienerProcess = super().to_string_helper() \
+        if self._to_string_helper_BrownianBridge is None:
+            self._to_string_helper_BrownianBridge = super().to_string_helper() \
                     .set_type(self) \
                     .add('mean', self._mean) \
                     .add('vol', self._vol)
-        return self._to_string_helper_WienerProcess
+        return self._to_string_helper_BrownianBridge
 
     def __str__(self):
-        if self._str_WienerProcess is None: self._str_WienerProcess = self.to_string_helper().to_string()
-        return self._str_WienerProcess
+        if self._str_BrownianBridge is None: self._str_BrownianBridge = self.to_string_helper().to_string()
+        return self._str_BrownianBridge
     
     def __repr__(self):
         return str(self)
