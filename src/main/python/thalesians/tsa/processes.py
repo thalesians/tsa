@@ -272,6 +272,94 @@ class WienerProcess(SolvedItoMarkovProcess):
     def __repr__(self):
         return str(self)
 
+class GeometricBrownianMotion(SolvedItoMarkovProcess):
+    def __init__(self, mean=None, vol=None):
+        if mean is None and vol is None:
+            mean = 0.; vol = 1.
+        
+        self._mean, self._vol = None, None
+        
+        if mean is not None:
+            self._mean = npu.to_ndim_2(mean, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self._mean)
+        if vol is not None:
+            self._vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self._vol)
+        
+        if self._mean is None: self._mean = npu.col_of(process_dim, 0.)
+        if self._vol is None: self._vol = np.eye(process_dim)
+        
+        npc.check_col(self._mean)
+        npc.check_nrow(self._mean, process_dim)
+        npc.check_nrow(self._vol, process_dim)
+        
+        noise_dim = npu.ncol(self._vol)
+        self._cov = np.dot(self._vol, self._vol.T)
+        
+        npu.make_immutable(self._mean)
+        npu.make_immutable(self._vol)
+        npu.make_immutable(self._cov)
+        
+        self._to_string_helper_WienerProcess = None
+        self._str_WienerProcess = None
+        
+        super(GeometricBrownianMotion, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
+                drift=lambda t, x: self._mean * x,
+                diffusion=lambda t, x: x * self._vol)
+        
+    @staticmethod
+    def create_2d(mean1, mean2, sd1, sd2, cor):
+        return GeometricBrownianMotion(npu.col(mean1, mean2), stats.make_vol_2d(sd1, sd2, cor))
+    
+    @staticmethod
+    def create_from_cov(mean, cov):
+        vol = None if cov is None else stats.cov_to_vol(cov)
+        return GeometricBrownianMotion(mean, vol)
+    
+    @property
+    def mean(self):
+        return self._mean
+    
+    @property
+    def vol(self):
+        return self._vol
+    
+    @property
+    def cov(self):
+        return self._cov
+    
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
+        value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
+        time_delta = time - time0
+        return value0 * np.exp(
+                (self._mean - .5 * npu.col(*np.sum(self._vol**2, axis=1))) * time_delta + \
+                np.dot(self._vol, np.sqrt(time_delta) * variate))
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._mean == other._mean and self._vol == other._vol
+        return False
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def to_string_helper(self):
+        if self._to_string_helper_WienerProcess is None:
+            self._to_string_helper_WienerProcess = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('mean', self._mean) \
+                    .add('vol', self._vol)
+        return self._to_string_helper_WienerProcess
+
+    def __str__(self):
+        if self._str_WienerProcess is None: self._str_WienerProcess = self.to_string_helper().to_string()
+        return self._str_WienerProcess
+    
+    def __repr__(self):
+        return str(self)
+
 class BrownianBridge(SolvedItoMarkovProcess):
     def __init__(self, initial_value=None, final_value=None, initial_time=0., final_time=1., vol=None):
         process_dim = 1
@@ -330,6 +418,12 @@ class BrownianBridge(SolvedItoMarkovProcess):
         return mean + np.dot(vol, variate)
 
     def _propagate_distr_impl(self, time_delta, distr0):
+        mean = value0 + time_delta / (self.__final_time - time0) * (self.__final_value - value0)
+        cov_factor = (time - time0) * (self.__final_time - time) / (self.__final_time - time0)
+        vol_factor = np.sqrt(cov_factor)
+        vol = vol_factor * self.__vol
+
+        
         mean = distr0.mean + self._mean * time_delta
         cov = distr0.cov + time_delta * self._cov
         return distrs.NormalDistr(mean=mean, cov=cov)
