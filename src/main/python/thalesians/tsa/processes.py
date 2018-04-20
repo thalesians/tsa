@@ -42,7 +42,8 @@ class ItoProcess(Process):
         self._to_string_helper_ItoProcess = None
         self._str_ItoProcess = None
         
-        super(ItoProcess, self).__init__(process_dim=self._process_dim, noise_dim=self._noise_dim, drift=self._drift, diffusion=self._diffusion, **kwargs)
+        super(ItoProcess, self).__init__(process_dim=self._process_dim, noise_dim=self._noise_dim,
+                drift=self._drift, diffusion=self._diffusion, **kwargs)
         
     @property
     def process_dim(self):
@@ -80,7 +81,8 @@ class SolvedItoProcess(ItoProcess):
         self._to_string_helper_SolvedItoProcess = None
         self._str_SolvedItoProcess = None
 
-        super(SolvedItoProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=drift, diffusion=diffusion, **kwargs)
+        super(SolvedItoProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
+                drift=drift, diffusion=diffusion, **kwargs)
         
     def propagate(self, time, variate, time0, value0, state0=None):
         raise NotImplementedError()
@@ -148,7 +150,8 @@ class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
         self._to_string_helper_SolvedItoMarkovProcess = None
         self._str_SolvedItoMarkovProcess = None
         
-        super(SolvedItoMarkovProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=drift, diffusion=diffusion, **kwargs)
+        super(SolvedItoMarkovProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
+                drift=drift, diffusion=diffusion, **kwargs)
     
     def propagate(self, time, variate, time0, value0, state0=None):
         if self.noise_dim != self.process_dim:
@@ -210,7 +213,8 @@ class WienerProcess(SolvedItoMarkovProcess):
         self._to_string_helper_WienerProcess = None
         self._str_WienerProcess = None
         
-        super(WienerProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=lambda t, x: self._mean, diffusion=lambda t, x: self._vol)
+        super(WienerProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
+                drift=lambda t, x: self._mean, diffusion=lambda t, x: self._vol)
         
     @staticmethod
     def create_2d(mean1, mean2, sd1, sd2, cor):
@@ -253,6 +257,71 @@ class WienerProcess(SolvedItoMarkovProcess):
     def __ne__(self, other):
         return not self.__eq__(other)
     
+    def to_string_helper(self):
+        if self._to_string_helper_WienerProcess is None:
+            self._to_string_helper_WienerProcess = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('mean', self._mean) \
+                    .add('vol', self._vol)
+        return self._to_string_helper_WienerProcess
+
+    def __str__(self):
+        if self._str_WienerProcess is None: self._str_WienerProcess = self.to_string_helper().to_string()
+        return self._str_WienerProcess
+    
+    def __repr__(self):
+        return str(self)
+
+class BrownianBridge(SolvedItoMarkovProcess):
+    def __init__(self, initial_value=None, final_value=None, initial_time=0., final_time=1.):
+        process_dim = 1
+
+        self.__initial_value = None
+        self.__final_value = None
+        if initial_value is not None:
+            self.__initial_value = npu.to_ndim_2(initial_value, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self.__initial_value)
+        if final_value is not None:
+            self.__final_value = npu.to_ndim_2(final_value, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self.__final_value)
+        if self.__initial_value is None:
+            self.__initial_value = npu.col_of(process_dim, 0.)
+        if self.__final_value is None:
+            self.__final_value = npu.col_of(process_dim, 0.)
+        checks.check(np.size(self.__initial_value) == np.size(self.__final_value))
+
+        self.__initial_time = initial_time
+        self.__final_time = final_time
+
+        super(BrownianBridge, self).__init__(process_dim=process_dim, noise_dim=process_dim,
+                drift=lambda t, x: (self.__final_value - x) / (self.__final_time - t),
+                diffusion=lambda t, x: 1.)
+
+    def propagate(self, time, variate, time0, value0, state0=None):
+        if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
+        value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
+        time_delta = time - time0
+        mean = value0 + time_delta / (self.__final_time - time0) * (self.__final_value - value0)
+        cov = (time - time0) * (self.__final_time - time) / (self.__final_time - time0)
+        vol = np.sqrt(cov)
+        return mean + np.dot(vol, variate)
+
+    def _propagate_distr_impl(self, time_delta, distr0):
+        mean = distr0.mean + self._mean * time_delta
+        cov = distr0.cov + time_delta * self._cov
+        return distrs.NormalDistr(mean=mean, cov=cov)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__initial_value == other.__initial_value and \
+                    self.__final_value == other.__final_value and \
+                    self.__initial_time == other.__initial_time and \
+                    self.__final_time == other.__final_time
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def to_string_helper(self):
         if self._to_string_helper_WienerProcess is None:
             self._to_string_helper_WienerProcess = super().to_string_helper() \
@@ -318,12 +387,9 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         self._to_string_helper_OrnsteinUhlenbeckProcess = None
         self._str_OrnsteinUhlenbeckProcess = None
         
-        #super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=lambda t, x: -np.dot(self._transition, x - self._mean), diffusion=lambda t, x: self._vol)
-
-        def drft(t, x):
-            return -np.dot(self._transition, x - self._mean)
-
-        super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim, drift=drft, diffusion=lambda t, x: self._vol)
+        super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
+                drift=lambda t, x: -np.dot(self._transition, x - self._mean),
+                diffusion=lambda t, x: self._vol)
         
     @staticmethod
     def create_from_cov(transition=None, mean=None, cov=None):

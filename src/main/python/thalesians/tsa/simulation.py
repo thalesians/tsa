@@ -51,7 +51,7 @@ class EulerMaruyama(object):
         checks.check_instance(process, proc.ItoProcess)
         self.__process = process
         self.__value = npu.to_ndim_2(initial_value, ndim_1_to_col=True, copy=True) if initial_value is not None else npu.col_of(process.process_dim, 0.)
-        self.__times = times if times is not None else xtimes(0., None, 1.)
+        self.__times = iter(times) if times is not None else xtimes(0., None, 1.)
         self.__variates = variates if variates is not None else rnd.multivatiate_normals(ndim=process.noise_dim)
         self._time = None
         self._time_unit = time_unit
@@ -66,10 +66,10 @@ class EulerMaruyama(object):
             if isinstance(time_delta, dt.timedelta):
                 time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
             npu.col_of(self.__process.noise_dim, 0.)
-            variatedelta = np.sqrt(time_delta) * npu.to_ndim_2(next(self.__variates), ndim_1_to_col=True, copy=False)
+            variate_delta = np.sqrt(time_delta) * npu.to_ndim_2(next(self.__variates), ndim_1_to_col=True, copy=False)
             drift = npu.to_ndim_2(self.__process.drift(self._time, self.__value), ndim_1_to_col=True, copy=False)
             diffusion = npu.to_ndim_2(self.__process.diffusion(self._time, self.__value), ndim_1_to_col=True, copy=False)
-            self.__value += drift * time_delta + diffusion.dot(variatedelta)
+            self.__value += drift * time_delta + diffusion.dot(variate_delta)
             self._time = newtime
         v = np.copy(self.__value)
         if self.__flatten: v = v.flatten()
