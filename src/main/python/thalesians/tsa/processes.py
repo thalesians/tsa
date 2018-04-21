@@ -273,60 +273,60 @@ class WienerProcess(SolvedItoMarkovProcess):
         return str(self)
 
 class GeometricBrownianMotion(SolvedItoMarkovProcess):
-    def __init__(self, mean=None, vol=None):
-        if mean is None and vol is None:
-            mean = 0.; vol = 1.
+    def __init__(self, pct_drift=None, pct_vol=None):
+        if pct_drift is None and pct_vol is None:
+            pct_drift = 0.; pct_vol = 1.
         
-        self._mean, self._vol = None, None
+        self._pct_drift, self._pct_vol = None, None
         
-        if mean is not None:
-            self._mean = npu.to_ndim_2(mean, ndim_1_to_col=True, copy=True)
-            process_dim = npu.nrow(self._mean)
-        if vol is not None:
-            self._vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=True)
-            process_dim = npu.nrow(self._vol)
+        if pct_drift is not None:
+            self._pct_drift = npu.to_ndim_2(pct_drift, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self._pct_drift)
+        if pct_vol is not None:
+            self._pct_vol = npu.to_ndim_2(pct_vol, ndim_1_to_col=True, copy=True)
+            process_dim = npu.nrow(self._pct_vol)
         
-        if self._mean is None: self._mean = npu.col_of(process_dim, 0.)
-        if self._vol is None: self._vol = np.eye(process_dim)
+        if self._pct_drift is None: self._pct_drift = npu.col_of(process_dim, 0.)
+        if self._pct_vol is None: self._pct_vol = np.eye(process_dim)
         
-        npc.check_col(self._mean)
-        npc.check_nrow(self._mean, process_dim)
-        npc.check_nrow(self._vol, process_dim)
+        npc.check_col(self._pct_drift)
+        npc.check_nrow(self._pct_drift, process_dim)
+        npc.check_nrow(self._pct_vol, process_dim)
         
-        noise_dim = npu.ncol(self._vol)
-        self._cov = np.dot(self._vol, self._vol.T)
+        noise_dim = npu.ncol(self._pct_vol)
+        self._pct_cov = np.dot(self._pct_vol, self._pct_vol.T)
         
-        npu.make_immutable(self._mean)
-        npu.make_immutable(self._vol)
-        npu.make_immutable(self._cov)
+        npu.make_immutable(self._pct_drift)
+        npu.make_immutable(self._pct_vol)
+        npu.make_immutable(self._pct_cov)
         
-        self._to_string_helper_WienerProcess = None
-        self._str_WienerProcess = None
+        self._to_string_helper_GeometricBrownianMotion = None
+        self._str_GeometricBrownianMotion = None
         
         super(GeometricBrownianMotion, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
-                drift=lambda t, x: self._mean * x,
-                diffusion=lambda t, x: x * self._vol)
+                drift=lambda t, x: self._pct_drift * x,
+                diffusion=lambda t, x: x * self._pct_vol)
         
     @staticmethod
-    def create_2d(mean1, mean2, sd1, sd2, cor):
-        return GeometricBrownianMotion(npu.col(mean1, mean2), stats.make_vol_2d(sd1, sd2, cor))
+    def create_2d(pct_drift1, pct_drift2, pct_sd1, pct_sd2, pct_cor):
+        return GeometricBrownianMotion(npu.col(pct_drift1, pct_drift2), stats.make_vol_2d(pct_sd1, pct_sd2, pct_cor))
     
     @staticmethod
-    def create_from_cov(mean, cov):
-        vol = None if cov is None else stats.cov_to_vol(cov)
-        return GeometricBrownianMotion(mean, vol)
+    def create_from_pct_cov(pct_drift, pct_cov):
+        pct_vol = None if pct_cov is None else stats.cov_to_vol(pct_cov)
+        return GeometricBrownianMotion(pct_drift, pct_vol)
     
     @property
-    def mean(self):
-        return self._mean
+    def pct_drift(self):
+        return self._pct_drift
     
     @property
-    def vol(self):
-        return self._vol
+    def pct_vol(self):
+        return self._pct_vol
     
     @property
-    def cov(self):
-        return self._cov
+    def pct_cov(self):
+        return self._pct_cov
     
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
@@ -334,28 +334,28 @@ class GeometricBrownianMotion(SolvedItoMarkovProcess):
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
         return value0 * np.exp(
-                (self._mean - .5 * npu.col(*np.sum(self._vol**2, axis=1))) * time_delta + \
-                np.dot(self._vol, np.sqrt(time_delta) * variate))
+                (self._pct_drift - .5 * npu.col(*np.sum(self._pct_vol**2, axis=1))) * time_delta + \
+                np.dot(self._pct_vol, np.sqrt(time_delta) * variate))
     
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self._mean == other._mean and self._vol == other._vol
+            return self._pct_drift == other._pct_drift and self._pct_vol == other._pct_vol
         return False
     
     def __ne__(self, other):
         return not self.__eq__(other)
     
     def to_string_helper(self):
-        if self._to_string_helper_WienerProcess is None:
-            self._to_string_helper_WienerProcess = super().to_string_helper() \
+        if self._to_string_helper_GeometricBrownianMotion is None:
+            self._to_string_helper_GeometricBrownianMotion = super().to_string_helper() \
                     .set_type(self) \
-                    .add('mean', self._mean) \
-                    .add('vol', self._vol)
-        return self._to_string_helper_WienerProcess
+                    .add('pct_drift', self._pct_drift) \
+                    .add('pct_vol', self._pct_vol)
+        return self._to_string_helper_GeometricBrownianMotion
 
     def __str__(self):
-        if self._str_WienerProcess is None: self._str_WienerProcess = self.to_string_helper().to_string()
-        return self._str_WienerProcess
+        if self._str_GeometricBrownianMotion is None: self._str_GeometricBrownianMotion = self.to_string_helper().to_string()
+        return self._str_GeometricBrownianMotion
     
     def __repr__(self):
         return str(self)
