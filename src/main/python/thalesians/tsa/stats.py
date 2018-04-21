@@ -29,6 +29,10 @@ def cor_to_cov(cors, vars=None, sds=None, copy=True):  # @ReservedAssignment
     npu.lower_to_symmetric(cors, copy=False)
     return cors
 
+def vol_to_cov(vol):
+    vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=False)
+    return np.dot(vol, vol.T)
+
 def cholesky_sqrt_2d(sd1, sd2, cor):
     return np.array(((sd1, 0.), (sd2 * cor, sd2 * np.sqrt(1. - cor * cor))))
 

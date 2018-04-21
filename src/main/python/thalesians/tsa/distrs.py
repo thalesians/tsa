@@ -88,7 +88,7 @@ class WideSenseDistr(Distr):
     @property
     def cov(self):
         if self._cov is None:
-            self._cov = np.dot(self._vol, self._vol.T)
+            self._cov = stats.vol_to_cov(self._vol)
         return self._cov
     
     @property
@@ -125,6 +125,18 @@ class WideSenseDistr(Distr):
 class NormalDistr(WideSenseDistr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
         super(NormalDistr, self).__init__(mean, cov, vol, dim, copy)
+
+    @staticmethod
+    def approximate(distr, copy=True):
+        if isinstance(distr, NormalDistr) and not copy: return distr
+        return NormalDistr(distr.mean, distr.cov, None, distr.dim, copy)
+
+    def __eq__(self, other):
+        if isinstance(other, NormalDistr):
+            if self.dim != other.dim: return False
+            if not np.array_equal(self.mean, other.mean): return False
+            return np.array_equal(self.cov, other.cov)
+        return False
 
 class DiracDelta(NormalDistr):
     def __init__(self, mean=None, dim=None, copy=True):
@@ -172,6 +184,86 @@ class DiracDelta(NormalDistr):
     def __str__(self):
         if self._str_DiracDelta is None: self._str_DiracDelta = self.to_string_helper().to_string()
         return self._str_DiracDelta
+
+class LogNormalDistr(WideSenseDistr):
+    def __init__(self, mean_of_log=None, cov_of_log=None, vol_of_log=None, dim=None, copy=True):
+        if mean_of_log is not None and dim is not None and np.size(mean_of_log) == 1:
+            mean_of_log = npu.col_of(dim, npu.to_scalar(mean_of_log))
+        
+        if mean_of_log is None and vol_of_log is None and cov_of_log is None:
+            self._dim = 1 if dim is None else dim
+            mean_of_log = npu.col_of(self._dim, 0.)
+            cov_of_log = np.eye(self._dim)
+            vol_of_log = np.eye(self._dim)
+            
+        self._dim, self._mean_of_log, self._vol_of_log, self._cov_of_log = None, None, None, None
+        
+        # TODO We don't currently check whether cov_of_log and vol_of_log are consistent, i.e. that cov_of_log = np.dot(vol_of_log, vol_of_log.T) -- should we?
+        
+        if mean_of_log is not None:
+            self._mean_of_log = npu.to_ndim_2(mean_of_log, ndim_1_to_col=True, copy=copy)
+            self._dim = npu.nrow(self._mean_of_log)
+        if cov_of_log is not None:
+            self._cov_of_log = npu.to_ndim_2(cov_of_log, ndim_1_to_col=True, copy=copy)
+            self._dim = npu.nrow(self._cov_of_log)
+        if vol_of_log is not None:
+            self._vol_of_log = npu.to_ndim_2(vol_of_log, ndim_1_to_col=True, copy=copy)
+            self._dim = npu.nrow(self._vol_of_log)
+        
+        if self._mean_of_log is None: self._mean_of_log = npu.col_of(self._dim, 0.)
+        if self._cov_of_log is None and self._vol_of_log is None:
+            self._cov_of_log = np.eye(self._dim)
+            self._vol_of_log = np.eye(self._dim)
+        npc.check_col(self._mean_of_log)
+        npc.check_nrow(self._mean_of_log, self._dim)
+        if self._cov_of_log is not None:
+            npc.check_nrow(self._cov_of_log, self._dim)
+            npc.check_square(self._cov_of_log)
+        if self._vol_of_log is not None:
+            npc.check_nrow(self._vol_of_log, self._dim)
+
+        if self._cov_of_log is None: self._cov_of_log = stats.vol_to_cov(self._vol)
+        if self._vol_of_log is None: self._vol_of_log = stats.cov_to_vol(self._cov)
+            
+        npu.make_immutable(self._mean_of_log)
+        npu.make_immutable(self._cov_of_log)
+        npu.make_immutable(self._vol_of_log)
+
+        mean = np.exp(self._mean_of_log + .5 * npu.col(*[self._cov_of_log[i,i] for i in range(dim)]))
+        cov = np.array([[np.exp(self._mean_of_log[i] + self._mean_of_log[j] + .5 * (self._cov_of_log[i,i] + self._cov_of_log[j,j])) * (np.exp(self._cov_of_log[i,j]) - 1.) for j in range(dim)] for i in range(dim)])
+        
+        self._to_string_helper_LogNormalDistr = None
+        self._str_LogNormalDistr = None
+        
+        super(LogNormalDistr, self).__init__(mean, cov, vol, dim, copy)
+
+    @property
+    def mean_of_log(self):
+        return self._mean_of_log
     
-    def __repr__(self):
-        return str(self)
+    @property
+    def vol_of_log(self):
+        return self._vol_of_log
+
+    @property
+    def cov_of_log(self):
+        return self._cov_of_log
+
+    def __eq__(self, other):
+        if isinstance(other, LogNormalDistr):
+            if self.dim != other.dim: return False
+            if not np.array_equal(self.mean_of_log, other.mean_of_log): return False
+            return np.array_equal(self.cov_of_log, other.cov_of_log)
+        return False
+    
+    def to_string_helper(self):
+        if self._to_string_helper_LogNormalDistr is None:
+            self._to_string_helper_LogNormalDistr = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('mean_of_log', self._mean_of_log) \
+                    .add('cov_of_log', self._cov_of_log)
+        return self._to_string_helper_LogNormalDistr
+    
+    def __str__(self):
+        if self._str_LogNormalDistr is None: self._str_LogNormalDistr = self.to_string_helper().to_string()
+        return self._str_LogNormalDistr

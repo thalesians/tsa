@@ -230,7 +230,7 @@ class KalmanFilter(objects.Named):
             process_dim = p.process_dim
             m = self._state_distr.mean[row:row+process_dim, 0:1]
             c = self._state_distr.cov[row:row+process_dim, row:row+process_dim]
-            state_distrs.append(p.propagate_distr(time, self._time, N(mean=m, cov=c)))
+            state_distrs.append(N.approximate(p.propagate_distr(time, self._time, N(mean=m, cov=c)), copy=False))
             row += process_dim
         state_mean = np.vstack([d.mean for d in state_distrs])
         state_cov = block_diag(*[d.cov for d in state_distrs])

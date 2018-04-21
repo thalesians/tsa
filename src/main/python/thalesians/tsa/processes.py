@@ -204,7 +204,7 @@ class WienerProcess(SolvedItoMarkovProcess):
         npc.check_nrow(self._vol, process_dim)
         
         noise_dim = npu.ncol(self._vol)
-        self._cov = np.dot(self._vol, self._vol.T)
+        self._cov = stats.vol_to_cov(self._vol)
         
         npu.make_immutable(self._mean)
         npu.make_immutable(self._vol)
@@ -294,7 +294,7 @@ class GeometricBrownianMotion(SolvedItoMarkovProcess):
         npc.check_nrow(self._pct_vol, process_dim)
         
         noise_dim = npu.ncol(self._pct_vol)
-        self._pct_cov = np.dot(self._pct_vol, self._pct_vol.T)
+        self._pct_cov = stats.vol_to_cov(self._pct_vol)
         
         npu.make_immutable(self._pct_drift)
         npu.make_immutable(self._pct_vol)
@@ -392,7 +392,7 @@ class BrownianBridge(SolvedItoMarkovProcess):
         npc.check_nrow(self.__final_value, process_dim)
         
         noise_dim = npu.ncol(self.__vol)
-        self.__cov = np.dot(self.__vol, self.__vol.T)
+        self.__cov = stats.vol_to_cov(self.__vol)
         
         npu.make_immutable(self.__initial_value)
         npu.make_immutable(self.__final_value)
@@ -489,7 +489,7 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         
         self._transition_x_2 = npu.kron_sum(self._transition, self._transition)
         self._transition_x_2_inverse = np.linalg.inv(self._transition_x_2)
-        self._cov = np.dot(self._vol, self._vol.T)
+        self._cov = stats.vol_to_cov(self._vol)
         self._cov_vec = npu.vec(self._cov)
         
         self._cached_mean_reversion_factor = None
