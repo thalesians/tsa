@@ -31,7 +31,7 @@ class Distr(object):
         if self._str_Distr is None: self._str_Distr = self.to_string_helper().to_string()
         return self._str_Distr
     
-class NormalDistr(Distr):
+class WideSenseDistr(Distr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
         if mean is not None and dim is not None and np.size(mean) == 1:
             mean = npu.col_of(dim, npu.to_scalar(mean))
@@ -55,7 +55,7 @@ class NormalDistr(Distr):
         if vol is not None:
             self._vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=copy)
             self._dim = npu.nrow(self._vol)
-            
+        
         if self._mean is None: self._mean = npu.col_of(self._dim, 0.)
         if self._cov is None and self._vol is None:
             self._cov = np.eye(self._dim)
@@ -72,10 +72,10 @@ class NormalDistr(Distr):
         if self._cov is not None: npu.make_immutable(self._cov)
         if self._vol is not None: npu.make_immutable(self._vol)
         
-        self._to_string_helper_NormalDistr = None
-        self._str_NormalDistr = None
+        self._to_string_helper_WideSenseDistr = None
+        self._str_WideSenseDistr = None
         
-        super(NormalDistr, self).__init__()
+        super(WideSenseDistr, self).__init__()
         
     @property
     def dim(self):
@@ -98,7 +98,7 @@ class NormalDistr(Distr):
         return self._vol
     
     def __eq__(self, other):
-        if isinstance(other, NormalDistr):
+        if isinstance(other, WideSenseDistr):
             if self.dim != other.dim: return False
             if not np.array_equal(self.mean, other.mean): return False
             return np.array_equal(self.cov, other.cov)
@@ -108,19 +108,23 @@ class NormalDistr(Distr):
         return not self.__eq__(other)
     
     def to_string_helper(self):
-        if self._to_string_helper_NormalDistr is None:
-            self._to_string_helper_NormalDistr = super().to_string_helper() \
+        if self._to_string_helper_WideSenseDistr is None:
+            self._to_string_helper_WideSenseDistr = super().to_string_helper() \
                     .set_type(self) \
                     .add('mean', self._mean) \
                     .add('cov', self._cov)
-        return self._to_string_helper_NormalDistr 
+        return self._to_string_helper_WideSenseDistr 
     
     def __str__(self):
-        if self._str_NormalDistr is None: self._str_NormalDistr = self.to_string_helper().to_string()
-        return self._str_NormalDistr
+        if self._str_WideSenseDistr is None: self._str_WideSenseDistr = self.to_string_helper().to_string()
+        return self._str_WideSenseDistr
     
     def __repr__(self):
         return str(self)
+
+class NormalDistr(WideSenseDistr):
+    def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
+        super(NormalDistr, self).__init__(mean, cov, vol, dim, copy)
 
 class DiracDelta(NormalDistr):
     def __init__(self, mean=None, dim=None, copy=True):
