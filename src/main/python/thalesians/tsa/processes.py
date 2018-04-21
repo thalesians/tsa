@@ -406,6 +406,11 @@ class BrownianBridge(SolvedItoMarkovProcess):
                 drift=lambda t, x: (self.__final_value - x) / (self.__final_time - t),
                 diffusion=lambda t, x: self.__vol)
 
+    @staticmethod
+    def create_from_cov(initial_value=None, final_value=None, initial_time=0., final_time=1., cov=None):
+        vol = None if cov is None else stats.cov_to_vol(cov)
+        return BrownianBridge(initial_value=initial_value, final_value=final_value, initial_time=initial_time, final_time=final_time, vol=vol)
+    
     def propagate(self, time, variate, time0, value0, state0=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
