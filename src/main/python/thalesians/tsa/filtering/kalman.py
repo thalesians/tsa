@@ -109,8 +109,8 @@ class KalmanFilterState(filtering.FilterState):
 class KalmanFilter(objects.Named):
     LN_2PI = np.log(2. * np.pi)
     
-    def __init__(self, time, state_distr, process, name=None, pype=None,
-                 pype_options=frozenset(filtering.FilterPypeOptions)):
+    def __init__(self, time, state_distr, process, approximate_distr=False,
+                 name=None, pype=None, pype_options=frozenset(filtering.FilterPypeOptions)):
         super().__init__(name)
         self._pype = pype
         self._pype_options = frozenset() if (pype_options is None or pype is None) else frozenset(pype_options)
@@ -121,6 +121,7 @@ class KalmanFilter(objects.Named):
         self._state_distr = state_distr
         self._is_posterior = False
         self._processes = tuple(process)
+        self._approximate_distr = approximate_distr
         self._to_string_helper_KalmanFilter = None
         self._str_KalmanFilter = None
         if filtering.FilterPypeOptions.PRIOR_STATE in self._pype_options: self._pype.send(self.state)
@@ -230,7 +231,11 @@ class KalmanFilter(objects.Named):
             process_dim = p.process_dim
             m = self._state_distr.mean[row:row+process_dim, 0:1]
             c = self._state_distr.cov[row:row+process_dim, row:row+process_dim]
-            state_distrs.append(N.approximate(p.propagate_distr(time, self._time, N(mean=m, cov=c)), copy=False))
+            state_distr = p.propagate_distr(time, self._time, N(mean=m, cov=c), assume_distr=self._approximate_distr)
+            if not isinstance(state_distr, N):
+                if self._approximate_distr: state_distr = N.approximate(state_distr, copy=False)
+                else: raise ValueError('The propagated state distribution is not Normal; to approximate with a Normal distribution, set the approximate_distr parameter to True (currently False)')
+            state_distrs.append(state_distr)
             row += process_dim
         state_mean = np.vstack([d.mean for d in state_distrs])
         state_cov = block_diag(*[d.cov for d in state_distrs])

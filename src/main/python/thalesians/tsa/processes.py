@@ -114,7 +114,7 @@ class MarkovProcess(Process):
         
         super(MarkovProcess, self).__init__(process_dim=process_dim, **kwargs)
         
-    def propagate_distr(self, time, time0, distr0):
+    def propagate_distr(self, time, time0, distr0, assume_distr=False):
         if time == time0: return distr0
         if self._cached_time is None or self._cached_time != time or self._cached_time0 != time0 or self._cached_distr0 != distr0:
             time_delta = time - time0
@@ -122,13 +122,13 @@ class MarkovProcess(Process):
                 time_delta = time_delta.item()
             if isinstance(time_delta, dt.timedelta):
                 time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
-            self._cached_distr = self._propagate_distr_impl(time_delta, distr0)
+            self._cached_distr = self._propagate_distr_impl(time_delta, distr0, assume_distr)
             self._cached_time = time
             self._cached_time0 = time0
             self._cached_distr0 = distr0
         return self._cached_distr
     
-    def _propagate_distr_impl(self, time_delta, distr0):
+    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
         raise NotImplementedError()
     
     def to_string_helper(self):
@@ -159,7 +159,7 @@ class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
-        distr = self.propagate_distr(time, time0, distrs.DiracDelta.create(value0))
+        distr = self.propagate_distr(time, time0, distrs.DiracDelta.create(value0), assume_distr=True)
         return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
     
     def to_string_helper(self):
@@ -244,7 +244,9 @@ class WienerProcess(SolvedItoMarkovProcess):
         time_delta = time - time0
         return value0 + self._mean * time_delta + np.dot(self._vol, np.sqrt(time_delta) * variate)
     
-    def _propagate_distr_impl(self, time_delta, distr0):
+    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+        if not isinstance(distr0, distrs.NormalDistr) and not assume_distr:
+            raise ValueError('Do not know how to propagate a distribution that is not normal')
         mean = distr0.mean + self._mean * time_delta
         cov = distr0.cov + time_delta * self._cov
         return distrs.NormalDistr(mean=mean, cov=cov)
@@ -337,6 +339,14 @@ class GeometricBrownianMotion(SolvedItoMarkovProcess):
                 (self._pct_drift - .5 * npu.col(*np.sum(self._pct_vol**2, axis=1))) * time_delta + \
                 np.dot(self._pct_vol, np.sqrt(time_delta) * variate))
     
+    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+        if not isinstance(distr0, distrs.LogNormalDistr) and not assume_distr:
+            raise ValueError('Do not know how to propagate a distribution that is not log-normal')
+        # Note: the sum of two independent log-normal distributions is only approximately log-normal
+        mean = np.log(distr0.mean) + (self._pct_drift - .5 * npu.col([self._pct_cov[i, i] for i in range(self.process_dim)])) * time_delta
+        cov = distr0.cov + time_delta * self._pct_cov
+        return distrs.LogNormalDistr(mean_of_log=mean, cov_of_log=cov)
+    
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self._pct_drift == other._pct_drift and self._pct_vol == other._pct_vol
@@ -422,13 +432,13 @@ class BrownianBridge(SolvedItoMarkovProcess):
         vol = vol_factor * self.__vol
         return mean + np.dot(vol, variate)
 
-    def _propagate_distr_impl(self, time_delta, distr0):
+    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+        if not isinstance(distr0, distrs.NormalDistr) and not assume_distr:
+            raise ValueError('Do not know how to propagate a distribution that is not normal')
         mean = value0 + time_delta / (self.__final_time - time0) * (self.__final_value - value0)
         cov_factor = (time - time0) * (self.__final_time - time) / (self.__final_time - time0)
         vol_factor = np.sqrt(cov_factor)
         vol = vol_factor * self.__vol
-
-        
         mean = distr0.mean + self._mean * time_delta
         cov = distr0.cov + time_delta * self._cov
         return distrs.NormalDistr(mean=mean, cov=cov)
@@ -577,7 +587,9 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         c = self.noise_covariance(time_delta)
         return m + np.dot(np.linalg.cholesky(c), variate)
         
-    def _propagate_distr_impl(self, time_delta, distr0):
+    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+        if not isinstance(distr0, distrs.NormalDistr) and not assume_distr:
+            raise ValueError('Do not know how to propagate a distribution that is not normal')
         value0 = distr0.mean
         mrf = self.mean_reversion_factor(time_delta)
         eye_minus_mrf = np.eye(self.process_dim) - mrf

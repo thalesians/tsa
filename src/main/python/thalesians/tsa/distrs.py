@@ -222,20 +222,21 @@ class LogNormalDistr(WideSenseDistr):
         if self._vol_of_log is not None:
             npc.check_nrow(self._vol_of_log, self._dim)
 
-        if self._cov_of_log is None: self._cov_of_log = stats.vol_to_cov(self._vol)
-        if self._vol_of_log is None: self._vol_of_log = stats.cov_to_vol(self._cov)
+        if self._cov_of_log is None: self._cov_of_log = stats.vol_to_cov(self._vol_of_log)
+        if self._vol_of_log is None: self._vol_of_log = stats.cov_to_vol(self._cov_of_log)
             
         npu.make_immutable(self._mean_of_log)
         npu.make_immutable(self._cov_of_log)
         npu.make_immutable(self._vol_of_log)
 
-        mean = np.exp(self._mean_of_log + .5 * npu.col(*[self._cov_of_log[i,i] for i in range(dim)]))
-        cov = np.array([[np.exp(self._mean_of_log[i] + self._mean_of_log[j] + .5 * (self._cov_of_log[i,i] + self._cov_of_log[j,j])) * (np.exp(self._cov_of_log[i,j]) - 1.) for j in range(dim)] for i in range(dim)])
+        mean = np.exp(self._mean_of_log + .5 * npu.col(*[self._cov_of_log[i,i] for i in range(self._dim)]))
+        cov = np.array([[np.exp(self._mean_of_log[i,0] + self._mean_of_log[j,0] + .5 * (self._cov_of_log[i,i] + self._cov_of_log[j,j])) * (np.exp(self._cov_of_log[i,j]) - 1.) for j in range(self._dim)] for i in range(self._dim)])
+        vol = stats.cov_to_vol(cov)
         
         self._to_string_helper_LogNormalDistr = None
         self._str_LogNormalDistr = None
         
-        super(LogNormalDistr, self).__init__(mean, cov, vol, dim, copy)
+        super(LogNormalDistr, self).__init__(mean, cov, vol, self._dim, copy)
 
     @property
     def mean_of_log(self):
