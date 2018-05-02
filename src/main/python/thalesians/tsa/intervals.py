@@ -1,6 +1,6 @@
 import io
 
-class Interval:
+class Interval(object):
     def __init__(self, left, right, left_closed=False, right_closed=False):
         self._left = left
         self._right = right

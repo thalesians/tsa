@@ -173,11 +173,11 @@ class FlatStoredArray(object):
     def __len__(self):
         return self.__count
     
-    def __repr__(self):
-        return repr(self._data)
-    
     def __str__(self):
         return str(self._data)
+    
+    def __repr__(self):
+        return repr(self._data)
     
     def setall(self, iterable):
         for i, v in enumerate(iterable):

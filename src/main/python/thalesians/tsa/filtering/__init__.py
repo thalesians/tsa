@@ -69,8 +69,8 @@ class Obs(object):
         if self._to_string_helper_Obs is None:
             self._to_string_helper_Obs = ToStringHelper(self) \
                     .add('time', self._time) \
-                    .add('distr', self._distr) ##\
-                    ##.add('observable', self._observable)
+                    .add('distr', self._distr) \
+                    .add('observable_name', self._observable_name)
         return self._to_string_helper_Obs 
     
     def __str__(self):
@@ -123,9 +123,6 @@ class PredictedObs(Obs):
     def __str__(self):
         if self._str_PredictedObs is None: self._str_PredictedObs = self.to_string_helper().to_string()
         return self._str_PredictedObs
-    
-    def __repr__(self):
-        return str(self)
     
 class ObsResult(object):
     def __init__(self, accepted, obs, predicted_obs, innov_distr, log_likelihood):
@@ -220,9 +217,6 @@ class Observable(objects.Named):
     def __str__(self):
         if self._str_Observable is None: self._str_Observable = self.to_string_helper().to_string()
         return self._str_Observable
-    
-    def __repr__(self):
-        return str(self)
     
 class FilterState(object):
     def __init__(self, filter, time, is_posterior, filter_name=None):  # @ReservedAssignment

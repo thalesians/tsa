@@ -131,7 +131,7 @@ def multivariate_normal(mean=None, cov=None, size=None, ndim=None, random_state=
     if random_state is None: random_state = _rs()
     return random_state.multivariate_normal(mean, cov, size)
 
-def multivatiate_normals(mean=None, cov=None, size=None, count=None, ndim=None, random_state=None):
+def multivariate_normals(mean=None, cov=None, size=None, count=None, ndim=None, random_state=None):
     i = 0
     while count is None or i < count:
         yield multivariate_normal(mean, cov, size, ndim, random_state)

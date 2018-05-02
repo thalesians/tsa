@@ -30,9 +30,6 @@ class KalmanObsResult(filtering.ObsResult):
         if self._str_KalmanObsResult is None: self._str_KalmanObsResult = self.to_string_helper().to_string()
         return self._str_KalmanObsResult
     
-    def __repr__(self):
-        return str(self)
-    
 class KalmanFilterObsModel(filtering.ObsModel):
     def __init__(self, obs_matrix):
         super().__init__()
@@ -68,9 +65,6 @@ class KalmanFilterObsModel(filtering.ObsModel):
     def __str__(self):
         if self._str_KalmanFilterObsModel is None: self._str_KalmanFilterObsModel = self.to_string_helper().to_string()
         return self._str_KalmanFilterObsModel
-    
-    def __repr__(self):
-        return str(self)
 
 class KalmanFilterState(filtering.FilterState):
     def __init__(self, filter, time, is_posterior, state_distr, filter_name=None):  # @ReservedAssignment
@@ -102,9 +96,6 @@ class KalmanFilterState(filtering.FilterState):
     def __str__(self):
         if self._str_KalmanFilterState is None: self._str_KalmanFilterState = self.to_string_helper().to_string()
         return self._str_KalmanFilterState
-    
-    def __repr__(self):
-        return str(self)
 
 class KalmanFilter(objects.Named):
     LN_2PI = np.log(2. * np.pi)
@@ -231,7 +222,7 @@ class KalmanFilter(objects.Named):
             process_dim = p.process_dim
             m = self._state_distr.mean[row:row+process_dim, 0:1]
             c = self._state_distr.cov[row:row+process_dim, row:row+process_dim]
-            state_distr = p.propagate_distr(time, self._time, N(mean=m, cov=c), assume_distr=self._approximate_distr)
+            state_distr = p.propagate_distr(self._time, N(mean=m, cov=c), time, assume_distr=self._approximate_distr)
             if not isinstance(state_distr, N):
                 if self._approximate_distr: state_distr = N.approximate(state_distr, copy=False)
                 else: raise ValueError('The propagated state distribution is not Normal; to approximate with a Normal distribution, set the approximate_distr parameter to True (currently False)')
@@ -275,6 +266,3 @@ class KalmanFilter(objects.Named):
     def __str__(self):
         if self._str_KalmanFilter is None: self._str_KalmanFilter = self.to_string_helper().to_string()
         return self._str_KalmanFilter
-    
-    def __repr__(self):
-        return str(self)

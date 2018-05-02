@@ -1,7 +1,9 @@
 import numpy as np
 
+import thalesians.tsa.checks as checks
 import thalesians.tsa.numpychecks as npc
 import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.random as rnd
 import thalesians.tsa.stats as stats
 from thalesians.tsa.strings import ToStringHelper
 
@@ -22,6 +24,9 @@ class Distr(object):
     def cov(self):
         raise NotImplementedError()
     
+    def sample(self, size=1, random_state=None):
+        raise NotImplementedError()
+
     def to_string_helper(self):
         if self._to_string_helper_Distr is None:
             self._to_string_helper_Distr = ToStringHelper(self)
@@ -30,47 +35,51 @@ class Distr(object):
     def __str__(self):
         if self._str_Distr is None: self._str_Distr = self.to_string_helper().to_string()
         return self._str_Distr
+
+    def __repr__(self):
+        return str(self)
     
 class WideSenseDistr(Distr):
-    def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
-        if mean is not None and dim is not None and np.size(mean) == 1:
-            mean = npu.col_of(dim, npu.to_scalar(mean))
-        
-        if mean is None and vol is None and cov is None:
-            self._dim = 1 if dim is None else dim
-            mean = npu.col_of(self._dim, 0.)
-            cov = np.eye(self._dim)
-            vol = np.eye(self._dim)
+    def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True, do_not_init=False):
+        if not do_not_init:
+            if mean is not None and dim is not None and np.size(mean) == 1:
+                mean = npu.col_of(dim, npu.to_scalar(mean))
             
-        self._dim, self._mean, self._vol, self._cov = None, None, None, None
-        
-        # TODO We don't currently check whether cov and vol are consistent, i.e. that cov = np.dot(vol, vol.T) -- should we?
-        
-        if mean is not None:
-            self._mean = npu.to_ndim_2(mean, ndim_1_to_col=True, copy=copy)
-            self._dim = npu.nrow(self._mean)
-        if cov is not None:
-            self._cov = npu.to_ndim_2(cov, ndim_1_to_col=True, copy=copy)
-            self._dim = npu.nrow(self._cov)
-        if vol is not None:
-            self._vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=copy)
-            self._dim = npu.nrow(self._vol)
-        
-        if self._mean is None: self._mean = npu.col_of(self._dim, 0.)
-        if self._cov is None and self._vol is None:
-            self._cov = np.eye(self._dim)
-            self._vol = np.eye(self._dim)
-        npc.check_col(self._mean)
-        npc.check_nrow(self._mean, self._dim)
-        if self._cov is not None:
-            npc.check_nrow(self._cov, self._dim)
-            npc.check_square(self._cov)
-        if self._vol is not None:
-            npc.check_nrow(self._vol, self._dim)
+            if mean is None and vol is None and cov is None:
+                self._dim = 1 if dim is None else dim
+                mean = npu.col_of(self._dim, 0.)
+                cov = np.eye(self._dim)
+                vol = np.eye(self._dim)
+                
+            self._dim, self._mean, self._vol, self._cov = None, None, None, None
             
-        npu.make_immutable(self._mean)
-        if self._cov is not None: npu.make_immutable(self._cov)
-        if self._vol is not None: npu.make_immutable(self._vol)
+            # TODO We don't currently check whether cov and vol are consistent, i.e. that cov = np.dot(vol, vol.T) -- should we?
+            
+            if mean is not None:
+                self._mean = npu.to_ndim_2(mean, ndim_1_to_col=True, copy=copy)
+                self._dim = npu.nrow(self._mean)
+            if cov is not None:
+                self._cov = npu.to_ndim_2(cov, ndim_1_to_col=True, copy=copy)
+                self._dim = npu.nrow(self._cov)
+            if vol is not None:
+                self._vol = npu.to_ndim_2(vol, ndim_1_to_col=True, copy=copy)
+                self._dim = npu.nrow(self._vol)
+            
+            if self._mean is None: self._mean = npu.col_of(self._dim, 0.)
+            if self._cov is None and self._vol is None:
+                self._cov = np.eye(self._dim)
+                self._vol = np.eye(self._dim)
+            npc.check_col(self._mean)
+            npc.check_nrow(self._mean, self._dim)
+            if self._cov is not None:
+                npc.check_nrow(self._cov, self._dim)
+                npc.check_square(self._cov)
+            if self._vol is not None:
+                npc.check_nrow(self._vol, self._dim)
+            
+            npu.make_immutable(self._mean)
+            if self._cov is not None: npu.make_immutable(self._cov)
+            if self._vol is not None: npu.make_immutable(self._vol)
         
         self._to_string_helper_WideSenseDistr = None
         self._str_WideSenseDistr = None
@@ -111,16 +120,13 @@ class WideSenseDistr(Distr):
         if self._to_string_helper_WideSenseDistr is None:
             self._to_string_helper_WideSenseDistr = super().to_string_helper() \
                     .set_type(self) \
-                    .add('mean', self._mean) \
-                    .add('cov', self._cov)
-        return self._to_string_helper_WideSenseDistr 
+                    .add('mean', self.mean) \
+                    .add('cov', self.cov)
+        return self._to_string_helper_WideSenseDistr
     
     def __str__(self):
         if self._str_WideSenseDistr is None: self._str_WideSenseDistr = self.to_string_helper().to_string()
         return self._str_WideSenseDistr
-    
-    def __repr__(self):
-        return str(self)
 
 class NormalDistr(WideSenseDistr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
@@ -130,6 +136,9 @@ class NormalDistr(WideSenseDistr):
     def approximate(distr, copy=True):
         if isinstance(distr, NormalDistr) and not copy: return distr
         return NormalDistr(distr.mean, distr.cov, None, distr.dim, copy)
+
+    def sample(self, size=1, random_state=None):
+        return rnd.multivariate_normal(self.mean, self.cov, size=size, random_state=random_state)
 
     def __eq__(self, other):
         if isinstance(other, NormalDistr):
@@ -175,7 +184,7 @@ class DiracDelta(NormalDistr):
     @property
     def vol(self):
         return self.cov
-    
+
     def to_string_helper(self):
         if self._to_string_helper_DiracDelta is None:
             self._to_string_helper_DiracDelta = ToStringHelper(self).add('mean', self._mean)
@@ -268,3 +277,271 @@ class LogNormalDistr(WideSenseDistr):
     def __str__(self):
         if self._str_LogNormalDistr is None: self._str_LogNormalDistr = self.to_string_helper().to_string()
         return self._str_LogNormalDistr
+
+'''
+class MultinomialResamplingParticleFilter(ParticleFilter):
+    def _resample(self):
+        counts = self._random_state.multinomial(self.particle_count, self._weights)
+        particle_idx = 0
+        for i in range(self.particle_count):
+            for j in range(counts[i]):  # @UnusedVariable
+                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
+                particle_idx += 1
+        
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+
+class RegularisedResamplingParticleFilter(ParticleFilter):
+    def _resample(self):
+        # TODO This only works when state_dim == 1
+        # TODO Vectorise
+        kde = sm.nonparametric.KDEUnivariate(self._prior_particles)
+        kde.fit(fft=False, weights=self._weights)
+        counts = self._random_state.multinomial(self.particle_count, self._weights)
+        particle_idx = 0
+        bw_factor = .5
+        for i in range(self.particle_count):
+            for j in range(counts[i]):  # @UnusedVariable
+                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
+                particle_idx += 1
+        self._resampled_particles[:] += bw_factor * kde.bw * self._random_state.normal(size=(self.particle_count, 1))
+        
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+            
+class SmoothResamplingParticleFilter(ParticleFilter):
+    def _resample(self):
+        new_weights = np.empty((self.particle_count+1,))
+        new_weights[0] = .5*self._weights[0]
+        new_weights[self.particle_count] = .5*self._weights[self.particle_count-1]
+        for i in range(1, self.particle_count):
+            new_weights[i] = .5*(self._weights[i] + self._weights[i-1])
+
+        uniforms = self._random_state.uniform(size=self.particle_count)
+        uniforms.sort()
+        new_uniforms = np.empty(shape=(self.particle_count,))
+        regions = np.empty(shape=(self.particle_count,), dtype=np.int)
+        s = 0
+        j = 0
+        for i in range(self.particle_count + 1):
+            s = s + new_weights[i]
+            while j < self.particle_count and uniforms[j] <= s:
+                regions[j] = i
+                new_uniforms[j] = (uniforms[j] - (s - new_weights[i])) / new_weights[i]
+                j += 1
+                
+        for i in range(self.particle_count):
+            if regions[i] == 0:
+                self._resampled_particles[i,:] = self._prior_particles[0,:]
+            if regions[i] == self.particle_count:
+                self._resampled_particles[i,:] = self._prior_particles[self.particle_count-1,:]
+            else:
+                self._resampled_particles[i,:] = (self._prior_particles[regions[i],:] - self._prior_particles[regions[i]-1,:]) * new_uniforms[i] + self._prior_particles[regions[i]-1,:]   
+            
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+
+class Sampler(object):
+    def __init__(self, particles, weights):
+        pass
+
+    def sample(self):
+        raise NotImplementedError()
+
+class SimpleSampler(Sampler):
+    def __init__(self):
+        super(SimpleSampler, self).__init__()
+
+class KDESampler(Sampler):
+    def __init__(self):
+        super(KDESampler, self).__init__()
+
+class MultinomialResamplingParticleFilter(object):
+    def _resample(self):
+        counts = self._random_state.multinomial(self.particle_count, self._weights)
+        particle_idx = 0
+        for i in range(self.particle_count):
+            for j in range(counts[i]):  # @UnusedVariable
+                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
+                particle_idx += 1
+        
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+'''
+
+class EmpiricalDistr(WideSenseDistr):
+    def __init__(self, particles=None, weights=None,
+            dim=None, use_n_minus_1_stats=False, sampler=None, copy=True):
+
+        self._particles, self._weights, self._dim = None, None, None
+
+        if particles is not None:
+            self._particles = npu.to_ndim_2(particles, ndim_1_to_col=True, copy=copy)
+            self._dim = npu.ncol(self._particles)
+            if weights is None:
+                weights = np.ones((npu.nrow(self._particles), 1))
+                weights /= float(npu.nrow(self._particles))
+
+        if weights is not None:
+            checks.check_not_none(particles)
+            self._weights = npu.to_ndim_2(weights, ndim_1_to_col=True, copy=copy)
+            self._dim = npu.ncol(self._particles)
+
+        if dim is not None:
+            self._dim = dim
+
+        if self._particles is not None:
+            npc.check_ncol(self._particles, self._dim)
+        if self._weights is not None:
+            npc.check_nrow(self._weights, npu.nrow(self._particles))
+
+        npu.make_immutable(self._particles, allow_none=True)
+        npu.make_immutable(self._weights, allow_none=True)
+
+        self._use_n_minus_1_stats = use_n_minus_1_stats
+
+        # "n minus 1" (unbiased) stats only make sense when using "repeat"-type weights, meaning that each weight
+        # represents the number of occurrences of one observation.
+        #
+        # See https://stats.stackexchange.com/questions/61225/correct-equation-for-weighted-unbiased-sample-covariance
+
+        self._weight_sum = None
+        self._mean = None
+        self._var_n = None
+        self._var_n_minus_1 = None
+        self._cov_n = None
+        self._cov_n_minus_1 = None
+        self._vol_n = None
+        self._vol_n_minus_1 = None
+
+        self._to_string_helper_EmpiricalDistr = None
+        self._str_EmpiricalDistr = None
+        
+        super(EmpiricalDistr, self).__init__(do_not_init=True)
+
+    @property
+    def particle_count(self):
+        return npu.nrow(self._particles) if self._particles is not None else 0
+
+    @property
+    def particles(self):
+        return self._particles
+
+    def particle(self, idx):
+        if self.particle_count == 0: raise IndexError('The empirical distribution has no particles')
+        return npu.to_ndim_2(self._particles[idx,:], ndim_1_to_col=True, copy=False)
+
+    @property
+    def weights(self):
+        return self._weights
+
+    def weight(self, idx):
+        if self.particle_count == 0: raise IndexError('The empirical distribution has no particles')
+        return self._weights[idx,0]
+
+    @property
+    def dim(self):
+        return self._dim
+
+    @property
+    def weight_sum(self):
+        if self._weight_sum is None:
+            self._weight_sum = np.sum(self._weights)
+        return self._weight_sum
+
+    @property
+    def mean(self):
+        if self._mean is None:
+            self._mean = np.average(self._particles, weights=self._weights.flat, axis=0)
+            self._mean = npu.to_ndim_2(self._mean, ndim_1_to_col=True, copy=False)
+            npu.make_immutable(self._mean)
+        return self._mean
+
+    @property
+    def var_n(self):
+        if self._var_n is None:
+            self._var_n = np.average((self._particles - self.mean.T)**2, weights=self._weights.flat, axis=0)
+            self._var_n = npu.to_ndim_2(self._var_n, ndim_1_to_col=True, copy=False)
+            npu.make_immutable(self._var_n)
+        return self._var_n
+
+    @property
+    def var_n_minus_1(self):
+        if self._var_n_minus_1 is None:
+            self._var_n_minus_1 = self.var_n * self.weight_sum / (self.weight_sum - 1.)
+            npu.make_immutable(self._var_n_minus_1)
+        return self._var_n_minus_1
+
+    @property
+    def var(self):
+        return self._var_n_minus_1 if self._use_n_minus_1_stats else self._var_n
+
+    @property
+    def cov_n(self):
+        if self._cov_n is None:
+            self._cov_n = np.sum([self.weight(i) * np.dot(self.particle(i) - self.mean, (self.particle(i) - self.mean).T) for i in range(self.particle_count)], axis=0)
+            # The following is more efficient:
+            # self._cov_n = np.dot(self._particles.T - self.mean, self.particles - self.mean.T)
+            self._cov_n /= self.weight_sum
+            npu.make_immutable(self._cov_n)
+        return self._cov_n
+
+    @property
+    def cov_n_minus_1(self):
+        if self._cov_n_minus_1 is None:
+            self._cov_n_minus_1 = np.sum([self.weight(i) * np.dot(self.particle(i) - self.mean, (self.particle(i) - self.mean).T) for i in range(self.particle_count)], axis=0)
+            # The following is more efficient:
+            # self._cov_n_minus_1 = np.dot(self._particles.T - self.mean, self.particles - self.mean.T)
+            self._cov_n_minus_1 /= self.weight_sum - 1.
+            npu.make_immutable(self._cov_n_minus_1)
+        return self._cov_n_minus_1
+
+    @property
+    def cov(self):
+        return self._cov_n_minus_1 if self._use_n_minus_1_stats else self._cov_n
+
+    @property
+    def vol_n(self):
+        if self._vol_n is None:
+            self._vol_n = stats.cov_to_vol(self.cov_n)
+            npu.make_immutable(self._vol_n)
+        return self._vol_n
+
+    @property
+    def vol_n_minus_1(self):
+        if self._vol_n_minus_1 is None:
+            self._vol_n_minus_1 = stats.cov_to_vol(self.cov_n_minus_1)
+            npu.make_immutable(self._vol_n_minus_1)
+        return self._vol_n_minus_1
+
+    @property
+    def vol(self):
+        return self._vol_n_minus_1 if self._use_n_minus_1_stats else self._vol_n
+
+    def __eq__(self, other):
+        if isinstance(other, EmpiricalDistr):
+            if self._dim != other._dim: return False
+            if checks.is_exactly_one_not_none(self._particles, other._particles): return False
+            if checks.is_exactly_one_not_none(self._weights, other._weights): return False
+            if self._particles is not None:
+                if not np.array_equal(self._particles, other._particles): return False
+            if self._weights is not None:
+                if not np.array_equal(self._weights, other._weights): return False
+            return True
+        return False
+    
+    def to_string_helper(self):
+        if self._to_string_helper_EmpiricalDistr is None:
+            self._to_string_helper_EmpiricalDistr = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('particle_count', self.particle_count) \
+                    .add('dim', self.dim)
+        return self._to_string_helper_EmpiricalDistr
+    
+    def __str__(self):
+        if self._str_EmpiricalDistr is None: self._str_EmpiricalDistr = self.to_string_helper().to_string()
+        return self._str_EmpiricalDistr

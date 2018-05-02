@@ -7,6 +7,7 @@ import thalesians.tsa.checks as checks
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.numpychecks as npc
+import thalesians.tsa.random as rnd
 import thalesians.tsa.stats as stats
 from thalesians.tsa.strings import ToStringHelper
 
@@ -39,6 +40,8 @@ class ItoProcess(Process):
         # Note: the brackets around the lambdas below are essential, otherwise the result of the parsing will not be what we need:
         self._drift = (lambda t, x: npu.row_of(self._process_dim, 0.)) if drift is None else drift
         self._diffusion = (lambda t, x: npu.matrix_of(self._process_dim, self._noise_dim, 0.)) if diffusion is None else diffusion
+        #if not checks.is_callable(self._drift): self._drift = lambda t, x: self._drift
+        #if not checks.is_callable(self._diffusion): self._diffusion = lambda t, x: self._diffusion
         self._to_string_helper_ItoProcess = None
         self._str_ItoProcess = None
         
@@ -73,9 +76,6 @@ class ItoProcess(Process):
         if self._str_ItoProcess is None: self._str_ItoProcess = self.to_string_helper().to_string()
         return self._str_ItoProcess
     
-    def __repr__(self):
-        return str(self)
-    
 class SolvedItoProcess(ItoProcess):
     def __init__(self, process_dim=1, noise_dim=None, drift=None, diffusion=None, **kwargs):
         self._to_string_helper_SolvedItoProcess = None
@@ -84,7 +84,7 @@ class SolvedItoProcess(ItoProcess):
         super(SolvedItoProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
                 drift=drift, diffusion=diffusion, **kwargs)
         
-    def propagate(self, time, variate, time0, value0, state0=None):
+    def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         raise NotImplementedError()
     
     def to_string_helper(self):
@@ -95,9 +95,6 @@ class SolvedItoProcess(ItoProcess):
     def __str__(self):
         if self._str_SolvedItoProcess is None: self._str_SolvedItoProcess = self.to_string_helper().to_string()
         return self._str_SolvedItoProcess
-    
-    def __repr__(self):
-        return str(self)
 
 class MarkovProcess(Process):
     def __init__(self, process_dim, time_unit=dt.timedelta(days=1), **kwargs):
@@ -114,7 +111,7 @@ class MarkovProcess(Process):
         
         super(MarkovProcess, self).__init__(process_dim=process_dim, **kwargs)
         
-    def propagate_distr(self, time, time0, distr0, assume_distr=False):
+    def propagate_distr(self, time0, distr0, time, assume_distr=False):
         if time == time0: return distr0
         if self._cached_time is None or self._cached_time != time or self._cached_time0 != time0 or self._cached_distr0 != distr0:
             time_delta = time - time0
@@ -122,13 +119,13 @@ class MarkovProcess(Process):
                 time_delta = time_delta.item()
             if isinstance(time_delta, dt.timedelta):
                 time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
-            self._cached_distr = self._propagate_distr_impl(time_delta, distr0, assume_distr)
+            self._cached_distr = self._propagate_distr_impl(distr0, time_delta, assume_distr)
             self._cached_time = time
             self._cached_time0 = time0
             self._cached_distr0 = distr0
         return self._cached_distr
     
-    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+    def _propagate_distr_impl(self, distr0, time_delta, assume_distr=False):
         raise NotImplementedError()
     
     def to_string_helper(self):
@@ -142,22 +139,22 @@ class MarkovProcess(Process):
         if self._str_MarkovProcess is None: self._str_MarkovProcess = self.to_string_helper().to_string()
         return self._str_MarkovProcess
     
-    def __repr__(self):
-        return str(self)
-    
 class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
-    def __init__(self, process_dim=1, noise_dim=None, drift=None, diffusion=None, **kwargs):
+    def __init__(self, process_dim=1, noise_dim=None, drift=None, diffusion=None, time_unit=dt.timedelta(days=1), **kwargs):
         self._to_string_helper_SolvedItoMarkovProcess = None
         self._str_SolvedItoMarkovProcess = None
         
         super(SolvedItoMarkovProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
-                drift=drift, diffusion=diffusion, **kwargs)
+                drift=drift, diffusion=diffusion, time_unit=time_unit, **kwargs)
     
-    def propagate(self, time, variate, time0, value0, state0=None):
+    def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         if self.noise_dim != self.process_dim:
             raise NotImplementedError('Cannot utilise the propagate_distr of the Markov process in propagate if noise_dim != process_dim; provide a custom implementation')
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        if variate is None:
+            if random_state is None: random_state = rnd.random_state()
+            variate = random_state.normal(size=self.noise_dim)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         distr = self.propagate_distr(time, time0, distrs.DiracDelta.create(value0), assume_distr=True)
         return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
@@ -183,7 +180,7 @@ class KalmanProcess(MarkovProcess):
         pass
     
 class WienerProcess(SolvedItoMarkovProcess):
-    def __init__(self, mean=None, vol=None):
+    def __init__(self, mean=None, vol=None, time_unit=dt.timedelta(days=1)):
         if mean is None and vol is None:
             mean = 0.; vol = 1.
         
@@ -214,7 +211,8 @@ class WienerProcess(SolvedItoMarkovProcess):
         self._str_WienerProcess = None
         
         super(WienerProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
-                drift=lambda t, x: self._mean, diffusion=lambda t, x: self._vol)
+                drift=lambda t, x: self._mean, diffusion=lambda t, x: self._vol,
+                time_unit=time_unit)
         
     @staticmethod
     def create_2d(mean1, mean2, sd1, sd2, cor):
@@ -237,14 +235,21 @@ class WienerProcess(SolvedItoMarkovProcess):
     def cov(self):
         return self._cov
     
-    def propagate(self, time, variate, time0, value0, state0=None):
+    def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        if variate is None:
+            if random_state is None: random_state = rnd.random_state()
+            variate = random_state.normal(size=self.noise_dim)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
+        if isinstance(time_delta, np.timedelta64):
+            time_delta = time_delta.item()
+        if isinstance(time_delta, dt.timedelta):
+            time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
         return value0 + self._mean * time_delta + np.dot(self._vol, np.sqrt(time_delta) * variate)
     
-    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+    def _propagate_distr_impl(self, distr0, time_delta, assume_distr=False):
         if not isinstance(distr0, distrs.NormalDistr) and not assume_distr:
             raise ValueError('Do not know how to propagate a distribution that is not normal')
         mean = distr0.mean + self._mean * time_delta
@@ -270,12 +275,9 @@ class WienerProcess(SolvedItoMarkovProcess):
     def __str__(self):
         if self._str_WienerProcess is None: self._str_WienerProcess = self.to_string_helper().to_string()
         return self._str_WienerProcess
-    
-    def __repr__(self):
-        return str(self)
 
 class GeometricBrownianMotion(SolvedItoMarkovProcess):
-    def __init__(self, pct_drift=None, pct_vol=None):
+    def __init__(self, pct_drift=None, pct_vol=None, time_unit=dt.timedelta(days=1)):
         if pct_drift is None and pct_vol is None:
             pct_drift = 0.; pct_vol = 1.
         
@@ -307,7 +309,8 @@ class GeometricBrownianMotion(SolvedItoMarkovProcess):
         
         super(GeometricBrownianMotion, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
                 drift=lambda t, x: self._pct_drift * x,
-                diffusion=lambda t, x: x * self._pct_vol)
+                diffusion=lambda t, x: x * self._pct_vol,
+                time_unit=time_unit)
         
     @staticmethod
     def create_2d(pct_drift1, pct_drift2, pct_sd1, pct_sd2, pct_cor):
@@ -330,16 +333,23 @@ class GeometricBrownianMotion(SolvedItoMarkovProcess):
     def pct_cov(self):
         return self._pct_cov
     
-    def propagate(self, time, variate, time0, value0, state0=None):
+    def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        if variate is None:
+            if random_state is None: random_state = rnd.random_state()
+            variate = random_state.normal(size=self.noise_dim)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
+        if isinstance(time_delta, np.timedelta64):
+            time_delta = time_delta.item()
+        if isinstance(time_delta, dt.timedelta):
+            time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
         return value0 * np.exp(
                 (self._pct_drift - .5 * npu.col(*np.sum(self._pct_vol**2, axis=1))) * time_delta + \
                 np.dot(self._pct_vol, np.sqrt(time_delta) * variate))
     
-    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+    def _propagate_distr_impl(self, distr0, time_delta, assume_distr=False):
         if not isinstance(distr0, distrs.LogNormalDistr) and not assume_distr:
             raise ValueError('Do not know how to propagate a distribution that is not log-normal')
         # Note: the sum of two independent log-normal distributions is only approximately log-normal
@@ -366,12 +376,9 @@ class GeometricBrownianMotion(SolvedItoMarkovProcess):
     def __str__(self):
         if self._str_GeometricBrownianMotion is None: self._str_GeometricBrownianMotion = self.to_string_helper().to_string()
         return self._str_GeometricBrownianMotion
-    
-    def __repr__(self):
-        return str(self)
 
 class BrownianBridge(SolvedItoMarkovProcess):
-    def __init__(self, initial_value=None, final_value=None, initial_time=0., final_time=1., vol=None):
+    def __init__(self, initial_value=None, final_value=None, initial_time=0., final_time=1., vol=None, time_unit=dt.timedelta(days=1)):
         process_dim = 1
 
         self.__initial_value = None
@@ -414,25 +421,43 @@ class BrownianBridge(SolvedItoMarkovProcess):
 
         super(BrownianBridge, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
                 drift=lambda t, x: (self.__final_value - x) / (self.__final_time - t),
-                diffusion=lambda t, x: self.__vol)
+                diffusion=lambda t, x: self.__vol,
+                time_unit=time_unit)
 
     @staticmethod
     def create_from_cov(initial_value=None, final_value=None, initial_time=0., final_time=1., cov=None):
         vol = None if cov is None else stats.cov_to_vol(cov)
         return BrownianBridge(initial_value=initial_value, final_value=final_value, initial_time=initial_time, final_time=final_time, vol=vol)
     
-    def propagate(self, time, variate, time0, value0, state0=None):
+    def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        if variate is None:
+            if random_state is None: random_state = rnd.random_state()
+            variate = random_state.normal(size=self.noise_dim)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
-        mean = value0 + time_delta / (self.__final_time - time0) * (self.__final_value - value0)
-        cov_factor = (time - time0) * (self.__final_time - time) / (self.__final_time - time0)
+        if isinstance(time_delta, np.timedelta64):
+            time_delta = time_delta.item()
+        if isinstance(time_delta, dt.timedelta):
+            time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
+        final_time_minus_time0 = self.__final_time - time0
+        if isinstance(final_time_minus_time0, np.timedelta64):
+            final_time_minus_time0 = final_time_minus_time0.item()
+        if isinstance(final_time_minus_time0, dt.timedelta):
+            final_time_minus_time0 = final_time_minus_time0.total_seconds() / self._time_unit.total_seconds()
+        final_time_minus_time = self.__final_time - time
+        if isinstance(final_time_minus_time, np.timedelta64):
+            final_time_minus_time = time_delta.item()
+        if isinstance(final_time_minus_time, dt.timedelta):
+            final_time_minus_time = final_time_minus_time.total_seconds() / self._time_unit.total_seconds()
+        mean = value0 + time_delta / final_time_minus_time0 * (self.__final_value - value0)
+        cov_factor = time_delta * final_time_minus_time / final_time_minus_time0
         vol_factor = np.sqrt(cov_factor)
         vol = vol_factor * self.__vol
         return mean + np.dot(vol, variate)
 
-    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+    def _propagate_distr_impl(self, distr0, time_delta, assume_distr=False):
         if not isinstance(distr0, distrs.NormalDistr) and not assume_distr:
             raise ValueError('Do not know how to propagate a distribution that is not normal')
         mean = value0 + time_delta / (self.__final_time - time0) * (self.__final_value - value0)
@@ -464,12 +489,9 @@ class BrownianBridge(SolvedItoMarkovProcess):
     def __str__(self):
         if self._str_BrownianBridge is None: self._str_BrownianBridge = self.to_string_helper().to_string()
         return self._str_BrownianBridge
-    
-    def __repr__(self):
-        return str(self)
 
 class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
-    def __init__(self, transition=None, mean=None, vol=None):
+    def __init__(self, transition=None, mean=None, vol=None, time_unit=dt.timedelta(days=1)):
         if transition is None and mean is None and vol is None:
             transition = 1.; mean = 0.; vol = 1.
             
@@ -520,7 +542,8 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         
         super(OrnsteinUhlenbeckProcess, self).__init__(process_dim=process_dim, noise_dim=noise_dim,
                 drift=lambda t, x: -np.dot(self._transition, x - self._mean),
-                diffusion=lambda t, x: self._vol)
+                diffusion=lambda t, x: self._vol,
+                time_unit=time_unit)
         
     @staticmethod
     def create_from_cov(transition=None, mean=None, cov=None):
@@ -576,18 +599,25 @@ class OrnsteinUhlenbeckProcess(SolvedItoMarkovProcess):
         eye_minus_mrf_squared = np.eye(self.process_dim * self.process_dim) - mrf_squared
         return npu.unvec(np.dot(np.dot(self._transition_x_2_inverse, eye_minus_mrf_squared), self._cov_vec), self.process_dim)
         
-    def propagate(self, time, variate, time0, value0, state0=None):
+    def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
+        if variate is None:
+            if random_state is None: random_state = rnd.random_state()
+            variate = random_state.normal(size=self.noise_dim)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
         time_delta = time - time0
+        if isinstance(time_delta, np.timedelta64):
+            time_delta = time_delta.item()
+        if isinstance(time_delta, dt.timedelta):
+            time_delta = time_delta.total_seconds() / self._time_unit.total_seconds()
         mrf = self.mean_reversion_factor(time_delta)
         eye_minus_mrf = np.eye(self.process_dim) - mrf
         m = np.dot(mrf, value0) + np.dot(eye_minus_mrf, self._mean)
         c = self.noise_covariance(time_delta)
         return m + np.dot(np.linalg.cholesky(c), variate)
         
-    def _propagate_distr_impl(self, time_delta, distr0, assume_distr):
+    def _propagate_distr_impl(self, distr0, time_delta, assume_distr=False):
         if not isinstance(distr0, distrs.NormalDistr) and not assume_distr:
             raise ValueError('Do not know how to propagate a distribution that is not normal')
         value0 = distr0.mean

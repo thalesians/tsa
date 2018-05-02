@@ -52,7 +52,7 @@ class EulerMaruyama(object):
         self.__process = process
         self.__value = npu.to_ndim_2(initial_value, ndim_1_to_col=True, copy=True) if initial_value is not None else npu.col_of(process.process_dim, 0.)
         self.__times = iter(times) if times is not None else xtimes(0., None, 1.)
-        self.__variates = variates if variates is not None else rnd.multivatiate_normals(ndim=process.noise_dim)
+        self.__variates = variates if variates is not None else rnd.multivariate_normals(ndim=process.noise_dim)
         self._time = None
         self._time_unit = time_unit
         self.__flatten = flatten

@@ -86,7 +86,8 @@ def ndim_1_of(n, val):
     r.fill(val)
     return r
 
-def make_immutable(arg):
+def make_immutable(arg, allow_none=False):
+    if allow_none and arg is None: return None
     checks.check_numpy_array(arg)
     arg.flags.writeable = False
     return arg
