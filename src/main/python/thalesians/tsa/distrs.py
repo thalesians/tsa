@@ -478,7 +478,7 @@ class EmpiricalDistr(WideSenseDistr):
 
     @property
     def var(self):
-        return self._var_n_minus_1 if self._use_n_minus_1_stats else self._var_n
+        return self.var_n_minus_1 if self._use_n_minus_1_stats else self.var_n
 
     @property
     def cov_n(self):
@@ -502,7 +502,7 @@ class EmpiricalDistr(WideSenseDistr):
 
     @property
     def cov(self):
-        return self._cov_n_minus_1 if self._use_n_minus_1_stats else self._cov_n
+        return self.cov_n_minus_1 if self._use_n_minus_1_stats else self.cov_n
 
     @property
     def vol_n(self):
