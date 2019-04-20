@@ -5,6 +5,7 @@ import numpy.testing as npt
 
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
+import thalesians.tsa.stats as stats
 
 class TestDistrs(unittest.TestCase):
     def test_multivariate_normal_distr(self):
@@ -20,12 +21,12 @@ class TestDistrs(unittest.TestCase):
         
         sd1=3.; sd2=4.; cor=-.5
 
-        normal_2d = distrs.NormalDistr(mean=[1., 2.], cov=distrs.NormalDistr.make_cov_2d(sd1=sd1, sd2=sd2, cor=cor))
+        normal_2d = distrs.NormalDistr(mean=[1., 2.], cov=stats.make_cov_2d(sd1=sd1, sd2=sd2, cor=cor))
         npt.assert_almost_equal(normal_2d.mean, npu.col(1., 2.))
         npt.assert_almost_equal(normal_2d.cov, [[sd1*sd1, cor*sd1*sd2], [cor*sd1*sd2, sd2*sd2]])
         npt.assert_almost_equal(normal_2d.vol, [[sd1, 0.], [cor*sd2, np.sqrt(1.-cor*cor)*sd2]])
 
-        normal_2d = distrs.NormalDistr(mean=[1., 2.], vol=distrs.NormalDistr.make_vol_2d(sd1=sd1, sd2=sd2, cor=cor))
+        normal_2d = distrs.NormalDistr(mean=[1., 2.], vol=stats.make_vol_2d(sd1=sd1, sd2=sd2, cor=cor))
         npt.assert_almost_equal(normal_2d.mean, npu.col(1., 2.))
         npt.assert_almost_equal(normal_2d.cov, [[sd1*sd1, cor*sd1*sd2], [cor*sd1*sd2, sd2*sd2]])
         npt.assert_almost_equal(normal_2d.vol, [[sd1, 0.], [cor*sd2, np.sqrt(1.-cor*cor)*sd2]])

@@ -30,41 +30,24 @@ class KalmanObsResult(filtering.ObsResult):
         if self._str_KalmanObsResult is None: self._str_KalmanObsResult = self.to_string_helper().to_string()
         return self._str_KalmanObsResult
     
-class KalmanFilterObsModel(filtering.ObsModel):
-    def __init__(self, obs_matrix):
-        super().__init__()
-        if not checks.is_numpy_array(obs_matrix) and not checks.is_iterable(obs_matrix):
-            obs_matrix = (obs_matrix,)
-        self._obs_matrix = npu.make_immutable(
-                block_diag(
-                        *[npu.to_ndim_2(om, ndim_1_to_col=False, copy=False) for om in obs_matrix]))
+class KalmanFilterObsModel(object):
+    def __init__(self):
         self._to_string_helper_KalmanFilterObsModel = None
         self._str_KalmanFilterObsModel = None
-        
-    @staticmethod
-    def create(*args):
-        return KalmanFilterObsModel(args)
-    
-    @property
-    def obs_matrix(self):
-        return self._obs_matrix
     
     def predict_obs(self, time, state_distr, observable=None):
-        obs_mean = np.dot(self._obs_matrix, state_distr.mean)
-        cross_cov = np.dot(self._obs_matrix, state_distr.cov)
-        obs_cov = np.dot(cross_cov, self._obs_matrix.T)
-        return filtering.PredictedObs(observable, time, N(mean=obs_mean, cov=obs_cov), cross_cov)
+        raise NotImplementedError()
     
     def to_string_helper(self):
-        if self._to_string_helper_KalmanFilterObsModel is None:
-            self._to_string_helper_KalmanFilterObsModel = super().to_string_helper() \
-                    .set_type(self) \
-                    .add('obs_matrix', self._obs_matrix)
+        if self._to_string_helper_KalmanFilterObsModel is None: self._to_string_helper_KalmanFilterObsModel = ToStringHelper(self)
         return self._to_string_helper_KalmanFilterObsModel
-    
+        
     def __str__(self):
         if self._str_KalmanFilterObsModel is None: self._str_KalmanFilterObsModel = self.to_string_helper().to_string()
         return self._str_KalmanFilterObsModel
+    
+    def __repr__(self):
+        return str(self)
 
 class KalmanFilterState(filtering.FilterState):
     def __init__(self, filter, time, is_posterior, state_distr, filter_name=None):  # @ReservedAssignment

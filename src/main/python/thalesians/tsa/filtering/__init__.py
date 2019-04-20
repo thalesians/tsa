@@ -171,25 +171,6 @@ class ObsResult(object):
     def __repr__(self):
         return str(self)
     
-class ObsModel(object):
-    def __init__(self):
-        self._to_string_helper_ObsModel = None
-        self._str_ObsModel = None
-    
-    def predict_obs(self, time, state_distr, observable=None):
-        raise NotImplementedError()
-    
-    def to_string_helper(self):
-        if self._to_string_helper_ObsModel is None: self._to_string_helper_ObsModel = ToStringHelper(self)
-        return self._to_string_helper_ObsModel
-        
-    def __str__(self):
-        if self._str_ObsModel is None: self._str_ObsModel = self.to_string_helper().to_string()
-        return self._str_ObsModel
-    
-    def __repr__(self):
-        return str(self)
-
 class Observable(objects.Named):
     def __init__(self, filter, name=None):  # @ReservedAssignment
         super().__init__(name)
