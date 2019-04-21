@@ -161,7 +161,6 @@ class LivePlot(object):
         self._keep_last_points = keep_last_points
         self._xs, self._ys = [], []
         self._minx, self._maxx, self._miny, self._maxy = [], [], [], []
-        self._flush_events_works = True
         if checks.is_timedelta(min_refresh_interval): min_refresh_interval = min_refresh_interval.total_seconds()
         self._min_refresh_interval = min_refresh_interval
         self._pad_left = pad_left
@@ -184,23 +183,12 @@ class LivePlot(object):
         return self._ax
         
     def refresh(self, force=False):
-        current_time = time.monotonic()
-        
+        current_time = time.monotonic()        
         if (not force) and self._min_refresh_interval is not None:
             if id(self._fig) in LivePlot._figure_refresh_times:
                 last_refresh_time = LivePlot._figure_refresh_times[id(self._fig)]
-                if current_time - last_refresh_time < self._min_refresh_interval: return
-        
-        if self._flush_events_works:
-            self._fig.canvas.draw_idle()
-            try:
-                self._fig.canvas.flush_events()
-            except NotImplementedError:
-                self._flush_events_works = False
-                self._fig.canvas.draw()
-        else:
-            self._fig.canvas.draw()
-        
+                if current_time - last_refresh_time < self._min_refresh_interval: return        
+        self._fig.canvas.draw()
         LivePlot._figure_refresh_times[id(self._fig)] = current_time
         
     def _append(self, x, y, plot_index):
