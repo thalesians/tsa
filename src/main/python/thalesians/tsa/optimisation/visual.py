@@ -84,11 +84,7 @@ def visualise_grid_search(grid_search_result,
                 heatmaps[(i1, i2)].autoscale()
         if (not refresh_until_ready) or all_ready: break
         else:
-            fig.canvas.draw_idle()
-            try:
-                fig.canvas.flush_events()
-            except NotImplementedError:
-                fig.canvas.draw()
+            fig.canvas.draw()
             time.sleep(1)
 
     return fig
