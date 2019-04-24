@@ -5,6 +5,7 @@ import numpy as np
 import statsmodels.api as sm
 
 import thalesians.tsa.checks as checks
+from thalesians.tsa.distrs import EmpiricalDistr
 from thalesians.tsa.distrs import NormalDistr as N
 import thalesians.tsa.filtering as filtering
 import thalesians.tsa.objects as objects
@@ -179,11 +180,14 @@ class ParticleFilter(objects.Named):
             return np.vstack([np.hstack([state_cov[r] for r in rs]) for rs in self._state_cov_rects])
         
         def _sub_state_distr(self, state_distr):
+            # TODO Does this even make sense?
             return N(mean=self._sub_state_mean(state_distr.mean), cov=self._sub_state_cov(state_distr.cov), copy=False)
         
         def predict(self, time, true_value=None):
+            print('ParticleObservable.predict called')
             self.filter.predict(time, true_value)
             predicted_obs = self._obs_model.predict_obs(time, self._sub_state_distr(self.filter._state_distr), self)
+            print('predicted_obs:', predicted_obs)
             
             cc = predicted_obs.cross_cov
             
@@ -233,6 +237,9 @@ class ParticleFilter(objects.Named):
         # TODO Use true_value
         if time < self._time:
             raise ValueError('Predicting the past (current time=%s, prediction time=%s)' % (self._time, time))
+        if time == self.time:
+            print('Predicting the present - nothing to do')
+            return
         if not self._resampled_particles_uptodate:
             self._resampled_particles[:] = self._prior_particles[:]
         row = 0
@@ -276,6 +283,8 @@ class ParticleFilter(objects.Named):
             #plt.plot(x_grid, kde.evaluate(x_grid))
             #plt.show()
             self.innovationvar = np.var(self.predicted_observation_particles) + self.predicted_observation_kde.bw * self.predicted_observation_kde.bw
+
+        self._state_distr = EmpiricalDistr(particles=self._prior_particles)
             
     def _weight(self, observation):
         if self._predicted_observation_sampler is not None:
