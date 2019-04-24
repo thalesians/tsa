@@ -317,6 +317,8 @@ class ParticleFilter(objects.Named):
         
         self._cached_posterior_mean = None
         self._cached_posterior_var = None
+
+        self._state_distr = EmpiricalDistr(particles=self._prior_particles, weights=self._weights)
         
     def _resample(self):
         raise NotImplementedError('Pure virtual method')
@@ -413,6 +415,8 @@ class MultinomialResamplingParticleFilter(ParticleFilter):
                 self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
                 particle_idx += 1
         
+        self._state_distr = EmpiricalDistr(particles=self._resampled_particles)
+
         self._resampled_particles_uptodate = True
         self._cached_resampled_mean = None
         self._cached_resampled_var = None
@@ -431,6 +435,8 @@ class RegularisedResamplingParticleFilter(ParticleFilter):
                 self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
                 particle_idx += 1
         self._resampled_particles[:] += bw_factor * kde.bw * self._random_state.normal(size=(self._particle_count, 1))
+        
+        self._state_distr = EmpiricalDistr(particles=self._resampled_particles)
         
         self._resampled_particles_uptodate = True
         self._cached_resampled_mean = None
@@ -465,6 +471,8 @@ class SmoothResamplingParticleFilter(ParticleFilter):
             else:
                 self._resampled_particles[i,:] = (self._prior_particles[regions[i],:] - self._prior_particles[regions[i]-1,:]) * new_uniforms[i] + self._prior_particles[regions[i]-1,:]   
             
+        self._state_distr = EmpiricalDistr(particles=self._resampled_particles)
+
         self._resampled_particles_uptodate = True
         self._cached_resampled_mean = None
         self._cached_resampled_var = None
