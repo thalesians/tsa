@@ -47,6 +47,9 @@ def numpy_timedelta64_to_python_timedelta(x, allow_none=False):
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
 
+def numpy_timedelta64_to_python_time(x, allow_none=False):
+    return (dt.datetime.min + numpy_timedelta64_to_python_timedelta(x, allow_none)).time()
+
 def pandas_timedelta_to_python_timedelta(x, allow_none=False):
     import pandas as pd
     if isinstance(x, pd.Timedelta): return x.to_pytimedelta()
@@ -73,6 +76,7 @@ def to_python_time(x, allow_datetimes=True, allow_none=False, *args, **kwargs):
     elif allow_datetimes and isinstance(x, dt.datetime): return x.time()
     elif allow_datetimes and isinstance(x, np.datetime64): return numpy_datetime64_to_python_datetime(x, *args, **kwargs).time()
     elif allow_datetimes and isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs).time()
+    elif isinstance(x, np.timedelta64): return numpy_timedelta64_to_python_time(x, allow_none)
     elif checks.is_string(x): return str_to_time(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_time(e, allow_datetimes, *args, **kwargs) for e in x]
     elif allow_none and x is None: return None
