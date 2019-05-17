@@ -1,6 +1,7 @@
 import copy
 import datetime
 import io
+import sys
 
 import numpy as np
 
@@ -297,7 +298,11 @@ class QLongValue(QNumericValue):
     def toLiteral(self):
         if self.value is None:
             return self.qType.nullValue
-        return '%s%s' % (str(long(self.value)), self.qType.char)
+        if sys.version_info >= (3, 0):
+            result = '%s%s' % (str(int(self.value)), self.qType.char)
+        else:
+            result = '%s%s' % (str(long(self.value)), self.qType.char)
+        return result
 
 def makeQLongValue(value=None):
     return QLongValue(value)
@@ -358,12 +363,12 @@ def inferQType(value, preferStringsToSymbols=False):
     elif isinstance(value, bool):
         return QTypes.BOOLEAN
     elif isinstance(value, int):
-        return QTypes.INT
-    elif isinstance(value, long):
+        return QTypes.INT if sys.version_info < (3, 0) else QTypes.LONG
+    elif sys.version_info < (3, 0) and isinstance(value, long):
         return QTypes.LONG
     elif isinstance(value, float):
         return QTypes.FLOAT
-    elif isinstance(value, str) or isinstance(value, unicode):
+    elif isinstance(value, str) or (sys.version_info < (3, 0) and isinstance(value, unicode)):
         return QTypes.CHAR_LIST if preferStringsToSymbols else QTypes.SYMBOL
     elif isinstance(value, datetime.datetime):
         return QTypes.DATETIME
