@@ -533,6 +533,53 @@ class QUpsertStatementBuilder(object):
 
         return statement.getvalue()
 
+class QBatchAppendStatementBuilder(object):
+    def __init__(self, rowsPerBatch=100):
+        self.__table = None
+        self.__rowsPerBatch = rowsPerBatch
+        self.__rows = []
+
+    def setTable(self, table):
+        self.__table = table
+        return self
+
+    def startNewRow(self):
+        self.__rows.append([])
+
+    def append(self, qValue):
+        assert len(self.__rows) > 0, 'No row has been started'
+        self.__rows[-1].append(qValue)
+
+    def toList(self):
+        assert self.__table is not None, 'Table is not set'
+
+        batches = []
+
+        i = 0
+        while i < len(self.__rows):
+            statement = io.StringIO()
+            statement.write('.[')
+            statement.write(toQSymbolLiteral(self.__table))
+            statement.write(';();,;(')
+            for j in range(self.__rowsPerBatch):
+                if i >= len(self.__rows): break
+                statement.write('(')
+                for index, qValue in enumerate(self.__rows[i]):
+                    if isinstance(qValue, QValue):
+                        statement.write(qValue.toLiteral())
+                    else:
+                        statement.write(qValue)
+                    if index < len(self.__rows[i]) - 1:
+                        statement.write(';')
+                statement.write(')')
+                if j < self.__rowsPerBatch - 1 and i < len(self.__rows) - 1:
+                    statement.write(';')
+                i += 1
+            statement.write(')]')
+            batches.append(statement.getvalue())
+
+        return batches
+
 class QExpression(object):
     def __init__(self, operator, lhs, rhs):
         self.operator = operator
