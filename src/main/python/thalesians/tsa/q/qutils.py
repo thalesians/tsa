@@ -799,3 +799,57 @@ def convert_time_zone(q_result, from_time_zone, to_time_zone, column_indices=((0
                 row_copy[column_index] = datetime
             processed_q_result.append(row_copy)
     return processed_q_result
+
+dtype_to_qtype = {
+    'object': None,
+    'int64': QTypes.LONG,
+    'float64': QTypes.FLOAT,
+    'bool': QTypes.BOOLEAN,
+    'datetime64[ns]': QTypes.DATETIME,
+    'timedelta[ns]': QTypes.TIME,
+    'category': QTypes.SYMBOL
+}
+
+def infer_q_type_for_df_column(df, column, string_columns=set()):
+    typ = dtype_to_qtype[df.dtypes[column].name]
+    if typ is None:
+        if all([isinstance(x, str) for x in df[column].values if x is not None]):
+            typ = QTypes.SYMBOL
+    if typ == QTypes.SYMBOL and column in string_columns:
+        typ = QTypes.UNTYPED_LIST
+    return typ
+
+def df_to_q_table_schema(df, name, string_columns=set()):
+    builder = QCreateTableStatementBuilder(overwrite=True)
+    builder.set_table(name)
+    for column in df.columns:
+        typ = infer_q_type_for_df_column(df, column, string_columns)
+        builder.append_column(column, typ, key=False)
+    return builder.to_string()
+
+def df_to_upsert_statements(df, name, string_columns=set(), q_types=None):
+    statements = []
+    if q_types is None:
+        q_types = {}
+        for column in df.columns:
+            q_types[column] = infer_q_type_for_df_column(df, column, string_columns)
+    for index, row in df.iterrows():
+        builder = QUpsertStatementBuilder()
+        builder.set_table(name)
+        for column in df.columns:
+            builder.append(make_q_value(row[column], q_types[column]))
+        statements.append(builder.to_string())
+    return statements
+
+def df_to_batch_append_statements(df, name, string_columns=set(), q_types=None, rows_per_batch=100):
+    builder = QBatchAppendStatementBuilder(rows_per_batch=rows_per_batch)
+    builder.set_table(name)
+    if q_types is None:
+        q_types = {}
+        for column in df.columns:
+            q_types[column] = infer_q_type_for_df_column(df, column, string_columns)
+    for index, row in df.iterrows():
+        builder.start_new_row()
+        for column in df.columns:
+            builder.append(make_q_value(row[column], q_types[column]))
+    return builder.to_list()
