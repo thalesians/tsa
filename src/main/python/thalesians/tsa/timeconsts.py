@@ -28,6 +28,7 @@ MICROSECONDS_PER_DAY = 86400000000
 NANOSECONDS_PER_DAY = 86400000000000
 
 ONE_MICROSECOND = dt.timedelta(microseconds=1)
+ONE_MILLISECOND = dt.timedelta(microseconds=1000)
 ONE_SECOND = dt.timedelta(seconds=1)
 ONE_MINUTE = dt.timedelta(minutes=1)
 ONE_HOUR = dt.timedelta(hours=1)
