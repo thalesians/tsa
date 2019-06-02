@@ -30,6 +30,7 @@ class Sequential(object):
         self._graph = tf.Graph()
         self._layers = []
         self._tf_layers = []
+        self._session = None
 
     def add(self, layer):
         if len(self._layers) == 0:
@@ -60,11 +61,21 @@ class Sequential(object):
             with self._graph.as_default():
                 self._optimizer = tf.train.GradientDescentOptimizer(lr, name='Optimizer').minimize(self._loss)
 
+    def _init_session(self):
+        if self._session is None:
+            self._session = tf.InteractiveSession(graph=self._graph)
+            init = tf.global_variables_initializer()
+            self._session.run(init)
+
     def fit(self, x, y, epochs):
-        self._session = tf.InteractiveSession(graph=self._graph)
-        init = tf.global_variables_initializer()
-        self._session.run(init)
+        self._init_session()
         for epoch in range(epochs):
             y_pred, _, loss = self._session.run([self._tf_layers[-1], self._optimizer, self._loss], feed_dict = {self._x: x, self._y: y})
         print('loss:', loss)
+        return y_pred
+
+    def predict(self, x):
+        self._init_session()
+        y_pred = self._session.run([self._tf_layers[-1]], feed_dict = {self._x: x})
+        y_pred = y_pred[0]
         return y_pred
