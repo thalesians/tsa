@@ -102,7 +102,7 @@ def check_int(arg, allow_none=False, message='Argument "%(string)s" is not an in
 
 def is_some_numpy_int(arg, allow_none=False):
     import numpy as np
-    return is_instance(arg, (np.int, np.int0, np.int8, np.int16, np.int32, np.int64), allow_none)
+    return is_instance(arg, (np.int0, np.int8, np.int16, np.int32, np.int64), allow_none)
 
 def check_some_numpy_int(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy int*, but of type %(actual)s', level=1):
     check(is_some_numpy_int(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
@@ -132,7 +132,7 @@ def check_float(arg, allow_none=False, message='Argument "%(string)s" is not a f
 
 def is_some_numpy_float(arg, allow_none=False):
     import numpy as np
-    return is_instance(arg, (np.float, np.float16, np.float32, np.float64), allow_none)
+    return is_instance(arg, (np.float16, np.float32, np.float64), allow_none)
 
 def check_some_numpy_float(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy float*, but of type %(actual)s', level=1):
     check(is_some_numpy_float(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)

@@ -416,6 +416,334 @@ class TestConditions(unittest.TestCase):
         self.assertFalse(checks.is_same_len_or_all_none([1], None, ['aaa', 222]))
         self.assertFalse(checks.is_same_len_or_all_none(None, ['aaa'], []))
         self.assertFalse(checks.is_same_len_or_all_none(None, ['aaa'], [111, 'BBB']))
+        
+    def test_is_instance(self):
+        self.assertTrue(checks.is_instance(1, int))
+        self.assertTrue(checks.is_instance(3.5, float))
+        self.assertTrue(checks.is_instance('hello', str))
+        self.assertTrue(checks.is_instance([1, 2, 3], list))
+    
+        self.assertTrue(checks.is_instance(1, (int, float)))
+        self.assertTrue(checks.is_instance(3.5, (int, float)))
+        self.assertTrue(checks.is_instance('hello', (str, list)))
+        self.assertTrue(checks.is_instance([1, 2, 3], (str, list)))
+    
+        self.assertFalse(checks.is_instance(1, float))
+        self.assertFalse(checks.is_instance(3.5, int))
+        self.assertFalse(checks.is_instance('hello', list))
+        self.assertFalse(checks.is_instance([1, 2, 3], str))
+    
+        self.assertFalse(checks.is_instance(1, (list, str)))
+        self.assertFalse(checks.is_instance(3.5, (list, str)))
+        self.assertFalse(checks.is_instance('hello', (int, float)))
+        self.assertFalse(checks.is_instance([1, 2, 3], (int, float)))
+    
+        self.assertFalse(checks.is_instance(None, int))
+        self.assertFalse(checks.is_instance(None, float))
+        self.assertFalse(checks.is_instance(None, str))
+        self.assertFalse(checks.is_instance(None, list))
+    
+        self.assertFalse(checks.is_instance(None, (int, float)))
+        self.assertFalse(checks.is_instance(None, (int, float)))
+        self.assertFalse(checks.is_instance(None, (str, list)))
+        self.assertFalse(checks.is_instance(None, (str, list)))
+    
+        self.assertTrue(checks.is_instance(1, int, allow_none=True))
+        self.assertTrue(checks.is_instance(3.5, float, allow_none=True))
+        self.assertTrue(checks.is_instance('hello', str, allow_none=True))
+        self.assertTrue(checks.is_instance([1, 2, 3], list, allow_none=True))
+    
+        self.assertTrue(checks.is_instance(1, (int, float), allow_none=True))
+        self.assertTrue(checks.is_instance(3.5, (int, float), allow_none=True))
+        self.assertTrue(checks.is_instance('hello', (str, list), allow_none=True))
+        self.assertTrue(checks.is_instance([1, 2, 3], (str, list), allow_none=True))
+    
+        self.assertFalse(checks.is_instance(1, float, allow_none=True))
+        self.assertFalse(checks.is_instance(3.5, int, allow_none=True))
+        self.assertFalse(checks.is_instance('hello', list, allow_none=True))
+        self.assertFalse(checks.is_instance([1, 2, 3], str, allow_none=True))
+    
+        self.assertFalse(checks.is_instance(1, (list, str), allow_none=True))
+        self.assertFalse(checks.is_instance(3.5, (list, str), allow_none=True))
+        self.assertFalse(checks.is_instance('hello', (int, float), allow_none=True))
+        self.assertFalse(checks.is_instance([1, 2, 3], (int, float), allow_none=True))
+    
+        self.assertTrue(checks.is_instance(None, int, allow_none=True))
+        self.assertTrue(checks.is_instance(None, float, allow_none=True))
+        self.assertTrue(checks.is_instance(None, str, allow_none=True))
+        self.assertTrue(checks.is_instance(None, list, allow_none=True))
+    
+        self.assertTrue(checks.is_instance(None, (int, float), allow_none=True))
+        self.assertTrue(checks.is_instance(None, (int, float), allow_none=True))
+        self.assertTrue(checks.is_instance(None, (str, list), allow_none=True))
+        self.assertTrue(checks.is_instance(None, (str, list), allow_none=True))
+    
+    def test_check_instance(self):
+        checks.check_instance(1, int)
+        checks.check_instance(3.5, float)
+        checks.check_instance('hello', str)
+        checks.check_instance([1, 2, 3], list)
+    
+        checks.check_instance(1, (int, float))
+        checks.check_instance(3.5, (int, float))
+        checks.check_instance('hello', (str, list))
+        checks.check_instance([1, 2, 3], (str, list))
+    
+        with self.assertRaises(AssertionError):
+            checks.check_instance(1, float)
+        with self.assertRaises(AssertionError):
+            checks.check_instance(3.5, int)
+        with self.assertRaises(AssertionError):
+            checks.check_instance('hello', list)
+        with self.assertRaises(AssertionError):
+            checks.check_instance([1, 2, 3], str)
+    
+        with self.assertRaises(AssertionError):
+            checks.check_instance(1, (list, str))
+        with self.assertRaises(AssertionError):
+            checks.check_instance(3.5, (list, str))
+        with self.assertRaises(AssertionError):
+            checks.check_instance('hello', (int, float))
+        with self.assertRaises(AssertionError):
+            checks.check_instance([1, 2, 3], (int, float))
+    
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, int)
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, float)
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, str)
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, list)
+    
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, (int, float))
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, (int, float))
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, (str, list))
+        with self.assertRaises(AssertionError):
+            checks.check_instance(None, (str, list))
+    
+        checks.check_instance(1, int, allow_none=True)
+        checks.check_instance(3.5, float, allow_none=True)
+        checks.check_instance('hello', str, allow_none=True)
+        checks.check_instance([1, 2, 3], list, allow_none=True)
+    
+        checks.check_instance(1, (int, float), allow_none=True)
+        checks.check_instance(3.5, (int, float), allow_none=True)
+        checks.check_instance('hello', (str, list), allow_none=True)
+        checks.check_instance([1, 2, 3], (str, list), allow_none=True)
+    
+        with self.assertRaises(AssertionError):
+            checks.check_instance(1, float, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_instance(3.5, int, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_instance('hello', list, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_instance([1, 2, 3], str, allow_none=True)
+    
+        with self.assertRaises(AssertionError):
+            checks.check_instance(1, (list, str), allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_instance(3.5, (list, str), allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_instance('hello', (int, float), allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_instance([1, 2, 3], (int, float), allow_none=True)
+    
+        checks.check_instance(None, int, allow_none=True)
+        checks.check_instance(None, float, allow_none=True)
+        checks.check_instance(None, str, allow_none=True)
+        checks.check_instance(None, list, allow_none=True)
+    
+        checks.check_instance(None, (int, float), allow_none=True)
+        checks.check_instance(None, (int, float), allow_none=True)
+        checks.check_instance(None, (str, list), allow_none=True)
+        checks.check_instance(None, (str, list), allow_none=True)
+        
+    def test_ints(self):
+        import numpy as np
+        
+        self.assertTrue(checks.is_int(3))
+        self.assertFalse(checks.is_int(3.5))
+        self.assertFalse(checks.is_int(np.int64(3)))
+        self.assertFalse(checks.is_int(None))
+        self.assertTrue(checks.is_int(None, allow_none=True))
+        self.assertFalse(checks.is_int('hi'))
+        
+        checks.check_int(3)
+        with self.assertRaises(AssertionError):
+            checks.check_int(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_int(np.int64(3))
+        with self.assertRaises(AssertionError):
+            checks.check_int(None)
+        checks.check_int(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_int('hi')
+        
+        self.assertFalse(checks.is_some_numpy_int(3))
+        self.assertFalse(checks.is_some_numpy_int(3.5))
+        self.assertTrue(checks.is_some_numpy_int(np.int64(3)))
+        self.assertFalse(checks.is_some_numpy_int(None))
+        self.assertTrue(checks.is_some_numpy_int(None, allow_none=True))
+        self.assertFalse(checks.is_some_numpy_int('hi'))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_int(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_int(3.5)
+        checks.check_some_numpy_int(np.int64(3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_int(None)
+        checks.check_some_numpy_int(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_int('hi')
+
+        self.assertFalse(checks.is_some_numpy_uint(3))
+        self.assertFalse(checks.is_some_numpy_uint(3.5))
+        self.assertTrue(checks.is_some_numpy_uint(np.uint64(3)))
+        self.assertFalse(checks.is_some_numpy_uint(None))
+        self.assertTrue(checks.is_some_numpy_uint(None, allow_none=True))
+        self.assertFalse(checks.is_some_numpy_uint('hi'))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_uint(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_uint(3.5)
+        checks.check_some_numpy_uint(np.uint64(3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_uint(None)
+        checks.check_some_numpy_uint(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_uint('hi')
+
+        self.assertTrue(checks.is_some_int(3))
+        self.assertFalse(checks.is_some_int(3.5))
+        self.assertTrue(checks.is_some_int(np.uint64(3)))
+        self.assertFalse(checks.is_some_int(None))
+        self.assertTrue(checks.is_some_int(None, allow_none=True))
+        self.assertFalse(checks.is_some_int('hi'))
+
+        checks.check_some_int(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_int(3.5)
+        checks.check_some_int(np.int64(3))
+        checks.check_some_int(np.uint64(3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_int(None)
+        checks.check_some_int(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_int('hi')
+        
+    def test_floats(self):
+        import numpy as np
+        
+        self.assertFalse(checks.is_float(3))
+        self.assertTrue(checks.is_float(3.5))
+        # NB! The following is true (is that right?):
+        self.assertTrue(checks.is_float(np.float64(3.5)))
+        # NB! The following is true (is that right?):
+        self.assertTrue(checks.is_float(np.double(3.5)))
+        self.assertFalse(checks.is_float(None))
+        self.assertTrue(checks.is_float(None, allow_none=True))
+        self.assertFalse(checks.is_float('hi'))
+    
+        with self.assertRaises(AssertionError):
+            checks.check_float(3)
+        checks.check_float(3.5)
+        checks.check_float(np.float64(3.5))
+        checks.check_float(np.double(3.5))
+        with self.assertRaises(AssertionError):
+            checks.check_float(None)
+        checks.check_float(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_float('hi')
+        
+        self.assertFalse(checks.is_some_numpy_float(3))
+        self.assertFalse(checks.is_some_numpy_float(3.5))
+        self.assertTrue(checks.is_some_numpy_float(np.float64(3.5)))
+        # NB! The following is true (is that right?):
+        self.assertTrue(checks.is_some_numpy_float(np.double(3.5)))
+        self.assertFalse(checks.is_some_numpy_float(None))
+        self.assertTrue(checks.is_some_numpy_float(None, allow_none=True))
+        self.assertFalse(checks.is_some_numpy_float('hi'))
+    
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_float(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_float(3.5)
+        checks.check_some_numpy_float(np.float64(3.5))
+        checks.check_some_numpy_float(np.double(3.5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_float(None)
+        checks.check_some_numpy_float(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_float('hi')
+        
+        self.assertFalse(checks.is_some_numpy_double(3))
+        self.assertFalse(checks.is_some_numpy_double(3.5))
+        # NB! The following is true (is that right?):
+        self.assertTrue(checks.is_some_numpy_double(np.float64(3.5)))
+        self.assertTrue(checks.is_some_numpy_double(np.double(3.5)))
+        self.assertFalse(checks.is_some_numpy_double(None))
+        self.assertTrue(checks.is_some_numpy_double(None, allow_none=True))
+        self.assertFalse(checks.is_some_numpy_double('hi'))
+    
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_double(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_double(3.5)
+        checks.check_some_numpy_double(np.float64(3.5))
+        checks.check_some_numpy_double(np.double(3.5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_double(None)
+        checks.check_some_numpy_double(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_numpy_double('hi')
+        
+        self.assertFalse(checks.is_some_float(3))
+        self.assertTrue(checks.is_some_float(3.5))
+        self.assertTrue(checks.is_some_float(np.float64(3.5)))
+        self.assertTrue(checks.is_some_float(np.double(3.5)))
+        self.assertFalse(checks.is_some_float(None))
+        self.assertTrue(checks.is_some_float(None, allow_none=True))
+        self.assertFalse(checks.is_some_float('hi'))
+    
+        with self.assertRaises(AssertionError):
+            checks.check_some_float(3)
+        checks.check_some_float(3.5)
+        checks.check_some_float(np.float64(3.5))
+        checks.check_some_float(np.double(3.5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_float(None)
+        checks.check_some_float(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_float('hi')        
+        
+    def test_numbers(self):
+        import numpy as np
+                
+        self.assertTrue(checks.is_some_number(3))
+        self.assertTrue(checks.is_some_number(3.5))
+        self.assertTrue(checks.is_some_number(np.int64(3)))
+        self.assertTrue(checks.is_some_number(np.float64(3.5)))
+        self.assertTrue(checks.is_some_number(np.double(3.5)))
+        self.assertFalse(checks.is_some_number(None))
+        self.assertTrue(checks.is_some_number(None, allow_none=True))
+        self.assertFalse(checks.is_some_number('hi'))
+    
+        checks.check_some_number(3)
+        checks.check_some_number(3.5)
+        checks.check_some_number(np.float64(3.5))
+        checks.check_some_number(np.double(3.5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_number(None)
+        checks.check_some_number(None, allow_none=True)
+        with self.assertRaises(AssertionError):
+            checks.check_some_number('hi')        
 
 if __name__ == '__main__':
     unittest.main()
