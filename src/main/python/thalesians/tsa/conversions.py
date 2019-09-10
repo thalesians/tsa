@@ -28,14 +28,14 @@ def numpy_datetime64_to_python_datetime(x, allow_none=False):
         r = dt.datetime(year, month, day, hour, minute, second, microsecond)
         if microsecond % 10 == 9: r += dt.timedelta(microseconds=1)
         return r
-    elif checks.is_iterable(x): return [numpy_datetime64_to_python_datetime(e) for e in x]
+    elif checks.is_iterable(x): return [numpy_datetime64_to_python_datetime(e, allow_none) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
 def pandas_timestamp_to_python_datetime(x, allow_none=False):
     import pandas as pd
     if isinstance(x, pd.Timestamp): return x.to_pydatetime()
-    elif checks.is_iterable(x): return [pandas_timestamp_to_python_datetime(e) for e in x]
+    elif checks.is_iterable(x): return [pandas_timestamp_to_python_datetime(e, allow_none) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
@@ -43,17 +43,18 @@ def numpy_timedelta64_to_python_timedelta(x, allow_none=False):
     import numpy as np
     import pandas as pd
     if isinstance(x, np.timedelta64): return pd.to_timedelta(x, errors='coerce', box=True).to_pytimedelta()
-    elif checks.is_iterable(x): return [numpy_timedelta64_to_python_timedelta(e) for e in x]
+    elif checks.is_iterable(x): return [numpy_timedelta64_to_python_timedelta(e, allow_none) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
 
 def numpy_timedelta64_to_python_time(x, allow_none=False):
+    if checks.is_iterable(x): return[numpy_timedelta64_to_python_time(e, allow_none) for e in x]
     return (dt.datetime.min + numpy_timedelta64_to_python_timedelta(x, allow_none)).time()
 
 def pandas_timedelta_to_python_timedelta(x, allow_none=False):
     import pandas as pd
     if isinstance(x, pd.Timedelta): return x.to_pytimedelta()
-    elif checks.is_iterable(x): return [pandas_timedelta_to_python_timedelta(e) for e in x]
+    elif checks.is_iterable(x): return [pandas_timedelta_to_python_timedelta(e, allow_none) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
     
@@ -65,7 +66,7 @@ def to_python_date(x, allow_datetimes=True, allow_none=False, *args, **kwargs):
     elif allow_datetimes and isinstance(x, np.datetime64): return numpy_datetime64_to_python_datetime(x, *args, **kwargs).date()
     elif allow_datetimes and isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs).date()
     elif checks.is_string(x): return str_to_date(x, *args, **kwargs)
-    elif checks.is_iterable(x): return [to_python_date(e, allow_datetimes, *args, **kwargs) for e in x]
+    elif checks.is_iterable(x): return [to_python_date(e, allow_datetimes, allow_none, *args, **kwargs) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python date' % str(x))
 
@@ -78,7 +79,7 @@ def to_python_time(x, allow_datetimes=True, allow_none=False, *args, **kwargs):
     elif allow_datetimes and isinstance(x, pd.Timestamp): return pandas_timestamp_to_python_datetime(x, *args, **kwargs).time()
     elif isinstance(x, np.timedelta64): return numpy_timedelta64_to_python_time(x, allow_none)
     elif checks.is_string(x): return str_to_time(x, *args, **kwargs)
-    elif checks.is_iterable(x): return [to_python_time(e, allow_datetimes, *args, **kwargs) for e in x]
+    elif checks.is_iterable(x): return [to_python_time(e, allow_datetimes, allow_none, *args, **kwargs) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python time' % str(x))
 
@@ -91,7 +92,7 @@ def to_python_datetime(x, allow_dates=True, date_for_times=dt.date.today(), allo
     elif date_for_times is not None and isinstance(x, dt.time): return dt.datetime.combine(date_for_times, x)
     elif allow_dates and isinstance(x, dt.date): return dt.datetime.combine(x, dt.time())
     elif checks.is_string(x): return str_to_datetime(x, *args, **kwargs)
-    elif checks.is_iterable(x): return [to_python_datetime(e, allow_dates, date_for_times, *args, **kwargs) for e in x]
+    elif checks.is_iterable(x): return [to_python_datetime(e, allow_dates, date_for_times, allow_none, *args, **kwargs) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python datetime' % str(x))
 
@@ -104,6 +105,7 @@ def to_python_timedelta(x, allow_none=False):
         return pandas_timedelta_to_python_timedelta(x, allow_none)
     elif isinstance(x, dt.timedelta):
         return x
+    elif checks.is_iterable(x): return [to_python_timedelta(e, allow_none) for e in x]
     elif allow_none and x is None: return None
     else:
         try: return dt.timedelta(seconds=x)
@@ -114,7 +116,7 @@ def to_python_int(x, allow_none=False, allow_floats=False, *args, **kwargs):
     if checks.is_some_int(x, allow_none): return None if x is None else int(x)
     elif allow_floats and checks.is_some_float(x, allow_none): return int(to_python_float(x))
     elif checks.is_string(x): return str_to_int(x, *args, **kwargs)
-    elif checks.is_iterable(x): return [to_python_int(e, *args, **kwargs) for e in x]
+    elif checks.is_iterable(x): return [to_python_int(e, allow_none, allow_floats, *args, **kwargs) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python int' % str(x))
 
@@ -122,7 +124,7 @@ def to_python_float(x, allow_none=False, allow_ints=False, *args, **kwargs):
     if checks.is_some_float(x, allow_none): return None if x is None else float(x)
     elif allow_ints and checks.is_some_int(x, allow_none): return float(to_python_int(x))
     elif checks.is_string(x): return str_to_float(x, *args, **kwargs)
-    elif checks.is_iterable(x): return [to_python_float(e, *args, **kwargs) for e in x]
+    elif checks.is_iterable(x): return [to_python_float(e, allow_none, allow_ints, *args, **kwargs) for e in x]
     elif allow_none and x is None: return None
     raise ValueError('Unable to convert "%s" to Python float' % str(x))
 
