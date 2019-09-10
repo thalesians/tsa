@@ -1264,6 +1264,139 @@ class TestConditions(unittest.TestCase):
             checks.check_iterable_over_instances(None, int)
         iterable = checks.check_iterable_over_instances(None, int, allow_none=True)
         self.assertTrue(iterable is None)
+        
+    def test_dicts(self):
+        import collections as col
+        import numpy as np
+        
+        self.assertFalse(checks.is_dict(3))
+        self.assertFalse(checks.is_dict(3.5))
+        self.assertFalse(checks.is_dict('hi'))
+        self.assertFalse(checks.is_dict([1, 2, 3]))
+        self.assertFalse(checks.is_dict([[1, 2, 3], [1, 2, 3]]))
+        self.assertFalse(checks.is_dict(np.array([1, 2, 3])))
+        self.assertFalse(checks.is_dict(np.array([[1, 2, 3], [1, 2, 3]])))
+        self.assertTrue(checks.is_dict({'name': 'Paul', 'surname': 'Bilokon'}))
+        self.assertTrue(checks.is_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon')))))
+        self.assertFalse(checks.is_dict(None))
+        self.assertTrue(checks.is_dict(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_dict(3)
+        with self.assertRaises(AssertionError):
+            checks.check_dict(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_dict('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_dict([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_dict([[1, 2, 3], [1, 2, 3]])
+        with self.assertRaises(AssertionError):
+            checks.check_dict(np.array([1, 2, 3]))
+        with self.assertRaises(AssertionError):
+            checks.check_dict(np.array([[1, 2, 3], [1, 2, 3]]))
+        checks.check_dict({'name': 'Paul', 'surname': 'Bilokon'})
+        checks.check_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon'))))
+        with self.assertRaises(AssertionError):
+            checks.check_dict(None)
+        checks.check_dict(None, allow_none=True)
+        
+        self.assertFalse(checks.is_some_dict(3))
+        self.assertFalse(checks.is_some_dict(3.5))
+        self.assertFalse(checks.is_some_dict('hi'))
+        self.assertFalse(checks.is_some_dict([1, 2, 3]))
+        self.assertFalse(checks.is_some_dict([[1, 2, 3], [1, 2, 3]]))
+        self.assertFalse(checks.is_some_dict(np.array([1, 2, 3])))
+        self.assertFalse(checks.is_some_dict(np.array([[1, 2, 3], [1, 2, 3]])))
+        self.assertTrue(checks.is_some_dict({'name': 'Paul', 'surname': 'Bilokon'}))
+        self.assertTrue(checks.is_some_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon')))))
+        self.assertFalse(checks.is_some_dict(None))
+        self.assertTrue(checks.is_some_dict(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict([[1, 2, 3], [1, 2, 3]])
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict(np.array([1, 2, 3]))
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict(np.array([[1, 2, 3], [1, 2, 3]]))
+        checks.check_some_dict({'name': 'Paul', 'surname': 'Bilokon'})
+        checks.check_some_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon'))))
+        with self.assertRaises(AssertionError):
+            checks.check_some_dict(None)
+        checks.check_some_dict(None, allow_none=True)
+        
+    def test_callables(self):
+        import numpy as np
+        
+        self.assertFalse(checks.is_callable(3))
+        self.assertFalse(checks.is_callable(3.5))
+        self.assertFalse(checks.is_callable('hi'))
+        self.assertFalse(checks.is_callable([1, 2, 3]))
+        self.assertFalse(checks.is_callable([[1, 2, 3], [1, 2, 3]]))
+        self.assertFalse(checks.is_callable(np.array([1, 2, 3])))
+        self.assertFalse(checks.is_callable(np.array([[1, 2, 3], [1, 2, 3]])))
+        self.assertFalse(checks.is_callable({'name': 'Paul', 'surname': 'Bilokon'}))
+        def my_func():
+            return 123
+        self.assertTrue(checks.is_callable(my_func))
+        self.assertTrue(checks.is_callable(lambda x, y: x + y))
+        self.assertFalse(checks.is_callable(None))
+        self.assertTrue(checks.is_callable(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_callable(3)
+        with self.assertRaises(AssertionError):
+            checks.check_callable(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_callable('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_callable([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_callable([[1, 2, 3], [1, 2, 3]])
+        with self.assertRaises(AssertionError):
+            checks.check_callable(np.array([1, 2, 3]))
+        with self.assertRaises(AssertionError):
+            checks.check_callable(np.array([[1, 2, 3], [1, 2, 3]]))
+        with self.assertRaises(AssertionError):
+            checks.check_callable({'name': 'Paul', 'surname': 'Bilokon'})
+        def my_func1():
+            return 123
+        checks.check_callable(my_func1)
+        checks.check_callable(lambda x, y: x + y)
+        with self.assertRaises(AssertionError):
+            checks.check_callable(None)
+        checks.check_callable(None, allow_none=True)
+        
+    def test_type(self):
+        import numpy as np
+        
+        self.assertFalse(checks.is_type(3))
+        self.assertFalse(checks.is_type('hi'))
+        self.assertFalse(checks.is_type([1, 2, 3]))
+        self.assertTrue(checks.is_type(int))
+        self.assertTrue(checks.is_type(np.ndarray))
+        self.assertFalse(checks.is_type(None))
+        self.assertTrue(checks.is_type(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_type(3)
+        with self.assertRaises(AssertionError):
+            checks.check_type('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_type([1, 2, 3])
+        checks.check_type(int)
+        checks.check_type(np.ndarray)
+        with self.assertRaises(AssertionError):
+            checks.check_type(None)
+        checks.check_type(None, allow_none=True)
 
 if __name__ == '__main__':
     unittest.main()
