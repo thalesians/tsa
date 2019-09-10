@@ -1,5 +1,4 @@
 import collections as col
-import datetime as dt
 
 import thalesians.tsa.settings as settings
 import thalesians.tsa.utils as utils
@@ -176,10 +175,12 @@ def check_string(arg, allow_none=False, message='Argument "%(string)s" of type %
     return arg
 
 def is_date(arg, allow_none=False):
+    import datetime as dt
+    if is_instance(arg, dt.datetime, allow_none=False): return False
     return is_instance(arg, dt.date, allow_none)
 
-def check_date(arg, message='Argument "%(string)s" of type %(actual)s is not a date', level=1):
-    check(is_date(arg), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+def check_date(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a date', level=1):
+    check(is_date(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
 def is_some_date(arg, allow_none=False):
@@ -190,6 +191,7 @@ def check_some_date(arg, allow_none=False, message='Argument "%(string)s" of typ
     return arg
 
 def is_time(arg, allow_none=False):
+    import datetime as dt
     return is_instance(arg, dt.time, allow_none)
 
 def check_time(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a time', level=1):
@@ -204,6 +206,7 @@ def check_some_time(arg, allow_none=False, message='Argument "%(string)s" of typ
     return arg
 
 def is_datetime(arg, allow_none=False):
+    import datetime as dt
     return is_instance(arg, dt.datetime, allow_none)
 
 def check_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a datetime', level=1):
@@ -211,6 +214,7 @@ def check_datetime(arg, allow_none=False, message='Argument "%(string)s" of type
     return arg
 
 def is_some_datetime(arg, allow_none=False):
+    import datetime as dt
     import numpy as np
     import pandas as pd
     return is_instance(arg, (dt.datetime, np.datetime64, pd.Timestamp), allow_none)
@@ -220,6 +224,7 @@ def check_some_datetime(arg, allow_none=False, message='Argument "%(string)s" of
     return arg
 
 def is_timedelta(arg, allow_none=False):
+    import datetime as dt
     return is_instance(arg, dt.timedelta, allow_none)
 
 def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a timedelta', level=1):
@@ -227,6 +232,7 @@ def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of typ
     return arg
 
 def is_some_timedelta(arg, allow_none=False):
+    import datetime as dt
     import numpy as np
     import pandas as pd
     return is_instance(arg, (dt.timedelta, np.timedelta64, pd.Timedelta), allow_none)
@@ -249,6 +255,19 @@ def check_iterable_not_string(arg, allow_none=False, message='Argument "%(string
     check(is_iterable_not_string(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
 
+def is_iterable_over_instances(arg, types, allow_none=False, allow_empty=False):
+    if (allow_none and arg is None): return True, arg
+    if is_iterable(arg):
+        objs, iterable = utils.peek(iter(arg))
+        if (len(objs) == 0): return allow_empty, iterable
+        return isinstance(objs[0], types), iterable
+    return False, arg
+    
+def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=False, message='Argument is not an iterable over type %(expected)s', level=1):
+    result, iterable = is_iterable_over_instances(arg, types, allow_none, allow_empty)
+    check(result, lambda: message % {'expected': types}, level)
+    return iterable
+
 def is_dict(arg, allow_none=False):
     return is_instance(arg, dict, allow_none)
 
@@ -269,19 +288,6 @@ def is_callable(arg, allow_none=False):
 def check_callable(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not callable', level=1):
     check(is_callable(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
     return arg
-
-def is_iterable_over_instances(arg, types, allow_none=False, allow_empty=False):
-    if (allow_none and arg is None): return True, arg
-    if is_iterable(arg):
-        objs, iterable = utils.peek(iter(arg))
-        if (len(objs) == 0): return allow_empty, iterable
-        return isinstance(objs[0], types), iterable
-    return False, arg
-    
-def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=False, message='Argument is not an iterable over type %(expected)s', level=1):
-    result, iterable = is_iterable_over_instances(arg, types, allow_none, allow_empty)
-    check(result, lambda: message % {'expected': types}, level)
-    return iterable
 
 def is_type(arg, allow_none=False):
     return is_instance(arg, type, allow_none)
