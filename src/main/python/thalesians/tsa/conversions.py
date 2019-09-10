@@ -111,7 +111,7 @@ def to_python_timedelta(x, allow_none=False):
     raise ValueError('Unable to convert "%s" to Python timedelta' % str(x))
 
 def to_python_int(x, allow_none=False, allow_floats=False, *args, **kwargs):
-    if checks.is_some_int(x, allow_none): return int(x)
+    if checks.is_some_int(x, allow_none): return None if x is None else int(x)
     elif allow_floats and checks.is_some_float(x, allow_none): return int(to_python_float(x))
     elif checks.is_string(x): return str_to_int(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_int(e, *args, **kwargs) for e in x]
@@ -119,7 +119,7 @@ def to_python_int(x, allow_none=False, allow_floats=False, *args, **kwargs):
     raise ValueError('Unable to convert "%s" to Python int' % str(x))
 
 def to_python_float(x, allow_none=False, allow_ints=False, *args, **kwargs):
-    if checks.is_some_float(x, allow_none): return float(x)
+    if checks.is_some_float(x, allow_none): return None if x is None else float(x)
     elif allow_ints and checks.is_some_int(x, allow_none): return float(to_python_int(x))
     elif checks.is_string(x): return str_to_float(x, *args, **kwargs)
     elif checks.is_iterable(x): return [to_python_float(e, *args, **kwargs) for e in x]
