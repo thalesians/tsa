@@ -291,3 +291,7 @@ def check_callable(arg, allow_none=False, message='Argument "%(string)s" of type
 
 def is_type(arg, allow_none=False):
     return is_instance(arg, type, allow_none)
+
+def check_type(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a type', level=1):
+    check(is_type(arg, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg)}, level)
+    return arg
