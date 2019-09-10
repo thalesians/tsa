@@ -756,6 +756,8 @@ class TestConditions(unittest.TestCase):
         self.assertFalse(checks.is_numpy_array(3.5))
         self.assertFalse(checks.is_numpy_array(np.float64(3.5)))
         self.assertFalse(checks.is_numpy_array('hi'))
+        self.assertFalse(checks.is_numpy_array(None))
+        self.assertTrue(checks.is_numpy_array(None, allow_none=True))
 
         checks.check_numpy_array(np.array([1, 2, 3]))
         checks.check_numpy_array(np.array([[1, 2, 3], [1, 2, 3]]))
@@ -772,6 +774,9 @@ class TestConditions(unittest.TestCase):
             checks.check_numpy_array(np.float64(3.5))
         with self.assertRaises(AssertionError):
             checks.check_numpy_array('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array(None)
+        checks.check_numpy_array(None, allow_none=True)
 
     def test_strings(self):
         self.assertFalse(checks.is_string([1, 2, 3]))
@@ -780,6 +785,8 @@ class TestConditions(unittest.TestCase):
         self.assertTrue(checks.is_string('hi'))
         self.assertTrue(checks.is_string("hi"))
         self.assertTrue(checks.is_string("""hi"""))
+        self.assertFalse(checks.is_string(None))
+        self.assertTrue(checks.is_string(None, allow_none=True))
 
         with self.assertRaises(AssertionError):
             checks.check_string([1, 2, 3])
@@ -790,6 +797,473 @@ class TestConditions(unittest.TestCase):
         checks.check_string('hi')
         checks.check_string("hi")
         checks.check_string("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_string(None)
+        checks.check_string(None, allow_none=True)
+        
+    def test_dates(self):
+        import datetime as dt
+        import numpy as np
+        import pandas as pd
+        
+        self.assertFalse(checks.is_date([1, 2, 3]))
+        self.assertFalse(checks.is_date(3))
+        self.assertFalse(checks.is_date(3.5))
+        self.assertFalse(checks.is_date('hi'))
+        self.assertFalse(checks.is_date("hi"))
+        self.assertFalse(checks.is_date("""hi"""))
+        self.assertTrue(checks.is_date(dt.date(2019, 9, 10)))
+        self.assertFalse(checks.is_date(dt.time(12, 3)))
+        self.assertFalse(checks.is_date(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertFalse(checks.is_date(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_date(np.timedelta64(5, 's')))
+        self.assertFalse(checks.is_date(pd.Timedelta(5, 's')))
+        self.assertFalse(checks.is_date(None))
+        self.assertTrue(checks.is_date(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_date([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_date(3)
+        with self.assertRaises(AssertionError):
+            checks.check_date(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_date('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_date("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_date("""hi""")
+        checks.check_date(dt.date(2019, 9, 10))
+        with self.assertRaises(AssertionError):
+            checks.check_date(dt.time(12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_date(dt.datetime(2019, 9, 10, 12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_date(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_date(np.timedelta64(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_date(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_date(None)
+        checks.check_date(None, allow_none=True)
+        
+        self.assertFalse(checks.is_some_date([1, 2, 3]))
+        self.assertFalse(checks.is_some_date(3))
+        self.assertFalse(checks.is_some_date(3.5))
+        self.assertFalse(checks.is_some_date('hi'))
+        self.assertFalse(checks.is_some_date("hi"))
+        self.assertFalse(checks.is_some_date("""hi"""))
+        self.assertTrue(checks.is_some_date(dt.date(2019, 9, 10)))
+        self.assertFalse(checks.is_some_date(dt.time(12, 3)))
+        self.assertFalse(checks.is_some_date(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertFalse(checks.is_some_date(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_some_date(np.timedelta64(5, 's')))
+        self.assertFalse(checks.is_some_date(pd.Timedelta(5, 's')))
+        self.assertFalse(checks.is_some_date(None))
+        self.assertTrue(checks.is_some_date(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_date([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_some_date('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_some_date("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_some_date("""hi""")
+        checks.check_some_date(dt.date(2019, 9, 10))
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(dt.time(12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(dt.datetime(2019, 9, 10, 12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(np.timedelta64(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_date(None)
+        checks.check_some_date(None, allow_none=True)
+
+    def test_times(self):
+        import datetime as dt
+        import numpy as np
+        import pandas as pd
+        
+        self.assertFalse(checks.is_time([1, 2, 3]))
+        self.assertFalse(checks.is_time(3))
+        self.assertFalse(checks.is_time(3.5))
+        self.assertFalse(checks.is_time('hi'))
+        self.assertFalse(checks.is_time("hi"))
+        self.assertFalse(checks.is_time("""hi"""))
+        self.assertFalse(checks.is_time(dt.date(2019, 9, 10)))
+        self.assertTrue(checks.is_time(dt.time(12, 3)))
+        self.assertFalse(checks.is_time(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertFalse(checks.is_time(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_time(np.timedelta64(5, 's')))
+        self.assertFalse(checks.is_time(pd.Timedelta(5, 's')))
+        self.assertFalse(checks.is_time(None))
+        self.assertTrue(checks.is_time(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_time([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_time(3)
+        with self.assertRaises(AssertionError):
+            checks.check_time(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_time('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_time("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_time("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_time(dt.date(2019, 9, 10))
+        checks.check_time(dt.time(12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_time(dt.datetime(2019, 9, 10, 12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_time(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_time(np.timedelta64(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_time(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_time(None)
+        checks.check_time(None, allow_none=True)
+        
+        self.assertFalse(checks.is_some_time([1, 2, 3]))
+        self.assertFalse(checks.is_some_time(3))
+        self.assertFalse(checks.is_some_time(3.5))
+        self.assertFalse(checks.is_some_time('hi'))
+        self.assertFalse(checks.is_some_time("hi"))
+        self.assertFalse(checks.is_some_time("""hi"""))
+        self.assertFalse(checks.is_some_time(dt.date(2019, 9, 10)))
+        self.assertTrue(checks.is_some_time(dt.time(12, 3)))
+        self.assertFalse(checks.is_some_time(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertFalse(checks.is_some_time(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_some_time(None))
+        self.assertTrue(checks.is_some_time(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_time([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_some_time('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_some_time("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_some_time("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(dt.date(2019, 9, 10))
+        checks.check_some_time(dt.time(12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(dt.datetime(2019, 9, 10, 12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(np.timedelta64(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_time(None)
+        checks.check_some_time(None, allow_none=True)
+
+    def test_datetimes(self):
+        import datetime as dt
+        import numpy as np
+        import pandas as pd
+        
+        self.assertFalse(checks.is_datetime([1, 2, 3]))
+        self.assertFalse(checks.is_datetime(3))
+        self.assertFalse(checks.is_datetime(3.5))
+        self.assertFalse(checks.is_datetime('hi'))
+        self.assertFalse(checks.is_datetime("hi"))
+        self.assertFalse(checks.is_datetime("""hi"""))
+        self.assertFalse(checks.is_datetime(dt.date(2019, 9, 10)))
+        self.assertFalse(checks.is_datetime(dt.time(12, 3)))
+        self.assertTrue(checks.is_datetime(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertFalse(checks.is_datetime(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_datetime(np.timedelta64(5, 's')))
+        self.assertFalse(checks.is_datetime(pd.Timedelta(5, 's')))
+        self.assertFalse(checks.is_datetime(None))
+        self.assertTrue(checks.is_datetime(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_datetime([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(3)
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_datetime('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_datetime("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_datetime("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(dt.date(2019, 9, 10))
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(dt.time(12, 3))
+        checks.check_datetime(dt.datetime(2019, 9, 10, 12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(np.timedelta64(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_datetime(None)
+        checks.check_datetime(None, allow_none=True)
+        
+        self.assertFalse(checks.is_some_datetime([1, 2, 3]))
+        self.assertFalse(checks.is_some_datetime(3))
+        self.assertFalse(checks.is_some_datetime(3.5))
+        self.assertFalse(checks.is_some_datetime('hi'))
+        self.assertFalse(checks.is_some_datetime("hi"))
+        self.assertFalse(checks.is_some_datetime("""hi"""))
+        self.assertFalse(checks.is_some_datetime(dt.date(2019, 9, 10)))
+        self.assertFalse(checks.is_some_datetime(dt.time(12, 3)))
+        self.assertTrue(checks.is_some_datetime(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertFalse(checks.is_some_datetime(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_some_datetime(None))
+        self.assertTrue(checks.is_some_datetime(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(dt.date(2019, 9, 10))
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(dt.time(12, 3))
+        checks.check_some_datetime(dt.datetime(2019, 9, 10, 12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(np.timedelta64(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_datetime(None)
+        checks.check_some_datetime(None, allow_none=True)
+
+    def test_timedeltas(self):
+        import datetime as dt
+        import numpy as np
+        import pandas as pd
+        
+        self.assertFalse(checks.is_timedelta([1, 2, 3]))
+        self.assertFalse(checks.is_timedelta(3))
+        self.assertFalse(checks.is_timedelta(3.5))
+        self.assertFalse(checks.is_timedelta('hi'))
+        self.assertFalse(checks.is_timedelta("hi"))
+        self.assertFalse(checks.is_timedelta("""hi"""))
+        self.assertFalse(checks.is_timedelta(dt.date(2019, 9, 10)))
+        self.assertFalse(checks.is_timedelta(dt.time(12, 3)))
+        self.assertFalse(checks.is_timedelta(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertTrue(checks.is_timedelta(dt.timedelta(seconds=5)))
+        self.assertFalse(checks.is_timedelta(np.timedelta64(5, 's')))
+        # NB! Note that the following is true:
+        self.assertTrue(checks.is_timedelta(pd.Timedelta(5, 's')))
+        self.assertFalse(checks.is_timedelta(None))
+        self.assertTrue(checks.is_timedelta(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(3)
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(dt.date(2019, 9, 10))
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(dt.time(12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(dt.datetime(2019, 9, 10, 12, 3))
+        checks.check_timedelta(dt.timedelta(seconds=5))
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(np.timedelta64(5, 's'))
+        # NB! Note that the following holds:
+        checks.check_timedelta(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_timedelta(None)
+        checks.check_timedelta(None, allow_none=True)
+        
+        self.assertFalse(checks.is_some_timedelta([1, 2, 3]))
+        self.assertFalse(checks.is_some_timedelta(3))
+        self.assertFalse(checks.is_some_timedelta(3.5))
+        self.assertFalse(checks.is_some_timedelta('hi'))
+        self.assertFalse(checks.is_some_timedelta("hi"))
+        self.assertFalse(checks.is_some_timedelta("""hi"""))
+        self.assertFalse(checks.is_some_timedelta(dt.date(2019, 9, 10)))
+        self.assertFalse(checks.is_some_timedelta(dt.time(12, 3)))
+        self.assertFalse(checks.is_some_timedelta(dt.datetime(2019, 9, 10, 12, 3)))
+        self.assertTrue(checks.is_some_timedelta(dt.timedelta(seconds=5)))
+        self.assertTrue(checks.is_some_timedelta(np.timedelta64(5, 's')))
+        self.assertTrue(checks.is_some_timedelta(pd.Timedelta(5, 's')))
+        self.assertFalse(checks.is_some_timedelta(None))
+        self.assertTrue(checks.is_some_timedelta(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta(3)
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta('hi')
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta("hi")
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta("""hi""")
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta(dt.date(2019, 9, 10))
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta(dt.time(12, 3))
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta(dt.datetime(2019, 9, 10, 12, 3))
+        checks.check_some_timedelta(dt.timedelta(seconds=5))
+        checks.check_some_timedelta(np.timedelta64(5, 's'))
+        checks.check_some_timedelta(pd.Timedelta(5, 's'))
+        with self.assertRaises(AssertionError):
+            checks.check_some_timedelta(None)
+        checks.check_some_timedelta(None, allow_none=True)
+        
+    def test_iterables(self):
+        import numpy as np
+        
+        self.assertFalse(checks.is_iterable(3))
+        self.assertFalse(checks.is_iterable(3.5))
+        self.assertTrue(checks.is_iterable('hi'))
+        self.assertTrue(checks.is_iterable([1, 2, 3]))
+        self.assertTrue(checks.is_iterable([[1, 2, 3], [1, 2, 3]]))
+        self.assertTrue(checks.is_iterable(np.array([1, 2, 3])))
+        self.assertTrue(checks.is_iterable(np.array([[1, 2, 3], [1, 2, 3]])))
+        self.assertTrue(checks.is_iterable({'name': 'Paul', 'surname': 'Bilokon'}))
+        self.assertFalse(checks.is_iterable(None))
+        self.assertTrue(checks.is_iterable(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_iterable(3)
+        with self.assertRaises(AssertionError):
+            checks.check_iterable(3.5)
+        checks.check_iterable('hi')
+        checks.check_iterable([1, 2, 3])
+        checks.check_iterable([[1, 2, 3], [1, 2, 3]])
+        checks.check_iterable(np.array([1, 2, 3]))
+        checks.check_iterable(np.array([[1, 2, 3], [1, 2, 3]]))
+        checks.check_iterable({'name': 'Paul', 'surname': 'Bilokon'})
+        with self.assertRaises(AssertionError):
+            checks.check_iterable(None)
+        checks.check_iterable(None, allow_none=True)
+
+        self.assertFalse(checks.is_iterable_not_string(3))
+        self.assertFalse(checks.is_iterable_not_string(3.5))
+        self.assertFalse(checks.is_iterable_not_string('hi'))
+        self.assertTrue(checks.is_iterable_not_string([1, 2, 3]))
+        self.assertTrue(checks.is_iterable_not_string([[1, 2, 3], [1, 2, 3]]))
+        self.assertTrue(checks.is_iterable_not_string(np.array([1, 2, 3])))
+        self.assertTrue(checks.is_iterable_not_string(np.array([[1, 2, 3], [1, 2, 3]])))
+        self.assertTrue(checks.is_iterable_not_string({'name': 'Paul', 'surname': 'Bilokon'}))
+        self.assertFalse(checks.is_iterable_not_string(None))
+        self.assertTrue(checks.is_iterable_not_string(None, allow_none=True))
+
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_not_string(3)
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_not_string(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_not_string('hi')
+        checks.check_iterable_not_string([1, 2, 3])
+        checks.check_iterable_not_string([[1, 2, 3], [1, 2, 3]])
+        checks.check_iterable_not_string(np.array([1, 2, 3]))
+        checks.check_iterable_not_string(np.array([[1, 2, 3], [1, 2, 3]]))
+        checks.check_iterable_not_string({'name': 'Paul', 'surname': 'Bilokon'})
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_not_string(None)
+        checks.check_iterable_not_string(None, allow_none=True)
+
+        result, iterable = checks.is_iterable_over_instances(3, int)
+        self.assertFalse(result)
+        self.assertEqual(iterable, 3)
+        result, iterable = checks.is_iterable_over_instances(3.5, float)
+        self.assertFalse(result)
+        self.assertEqual(iterable, 3.5)
+        result, iterable = checks.is_iterable_over_instances('hi', str)
+        self.assertTrue(result)
+        self.assertEqual(list(iterable), ['h', 'i'])
+        result, iterable = checks.is_iterable_over_instances([1, 2, 3], int)
+        self.assertTrue(result)
+        self.assertEqual(list(iterable), [1, 2, 3])
+        result, iterable = checks.is_iterable_over_instances([[1, 2, 3], [1, 2, 3]], list)
+        self.assertTrue(result)
+        self.assertEqual(list(iterable), [[1, 2, 3], [1, 2, 3]])
+        result, iterable = checks.is_iterable_over_instances(np.array([1, 2, 3]), np.int32)
+        self.assertTrue(result)
+        self.assertEqual(list(iterable), [1, 2, 3])
+        # NB! In this case the iterable that was passed in does not quite match the returned iterable
+        result, _ = checks.is_iterable_over_instances(np.array([[1, 2, 3], [1, 2, 3]]), np.ndarray)
+        self.assertTrue(result)
+        result, iterable = checks.is_iterable_over_instances({'name': 'Paul', 'surname': 'Bilokon'}, str)
+        self.assertTrue(result)
+        self.assertEqual(list(iterable), ['name', 'surname'])
+        result, iterable = checks.is_iterable_over_instances([], int)
+        self.assertFalse(result)
+        result, iterable = checks.is_iterable_over_instances([], int, allow_empty=True)
+        self.assertTrue(result)
+        result, iterable = checks.is_iterable_over_instances(None, int)
+        self.assertFalse(result)
+        self.assertTrue(iterable is None)
+        result, iterable = checks.is_iterable_over_instances(None, int, allow_none=True)
+        self.assertTrue(result)
+        self.assertTrue(iterable is None)
+
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_over_instances(3, int)        
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_over_instances(3.5, float)
+        iterable = checks.check_iterable_over_instances('hi', str)
+        self.assertEqual(list(iterable), ['h', 'i'])
+        iterable = checks.check_iterable_over_instances([1, 2, 3], int)
+        self.assertEqual(list(iterable), [1, 2, 3])
+        iterable = checks.check_iterable_over_instances([[1, 2, 3], [1, 2, 3]], list)
+        self.assertEqual(list(iterable), [[1, 2, 3], [1, 2, 3]])        
+        iterable = checks.check_iterable_over_instances(np.array([1, 2, 3]), np.int32)
+        self.assertEqual(list(iterable), [1, 2, 3])        
+        # NB! In this case the iterable that was passed in does not quite match the returned iterable
+        _ = checks.check_iterable_over_instances(np.array([[1, 2, 3], [1, 2, 3]]), np.ndarray)
+        iterable = checks.check_iterable_over_instances({'name': 'Paul', 'surname': 'Bilokon'}, str)
+        self.assertEqual(list(iterable), ['name', 'surname'])
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_over_instances([], int)        
+        iterable = checks.check_iterable_over_instances([], int, allow_empty=True)
+        with self.assertRaises(AssertionError):
+            checks.check_iterable_over_instances(None, int)
+        iterable = checks.check_iterable_over_instances(None, int, allow_none=True)
+        self.assertTrue(iterable is None)
 
 if __name__ == '__main__':
     unittest.main()
