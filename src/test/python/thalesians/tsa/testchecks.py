@@ -743,7 +743,53 @@ class TestConditions(unittest.TestCase):
             checks.check_some_number(None)
         checks.check_some_number(None, allow_none=True)
         with self.assertRaises(AssertionError):
-            checks.check_some_number('hi')        
+            checks.check_some_number('hi')
+            
+    def test_numpy_arrays(self):
+        import numpy as np
+        self.assertTrue(checks.is_numpy_array(np.array([1, 2, 3])))
+        self.assertTrue(checks.is_numpy_array(np.array([[1, 2, 3], [1, 2, 3]])))
+        self.assertTrue(checks.is_numpy_array(np.array(3)))
+        self.assertFalse(checks.is_numpy_array([1, 2, 3]))
+        self.assertFalse(checks.is_numpy_array(3))
+        self.assertFalse(checks.is_numpy_array(np.int64(3)))
+        self.assertFalse(checks.is_numpy_array(3.5))
+        self.assertFalse(checks.is_numpy_array(np.float64(3.5)))
+        self.assertFalse(checks.is_numpy_array('hi'))
+
+        checks.check_numpy_array(np.array([1, 2, 3]))
+        checks.check_numpy_array(np.array([[1, 2, 3], [1, 2, 3]]))
+        checks.check_numpy_array(np.array(3))
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array(3)
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array(np.int64(3))
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array(3.5)
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array(np.float64(3.5))
+        with self.assertRaises(AssertionError):
+            checks.check_numpy_array('hi')
+
+    def test_strings(self):
+        self.assertFalse(checks.is_string([1, 2, 3]))
+        self.assertFalse(checks.is_string(3))
+        self.assertFalse(checks.is_string(3.5))
+        self.assertTrue(checks.is_string('hi'))
+        self.assertTrue(checks.is_string("hi"))
+        self.assertTrue(checks.is_string("""hi"""))
+
+        with self.assertRaises(AssertionError):
+            checks.check_string([1, 2, 3])
+        with self.assertRaises(AssertionError):
+            checks.check_string(3)
+        with self.assertRaises(AssertionError):
+            checks.check_string(3.5)
+        checks.check_string('hi')
+        checks.check_string("hi")
+        checks.check_string("""hi""")
 
 if __name__ == '__main__':
     unittest.main()
