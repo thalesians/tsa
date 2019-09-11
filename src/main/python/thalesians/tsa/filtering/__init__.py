@@ -87,7 +87,7 @@ def _time_and_obs_distr(obs, time=None, filter_time=None):
     elif isinstance(obs, distrs.Distr):
         obs_distr = obs
     else:
-        obs_distr = distrs.DiracDelta(obs)
+        obs_distr = distrs.DiracDeltaDistr(obs)
         
     if time is None: time = filter_time + 1
 

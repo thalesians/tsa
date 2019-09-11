@@ -147,7 +147,7 @@ class NormalDistr(WideSenseDistr):
             return np.array_equal(self.cov, other.cov)
         return False
 
-class DiracDelta(NormalDistr):
+class DiracDeltaDistr(NormalDistr):
     def __init__(self, mean=None, dim=None, copy=True):
         if mean is not None and dim is not None and np.size(mean) == 1:
             mean = npu.col_of(dim, npu.to_scalar(mean))
@@ -168,12 +168,12 @@ class DiracDelta(NormalDistr):
         
         self._zero_cov = None
         
-        self._to_string_helper_DiracDelta = None
-        self._str_DiracDelta = None
+        self._to_string_helper_DiracDeltaDistr = None
+        self._str_DiracDeltaDistr = None
         
     @staticmethod
     def create(value=None, dim=None):
-        return DiracDelta(value, dim)
+        return DiracDeltaDistr(value, dim)
 
     @property
     def cov(self):
@@ -186,13 +186,13 @@ class DiracDelta(NormalDistr):
         return self.cov
 
     def to_string_helper(self):
-        if self._to_string_helper_DiracDelta is None:
-            self._to_string_helper_DiracDelta = ToStringHelper(self).add('mean', self._mean)
-        return self._to_string_helper_DiracDelta 
+        if self._to_string_helper_DiracDeltaDistr is None:
+            self._to_string_helper_DiracDeltaDistr = ToStringHelper(self).add('mean', self._mean)
+        return self._to_string_helper_DiracDeltaDistr 
     
     def __str__(self):
-        if self._str_DiracDelta is None: self._str_DiracDelta = self.to_string_helper().to_string()
-        return self._str_DiracDelta
+        if self._str_DiracDeltaDistr is None: self._str_DiracDeltaDistr = self.to_string_helper().to_string()
+        return self._str_DiracDeltaDistr
 
 class LogNormalDistr(WideSenseDistr):
     def __init__(self, mean_of_log=None, cov_of_log=None, vol_of_log=None, dim=None, copy=True):
@@ -259,6 +259,10 @@ class LogNormalDistr(WideSenseDistr):
     def cov_of_log(self):
         return self._cov_of_log
 
+    def sample(self, size=1, random_state=None):
+        normal = rnd.multivariate_normal(self.mean_of_log, self.cov_of_log, size=size, random_state=random_state)
+        return np.exp(normal)
+    
     def __eq__(self, other):
         if isinstance(other, LogNormalDistr):
             if self.dim != other.dim: return False

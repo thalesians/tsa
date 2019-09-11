@@ -156,7 +156,7 @@ class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
             if random_state is None: random_state = rnd.random_state()
             variate = random_state.normal(size=self.noise_dim)
         variate = npu.to_ndim_2(variate, ndim_1_to_col=True, copy=False)
-        distr = self.propagate_distr(time, time0, distrs.DiracDelta.create(value0), assume_distr=True)
+        distr = self.propagate_distr(time, time0, distrs.DiracDeltaDistr.create(value0), assume_distr=True)
         return distr.mean + np.dot(np.linalg.cholesky(distr.cov), variate)
     
     def to_string_helper(self):
