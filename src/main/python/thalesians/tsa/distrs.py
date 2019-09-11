@@ -282,101 +282,6 @@ class LogNormalDistr(WideSenseDistr):
         if self._str_LogNormalDistr is None: self._str_LogNormalDistr = self.to_string_helper().to_string()
         return self._str_LogNormalDistr
 
-'''
-class MultinomialResamplingParticleFilter(ParticleFilter):
-    def _resample(self):
-        counts = self._random_state.multinomial(self.particle_count, self._weights)
-        particle_idx = 0
-        for i in range(self.particle_count):
-            for j in range(counts[i]):  # @UnusedVariable
-                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
-                particle_idx += 1
-        
-        self._resampled_particles_uptodate = True
-        self._cached_resampled_mean = None
-        self._cached_resampled_var = None
-
-class RegularisedResamplingParticleFilter(ParticleFilter):
-    def _resample(self):
-        # TODO This only works when state_dim == 1
-        # TODO Vectorise
-        kde = sm.nonparametric.KDEUnivariate(self._prior_particles)
-        kde.fit(fft=False, weights=self._weights)
-        counts = self._random_state.multinomial(self.particle_count, self._weights)
-        particle_idx = 0
-        bw_factor = .5
-        for i in range(self.particle_count):
-            for j in range(counts[i]):  # @UnusedVariable
-                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
-                particle_idx += 1
-        self._resampled_particles[:] += bw_factor * kde.bw * self._random_state.normal(size=(self.particle_count, 1))
-        
-        self._resampled_particles_uptodate = True
-        self._cached_resampled_mean = None
-        self._cached_resampled_var = None
-            
-class SmoothResamplingParticleFilter(ParticleFilter):
-    def _resample(self):
-        new_weights = np.empty((self.particle_count+1,))
-        new_weights[0] = .5*self._weights[0]
-        new_weights[self.particle_count] = .5*self._weights[self.particle_count-1]
-        for i in range(1, self.particle_count):
-            new_weights[i] = .5*(self._weights[i] + self._weights[i-1])
-
-        uniforms = self._random_state.uniform(size=self.particle_count)
-        uniforms.sort()
-        new_uniforms = np.empty(shape=(self.particle_count,))
-        regions = np.empty(shape=(self.particle_count,), dtype=np.int)
-        s = 0
-        j = 0
-        for i in range(self.particle_count + 1):
-            s = s + new_weights[i]
-            while j < self.particle_count and uniforms[j] <= s:
-                regions[j] = i
-                new_uniforms[j] = (uniforms[j] - (s - new_weights[i])) / new_weights[i]
-                j += 1
-                
-        for i in range(self.particle_count):
-            if regions[i] == 0:
-                self._resampled_particles[i,:] = self._prior_particles[0,:]
-            if regions[i] == self.particle_count:
-                self._resampled_particles[i,:] = self._prior_particles[self.particle_count-1,:]
-            else:
-                self._resampled_particles[i,:] = (self._prior_particles[regions[i],:] - self._prior_particles[regions[i]-1,:]) * new_uniforms[i] + self._prior_particles[regions[i]-1,:]   
-            
-        self._resampled_particles_uptodate = True
-        self._cached_resampled_mean = None
-        self._cached_resampled_var = None
-
-class Sampler(object):
-    def __init__(self, particles, weights):
-        pass
-
-    def sample(self):
-        raise NotImplementedError()
-
-class SimpleSampler(Sampler):
-    def __init__(self):
-        super(SimpleSampler, self).__init__()
-
-class KDESampler(Sampler):
-    def __init__(self):
-        super(KDESampler, self).__init__()
-
-class MultinomialResamplingParticleFilter(object):
-    def _resample(self):
-        counts = self._random_state.multinomial(self.particle_count, self._weights)
-        particle_idx = 0
-        for i in range(self.particle_count):
-            for j in range(counts[i]):  # @UnusedVariable
-                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
-                particle_idx += 1
-        
-        self._resampled_particles_uptodate = True
-        self._cached_resampled_mean = None
-        self._cached_resampled_var = None
-'''
-
 class EmpiricalDistr(WideSenseDistr):
     def __init__(self, particles=None, weights=None,
             dim=None, use_n_minus_1_stats=False, sampler=None, copy=True):
@@ -524,7 +429,7 @@ class EmpiricalDistr(WideSenseDistr):
 
     @property
     def vol(self):
-        return self._vol_n_minus_1 if self._use_n_minus_1_stats else self._vol_n
+        return self.vol_n_minus_1 if self._use_n_minus_1_stats else self.vol_n
 
     def __eq__(self, other):
         if isinstance(other, EmpiricalDistr):
@@ -549,3 +454,98 @@ class EmpiricalDistr(WideSenseDistr):
     def __str__(self):
         if self._str_EmpiricalDistr is None: self._str_EmpiricalDistr = self.to_string_helper().to_string()
         return self._str_EmpiricalDistr
+
+'''
+class MultinomialResamplingParticleFilter(ParticleFilter):
+    def _resample(self):
+        counts = self._random_state.multinomial(self.particle_count, self._weights)
+        particle_idx = 0
+        for i in range(self.particle_count):
+            for j in range(counts[i]):  # @UnusedVariable
+                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
+                particle_idx += 1
+        
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+
+class RegularisedResamplingParticleFilter(ParticleFilter):
+    def _resample(self):
+        # TODO This only works when state_dim == 1
+        # TODO Vectorise
+        kde = sm.nonparametric.KDEUnivariate(self._prior_particles)
+        kde.fit(fft=False, weights=self._weights)
+        counts = self._random_state.multinomial(self.particle_count, self._weights)
+        particle_idx = 0
+        bw_factor = .5
+        for i in range(self.particle_count):
+            for j in range(counts[i]):  # @UnusedVariable
+                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
+                particle_idx += 1
+        self._resampled_particles[:] += bw_factor * kde.bw * self._random_state.normal(size=(self.particle_count, 1))
+        
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+            
+class SmoothResamplingParticleFilter(ParticleFilter):
+    def _resample(self):
+        new_weights = np.empty((self.particle_count+1,))
+        new_weights[0] = .5*self._weights[0]
+        new_weights[self.particle_count] = .5*self._weights[self.particle_count-1]
+        for i in range(1, self.particle_count):
+            new_weights[i] = .5*(self._weights[i] + self._weights[i-1])
+
+        uniforms = self._random_state.uniform(size=self.particle_count)
+        uniforms.sort()
+        new_uniforms = np.empty(shape=(self.particle_count,))
+        regions = np.empty(shape=(self.particle_count,), dtype=np.int)
+        s = 0
+        j = 0
+        for i in range(self.particle_count + 1):
+            s = s + new_weights[i]
+            while j < self.particle_count and uniforms[j] <= s:
+                regions[j] = i
+                new_uniforms[j] = (uniforms[j] - (s - new_weights[i])) / new_weights[i]
+                j += 1
+                
+        for i in range(self.particle_count):
+            if regions[i] == 0:
+                self._resampled_particles[i,:] = self._prior_particles[0,:]
+            if regions[i] == self.particle_count:
+                self._resampled_particles[i,:] = self._prior_particles[self.particle_count-1,:]
+            else:
+                self._resampled_particles[i,:] = (self._prior_particles[regions[i],:] - self._prior_particles[regions[i]-1,:]) * new_uniforms[i] + self._prior_particles[regions[i]-1,:]   
+            
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+
+class Sampler(object):
+    def __init__(self, particles, weights):
+        pass
+
+    def sample(self):
+        raise NotImplementedError()
+
+class SimpleSampler(Sampler):
+    def __init__(self):
+        super(SimpleSampler, self).__init__()
+
+class KDESampler(Sampler):
+    def __init__(self):
+        super(KDESampler, self).__init__()
+
+class MultinomialResamplingParticleFilter(object):
+    def _resample(self):
+        counts = self._random_state.multinomial(self.particle_count, self._weights)
+        particle_idx = 0
+        for i in range(self.particle_count):
+            for j in range(counts[i]):  # @UnusedVariable
+                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
+                particle_idx += 1
+        
+        self._resampled_particles_uptodate = True
+        self._cached_resampled_mean = None
+        self._cached_resampled_var = None
+'''
