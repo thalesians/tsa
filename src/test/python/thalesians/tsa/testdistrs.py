@@ -337,6 +337,25 @@ class TestDistrs(unittest.TestCase):
         self.assertEqual(simple_empirical_1d.vol_n_minus_1, np.inf)
         self.assertEqual(simple_empirical_1d.vol, 1.)
 
+        # Now we shall be using "repeat"-type weights:
+        repeat_empirical_1d = distrs.EmpiricalDistr(particles=[[-1.], [1.]], weights=[2., 1.])
+        self.assertEqual(repeat_empirical_1d.particle_count, 2)
+        npt.assert_almost_equal(repeat_empirical_1d.particles, np.array([[-1.], [1.]]))
+        npt.assert_almost_equal(repeat_empirical_1d.particle(0), np.array([[-1.]]))
+        npt.assert_almost_equal(repeat_empirical_1d.weights, np.array([[2.], [1.]]))
+        npt.assert_almost_equal(repeat_empirical_1d.weight(0), 2.)
+        self.assertEqual(repeat_empirical_1d.dim, 1)
+        self.assertEqual(repeat_empirical_1d.weight_sum, 3.)
+        npt.assert_almost_equal(repeat_empirical_1d.mean, -0.33333333)
+        npt.assert_almost_equal(repeat_empirical_1d.var_n, 0.88888889)
+        npt.assert_almost_equal(repeat_empirical_1d.var_n_minus_1, 1.3333333)
+        npt.assert_almost_equal(repeat_empirical_1d.cov_n, 0.88888889)
+        npt.assert_almost_equal(repeat_empirical_1d.cov_n_minus_1, 1.3333333)
+        npt.assert_almost_equal(repeat_empirical_1d.cov, 0.88888889)
+        npt.assert_almost_equal(repeat_empirical_1d.vol_n, 0.94280904)
+        npt.assert_almost_equal(repeat_empirical_1d.vol_n_minus_1, 1.15470054)
+        npt.assert_almost_equal(repeat_empirical_1d.vol, 0.94280904)
+
         """
         std_log_normal_1d = distrs.LogNormalDistr(dim=1)
         npt.assert_almost_equal(std_log_normal_1d.mean, [[ 1.6487213]])
