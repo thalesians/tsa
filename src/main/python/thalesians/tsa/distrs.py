@@ -332,6 +332,10 @@ class EmpiricalDistr(WideSenseDistr):
         super(EmpiricalDistr, self).__init__(do_not_init=True)
 
     @property
+    def dim(self):
+        return self._dim
+
+    @property
     def particle_count(self):
         return npu.nrow(self._particles) if self._particles is not None else 0
 
@@ -352,14 +356,17 @@ class EmpiricalDistr(WideSenseDistr):
         return self._weights[idx,0]
 
     @property
-    def dim(self):
-        return self._dim
-
-    @property
     def weight_sum(self):
         if self._weight_sum is None:
             self._weight_sum = np.sum(self._weights)
         return self._weight_sum
+
+    @property
+    def normalised_weights(self):
+        return self.weights / self.weight_sum
+    
+    def normalised_weight(self, idx):
+        return self.weight(idx) / self.weight_sum
 
     @property
     def mean(self):
