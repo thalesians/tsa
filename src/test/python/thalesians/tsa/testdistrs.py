@@ -398,101 +398,26 @@ class TestDistrs(unittest.TestCase):
         npt.assert_almost_equal(approx_normal_empirical_2d.vol_n_minus_1, [[ 1.839968 ,  0.       ], [-1.00234  ,  2.4142446]])
         npt.assert_almost_equal(approx_normal_empirical_2d.vol, [[ 1.8307451,  0.       ], [-0.9973157,  2.4021431]])
 
-        """
-        std_log_normal_1d = distrs.LogNormalDistr(dim=1)
-        npt.assert_almost_equal(std_log_normal_1d.mean, [[ 1.6487213]])
-        npt.assert_almost_equal(std_log_normal_1d.cov, [[ 4.6707743]])
-        npt.assert_almost_equal(std_log_normal_1d.vol, [[ 2.1611974]])
-        
-        sample = std_log_normal_1d.sample(size=1)
-        self.assertEqual(np.shape(sample), (1, 1))
-        npt.assert_almost_equal(sample, [[ 1.6433127]])
-        
-        sample = std_log_normal_1d.sample(size=10)
-        self.assertEqual(np.shape(sample), (10, 1))
-        npt.assert_almost_equal(sample, [
-                [ 0.87086849],
-                [ 1.91111824],
-                [ 4.58609939],
-                [ 0.79124045],
-                [ 0.79125344],
-                [ 4.85113557],
-                [ 2.15423297],
-                [ 0.62533086],
-                [ 1.72040554],
-                [ 0.62912979]])
-        
-        std_log_normal_2d = distrs.LogNormalDistr(dim=2)
-        npt.assert_almost_equal(std_log_normal_2d.mean, [
-                [ 1.6487213],
-                [ 1.6487213]])
-        npt.assert_almost_equal(std_log_normal_2d.cov, [
-                [ 4.6707743,  0.       ],
-                [ 0.       ,  4.6707743]])
-        npt.assert_almost_equal(std_log_normal_2d.vol, [
-                [ 2.1611974,  0.       ],
-                [ 0.       ,  2.1611974]])
-        
-        sample = std_log_normal_2d.sample(size=10)
-        self.assertEqual(np.shape(sample), (10, 2))
-        npt.assert_almost_equal(sample, [
-                [ 0.62767689,  1.27374614],
-                [ 0.14759544,  0.17818769],
-                [ 0.5699039 ,  0.36318929],
-                [ 1.36922835,  0.40332037],
-                [ 0.2435815 ,  4.33035173],
-                [ 0.79789657,  1.06986043],
-                [ 0.24056903,  0.58019982],
-                [ 1.11730841,  0.31632232],
-                [ 1.45600738,  0.54846123],
-                [ 0.74699727,  0.54787583]])
-
-        sd1=.4; sd2=.4; cor=-.5
-
-        log_normal_2d = distrs.LogNormalDistr(mean_of_log=[1., 1.3], cov_of_log=stats.make_cov_2d(sd1=sd1, sd2=sd2, cor=cor))
-        npt.assert_almost_equal(log_normal_2d.mean_of_log, npu.col(1., 1.3))
-        npt.assert_almost_equal(log_normal_2d.cov_of_log, [[sd1*sd1, cor*sd1*sd2], [cor*sd1*sd2, sd2*sd2]])
-        npt.assert_almost_equal(log_normal_2d.vol_of_log, [[sd1, 0.], [cor*sd2, np.sqrt(1.-cor*cor)*sd2]])
-        npt.assert_almost_equal(log_normal_2d.mean, [[ 2.9446796], [ 3.9749016]])
-        npt.assert_almost_equal(log_normal_2d.cov, [[ 1.5045366, -0.8999087], [-0.8999087,  2.7414445]])
-        npt.assert_almost_equal(log_normal_2d.vol, [[ 1.2265956,  0.       ], [-0.7336637,  1.484312 ]])
-
-        sample = log_normal_2d.sample(size=10)
-        self.assertEqual(np.shape(sample), (10, 2))
-        npt.assert_almost_equal(sample, [
-                [ 1.42711164,  6.95143797],
-                [ 4.62238496,  2.99848502],
-                [ 4.32618186,  2.50643161],
-                [ 4.10913455,  1.42691268],
-                [ 2.94320341,  4.55346303],
-                [ 2.50304159,  3.80468825],
-                [ 2.24476532,  2.45957906],
-                [ 3.18112082,  2.60781028],
-                [ 2.01884543,  5.66848303],
-                [ 5.34174201,  2.12565878]])
-
-        log_normal_2d = distrs.LogNormalDistr(mean_of_log=[1., 1.3], vol_of_log=stats.make_vol_2d(sd1=sd1, sd2=sd2, cor=cor))
-        npt.assert_almost_equal(log_normal_2d.mean_of_log, npu.col(1., 1.3))
-        npt.assert_almost_equal(log_normal_2d.cov_of_log, [[sd1*sd1, cor*sd1*sd2], [cor*sd1*sd2, sd2*sd2]])
-        npt.assert_almost_equal(log_normal_2d.vol_of_log, [[sd1, 0.], [cor*sd2, np.sqrt(1.-cor*cor)*sd2]])
-        npt.assert_almost_equal(log_normal_2d.mean, npu.col(2.9446796, 3.9749016))
-        npt.assert_almost_equal(log_normal_2d.cov, [[ 1.5045366, -0.8999087], [-0.8999087,  2.7414445]])
-        npt.assert_almost_equal(log_normal_2d.vol, [[ 1.2265956,  0.       ], [-0.7336637,  1.484312 ]])
-
-        sample = log_normal_2d.sample(size=10)
-        self.assertEqual(np.shape(sample), (10, 2))
-        npt.assert_almost_equal(sample, [
-                [ 2.71288329,  2.80448293],
-                [ 2.70285608,  5.57387658],
-                [ 1.66454464,  4.28346127],
-                [ 3.23285936,  3.52238521],
-                [ 1.76160691,  4.67441442],
-                [ 2.32343609,  2.75776026],
-                [ 4.8398479 ,  2.85230385],
-                [ 1.67494888,  5.78583855],
-                [ 2.06409776,  5.58431178],
-                [ 3.6537541 ,  3.15441508]])
-        """
+        # Using more particles more faithfully approximates the mean and covariance of the normal distribution:
+        normal_distr = distrs.NormalDistr(mean=[10., 100.], cov=[[4., -3.], [-3., 9.]])
+        particles = normal_distr.sample(size=100000)
+        approx_normal_empirical_2d = distrs.EmpiricalDistr(particles=particles, weights=np.ones((100000,)))
+        self.assertEqual(approx_normal_empirical_2d.particle_count, 100000)
+        npt.assert_almost_equal(approx_normal_empirical_2d.particles, particles)
+        npt.assert_almost_equal(approx_normal_empirical_2d.particle(0), npu.col(*particles[0]))
+        npt.assert_almost_equal(approx_normal_empirical_2d.weights, npu.col(*np.ones((100000,))))
+        npt.assert_almost_equal(approx_normal_empirical_2d.weight(0), 1.)
+        self.assertEqual(approx_normal_empirical_2d.dim, 2)
+        self.assertEqual(approx_normal_empirical_2d.weight_sum, 100000.)
+        npt.assert_almost_equal(approx_normal_empirical_2d.mean, [[ 9.9863195], [ 100.0145412]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.var_n, [[ 3.9901799], [ 9.0390325]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.var_n_minus_1, [[ 3.9902198], [ 9.0391229]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.cov_n, [[ 3.9901799, -3.0120428], [-3.0120428,  9.0390325]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.cov_n_minus_1, [[ 3.9902198, -3.0120729], [-3.0120729,  9.0391229]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.cov, [[ 3.9901799, -3.0120428], [-3.0120428,  9.0390325]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.vol_n, [[ 1.9975435,  0.       ], [-1.5078735,  2.6010287]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.vol_n_minus_1, [[ 1.9975535,  0.       ], [-1.507881 ,  2.6010417]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.vol, [[ 1.9975435,  0.       ], [-1.5078735,  2.6010287]])
 
 if __name__ == '__main__':
     unittest.main()
