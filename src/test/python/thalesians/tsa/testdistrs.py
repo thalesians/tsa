@@ -307,11 +307,11 @@ class TestDistrs(unittest.TestCase):
         npt.assert_almost_equal(trivial_empirical_1d.cov_n_minus_1, np.nan)
         self.assertEqual(trivial_empirical_1d.cov, 0.)
         with self.assertRaises(np.linalg.LinAlgError):  # Matrix is not positive definite
-            self.assertEqual(trivial_empirical_1d.vol_n, 0.)
+            trivial_empirical_1d.vol_n
         with self.assertRaises(np.linalg.LinAlgError):  # Matrix is not positive definite
-            self.assertEqual(trivial_empirical_1d.vol_n_minus_1, 0.)
+            trivial_empirical_1d.vol_n_minus_1
         with self.assertRaises(np.linalg.LinAlgError):  # Matrix is not positive definite
-            self.assertEqual(trivial_empirical_1d.vol, 0.)
+            trivial_empirical_1d.vol
 
         simple_empirical_1d = distrs.EmpiricalDistr(particles=[[-1.], [1.]], weights=[.5, .5])
         self.assertEqual(simple_empirical_1d.particle_count, 2)
@@ -355,6 +355,48 @@ class TestDistrs(unittest.TestCase):
         npt.assert_almost_equal(repeat_empirical_1d.vol_n, 0.94280904)
         npt.assert_almost_equal(repeat_empirical_1d.vol_n_minus_1, 1.15470054)
         npt.assert_almost_equal(repeat_empirical_1d.vol, 0.94280904)
+
+        # Now we shall be using "repeat"-type weights. There are three two-dimensional particles:
+        repeat_empirical_2d = distrs.EmpiricalDistr(particles=[[-2., 2.], [0., 0.], [1., -1.]], weights=[2., 1., 1.])
+        self.assertEqual(repeat_empirical_2d.particle_count, 3)
+        npt.assert_almost_equal(repeat_empirical_2d.particles, np.array([[-2., 2.], [0., 0.], [1., -1.]]))
+        npt.assert_almost_equal(repeat_empirical_2d.particle(0), np.array([[-2.], [2.]]))
+        npt.assert_almost_equal(repeat_empirical_2d.weights, np.array([[2.], [1.], [1.]]))
+        npt.assert_almost_equal(repeat_empirical_2d.weight(0), 2.)
+        self.assertEqual(repeat_empirical_2d.dim, 2)
+        self.assertEqual(repeat_empirical_2d.weight_sum, 4.)
+        npt.assert_almost_equal(repeat_empirical_2d.mean, [[-0.75], [ 0.75]])
+        npt.assert_almost_equal(repeat_empirical_2d.var_n, [[ 1.6875], [ 1.6875]])
+        npt.assert_almost_equal(repeat_empirical_2d.var_n_minus_1, [[ 2.25], [ 2.25]])
+        npt.assert_almost_equal(repeat_empirical_2d.cov_n, [[ 1.6875, -1.6875], [-1.6875,  1.6875]])
+        npt.assert_almost_equal(repeat_empirical_2d.cov_n_minus_1, [[ 2.25, -2.25], [-2.25,  2.25]])
+        npt.assert_almost_equal(repeat_empirical_2d.cov, [[ 1.6875, -1.6875], [-1.6875,  1.6875]])
+        with self.assertRaises(np.linalg.LinAlgError):  # Matrix is not positive definite
+            repeat_empirical_2d.vol_n
+        with self.assertRaises(np.linalg.LinAlgError):  # Matrix is not positive definite
+            repeat_empirical_2d.vol_n_minus_1
+        with self.assertRaises(np.linalg.LinAlgError):  # Matrix is not positive definite
+            repeat_empirical_2d.vol
+        
+        normal_distr = distrs.NormalDistr(mean=[10., 100.], cov=[[4., -3.], [-3., 9.]])
+        particles = normal_distr.sample(size=100)
+        approx_normal_empirical_2d = distrs.EmpiricalDistr(particles=particles, weights=np.ones((100,)))
+        self.assertEqual(approx_normal_empirical_2d.particle_count, 100)
+        npt.assert_almost_equal(approx_normal_empirical_2d.particles, particles)
+        npt.assert_almost_equal(approx_normal_empirical_2d.particle(0), npu.col(*particles[0]))
+        npt.assert_almost_equal(approx_normal_empirical_2d.weights, npu.col(*np.ones((100,))))
+        npt.assert_almost_equal(approx_normal_empirical_2d.weight(0), 1.)
+        self.assertEqual(approx_normal_empirical_2d.dim, 2)
+        self.assertEqual(approx_normal_empirical_2d.weight_sum, 100.)
+        npt.assert_almost_equal(approx_normal_empirical_2d.mean, [[ 10.2077457], [ 99.6856645]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.var_n, [[ 3.3516275], [ 6.7649298]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.var_n_minus_1, [[ 3.3854823], [ 6.8332624]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.cov_n, [[ 3.3516275, -1.8258307], [-1.8258307,  6.7649298]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.cov_n_minus_1, [[ 3.3854823, -1.8442735], [-1.8442735,  6.8332624]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.cov, [[ 3.3516275, -1.8258307], [-1.8258307,  6.7649298]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.vol_n, [[ 1.8307451,  0.       ], [-0.9973157,  2.4021431]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.vol_n_minus_1, [[ 1.839968 ,  0.       ], [-1.00234  ,  2.4142446]])
+        npt.assert_almost_equal(approx_normal_empirical_2d.vol, [[ 1.8307451,  0.       ], [-0.9973157,  2.4021431]])
 
         """
         std_log_normal_1d = distrs.LogNormalDistr(dim=1)
