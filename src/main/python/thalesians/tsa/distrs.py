@@ -260,8 +260,7 @@ class LogNormalDistr(WideSenseDistr):
         return self._cov_of_log
 
     def sample(self, size=1, random_state=None):
-        normal = rnd.multivariate_normal(self.mean_of_log, self.cov_of_log, size=size, random_state=random_state)
-        return np.exp(normal)
+        return rnd.multivariate_lognormal(self.mean_of_log, self.cov_of_log, size=size, random_state=random_state)
     
     def __eq__(self, other):
         if isinstance(other, LogNormalDistr):

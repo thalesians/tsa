@@ -104,6 +104,26 @@ def lognormal(mean=0., sigma=1., size=None, random_state=None):
     if random_state is None: random_state = _rs()
     return random_state.lognormal(mean, sigma, size)
 
+# The `lognormal` implemented in `RandomState` behaves rather strangely. This implementation uses `RandomState`'s
+# `multivariate_normal` and then takes the elementwise exponential.
+def multivariate_lognormal(mean_of_log=0., cov_of_log=1., size=None, ndim=None, random_state=None):
+    global _rs
+    if ndim is None:
+        if mean_of_log is not None: ndim = np.size(mean_of_log)
+        elif cov_of_log is not None: ndim = npu.nrow(cov_of_log)
+        else: ndim = 1
+    if ndim is not None:
+        if mean_of_log is None: mean_of_log = npu.ndim_1_of(ndim, 0.)
+        if cov_of_log is None: cov_of_log = np.eye(ndim, ndim)
+    mean_of_log = npu.to_ndim_1(mean_of_log)
+    cov_of_log = npu.to_ndim_2(cov_of_log)
+    npc.check_size(mean_of_log, ndim)
+    npc.check_nrow(cov_of_log, ndim)
+    npc.check_square(cov_of_log)
+    if random_state is None: random_state = _rs()
+    normal = random_state.multivariate_normal(mean_of_log, cov_of_log, size)
+    return np.exp(normal)
+
 def logseries(p, size=None, random_state=None):
     global _rs
     if random_state is None: random_state = _rs()
