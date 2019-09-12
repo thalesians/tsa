@@ -460,21 +460,21 @@ class EmpiricalDistr(WideSenseDistr):
     def __str__(self):
         if self._str_EmpiricalDistr is None: self._str_EmpiricalDistr = self.to_string_helper().to_string()
         return self._str_EmpiricalDistr
+    
+def multinomial_resample(empirical_distr, target_particle_count=None, random_state=None):
+    if target_particle_count is None: target_particle_count = empirical_distr.particle_count
+    if random_state is None: random_state = rnd.random_state()
+    counts = rnd.multinomial(target_particle_count, npu.to_ndim_1(empirical_distr.normalised_weights))
+    assert np.sum(counts) == target_particle_count
+    particle_idx = 0
+    resampled_particles = np.empty((target_particle_count, np.shape(empirical_distr.particles)[1]))
+    for i in range(empirical_distr.particle_count):
+        for _ in range(counts[i]):
+            resampled_particles[particle_idx,:] = npu.to_ndim_1(empirical_distr.particle(i))
+            particle_idx += 1
+    return EmpiricalDistr(particles=resampled_particles, weights=np.ones((target_particle_count,)))
 
 '''
-class MultinomialResamplingParticleFilter(ParticleFilter):
-    def _resample(self):
-        counts = self._random_state.multinomial(self.particle_count, self._weights)
-        particle_idx = 0
-        for i in range(self.particle_count):
-            for j in range(counts[i]):  # @UnusedVariable
-                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
-                particle_idx += 1
-        
-        self._resampled_particles_uptodate = True
-        self._cached_resampled_mean = None
-        self._cached_resampled_var = None
-
 class RegularisedResamplingParticleFilter(ParticleFilter):
     def _resample(self):
         # TODO This only works when state_dim == 1
@@ -541,17 +541,4 @@ class SimpleSampler(Sampler):
 class KDESampler(Sampler):
     def __init__(self):
         super(KDESampler, self).__init__()
-
-class MultinomialResamplingParticleFilter(object):
-    def _resample(self):
-        counts = self._random_state.multinomial(self.particle_count, self._weights)
-        particle_idx = 0
-        for i in range(self.particle_count):
-            for j in range(counts[i]):  # @UnusedVariable
-                self._resampled_particles[particle_idx,:] = self._prior_particles[i,:]
-                particle_idx += 1
-        
-        self._resampled_particles_uptodate = True
-        self._cached_resampled_mean = None
-        self._cached_resampled_var = None
 '''
