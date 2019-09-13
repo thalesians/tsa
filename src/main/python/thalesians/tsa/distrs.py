@@ -437,6 +437,9 @@ class EmpiricalDistr(WideSenseDistr):
     def vol(self):
         return self.vol_n_minus_1 if self._use_n_minus_1_stats else self.vol_n
 
+    def sample(self, size=1, random_state=None):
+        return multinomial_resample(self, target_particle_count=size, random_state=random_state).particles
+    
     def __eq__(self, other):
         if isinstance(other, EmpiricalDistr):
             if self._dim != other._dim: return False
