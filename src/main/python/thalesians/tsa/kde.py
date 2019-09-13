@@ -6,14 +6,15 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 import thalesians.tsa.checks as checks
+import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
 
-class GaussianKDE(object):
+class GaussianKDEDistr(distrs.Distr):
     """
     Representation of a kernel-density estimate using Gaussian kernels.
 
-    Kernel density estimation is a way to estimate the probability density function (PDF) of a random variable in a non-parametric way. `GaussianKDE` works for both univariate and
-    multivariate data. It includes automatic bandwidth determination. The estimation works best for a unimodal distribution; bimodal or multimodal distributions tend to be
+    Kernel density estimation is a way to estimate the probability density function (PDF) of a random variable in a non-parametric way. `GaussianKDEDistr` works for both univariate
+    and multivariate data. It includes automatic bandwidth determination. The estimation works best for a unimodal distribution; bimodal or multimodal distributions tend to be
     oversmoothed.
 
     Parameters
@@ -25,13 +26,13 @@ class GaussianKDE(object):
         An array of weights, of the same shape as `x`.  Each value in `x` only contributes its associated weight towards the bin count (instead of 1).
     bw_method : str, scalar or callable, optional
         The method used to calculate the estimator bandwidth.  This can be 'scott', 'silverman', a scalar constant or a callable.  If a scalar, this will be used directly as
-        `kde.factor`. If a callable, it should take a `GaussianKDE` instance as the only parameter and return a scalar. If None (default), 'scott' is used. See Notes for more
+        `kde.factor`. If a callable, it should take a `GaussianKDEDistr` instance as the only parameter and return a scalar. If None (default), 'scott' is used. See Notes for more
         details.
 
     Attributes
     ----------
     dataset : ndarray
-        The dataset with which `GaussianKDE` was initialized.
+        The dataset with which `GaussianKDEDistr` was initialized.
     d : int
         Number of dimensions.
     n : int
@@ -62,7 +63,7 @@ class GaussianKDE(object):
     Notes
     -----
     Bandwidth selection strongly influences the estimate obtained from the KDE (much more so than the actual shape of the kernel). Bandwidth selection can be done by a "rule of
-    thumb", by cross-validation, by "plug-in methods" or by other means; see [3]_, [4]_ for reviews. `GaussianKDE` uses a rule of thumb, the default is Scott's Rule.
+    thumb", by cross-validation, by "plug-in methods" or by other means; see [3]_, [4]_ for reviews. `GaussianKDEDistr` uses a rule of thumb, the default is Scott's Rule.
 
     Scott's Rule [1]_, implemented as `scotts_factor`, is::
 
@@ -138,7 +139,18 @@ class GaussianKDE(object):
     def particle_count(self):
         return self._empirical_distr.particle_count
 
-    def evaluate(self, points):
+    @property
+    def mean(self):
+        return self._mean
+    
+    @property
+    def cov(self):
+        raise NotImplementedError()
+    
+    def sample(self, size=1, random_state=None):
+        raise NotImplementedError()
+
+    def pdf(self, points):
         """
         Evaluate the estimated pdf on a set of points.
 
@@ -175,8 +187,6 @@ class GaussianKDE(object):
 
         return result
 
-    __call__ = evaluate
-
     def scotts_factor(self):
         return np.power(self.neff, -1./(self.dim + 4))
 
@@ -196,7 +206,7 @@ class GaussianKDE(object):
         ----------
         bw_method : str, scalar or callable, optional
             The method used to calculate the estimator bandwidth.  This can be 'scott', 'silverman', a scalar constant or a callable. If a scalar, this will be used directly as
-            `kde.factor`.  If a callable, it should take a `GaussianKDE` instance as only parameter and return a scalar.  If None (default), nothing happens; the current
+            `kde.factor`.  If a callable, it should take a `GaussianKDEDistr` instance as only parameter and return a scalar.  If None (default), nothing happens; the current
             `kde.covariance_factor` method is kept.
 
         Examples
@@ -245,8 +255,8 @@ class GaussianKDE(object):
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
             # Compute the mean and residuals
-            _mean = np.sum(npu.to_ndim_1(self.empirical_distr.normalised_weights) * self.empirical_distr.particles.T, axis=1)
-            _residual = (self.empirical_distr.particles - _mean[:, None].T)
+            self._mean = np.sum(npu.to_ndim_1(self.empirical_distr.normalised_weights) * self.empirical_distr.particles.T, axis=1)
+            _residual = (self.empirical_distr.particles - self._mean[:, None].T)
             # Compute the biased covariance
             self._data_covariance = np.atleast_2d(np.dot(_residual.T * self.empirical_distr.normalised_weights.T, _residual))
             # Correct for bias (http://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Weighted_sample_covariance)
