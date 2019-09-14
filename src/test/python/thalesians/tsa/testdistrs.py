@@ -293,6 +293,7 @@ class TestDistrs(unittest.TestCase):
         
         trivial_empirical_1d = distrs.EmpiricalDistr(particles=[[0.]], weights=[1.])
         self.assertEqual(trivial_empirical_1d.particle_count, 1)
+        npt.assert_almost_equal(trivial_empirical_1d.effective_particle_count, 1.)
         self.assertEqual(trivial_empirical_1d.dim, 1)
         npt.assert_almost_equal(trivial_empirical_1d.particles, np.array([[0.]]))
         npt.assert_almost_equal(trivial_empirical_1d.particle(0), np.array([[0.]]))
@@ -317,6 +318,7 @@ class TestDistrs(unittest.TestCase):
 
         simple_empirical_1d = distrs.EmpiricalDistr(particles=[[-1.], [1.]], weights=[.5, .5])
         self.assertEqual(simple_empirical_1d.particle_count, 2)
+        npt.assert_almost_equal(simple_empirical_1d.effective_particle_count, 2.)
         self.assertEqual(simple_empirical_1d.dim, 1)
         npt.assert_almost_equal(simple_empirical_1d.particles, np.array([[-1.], [1.]]))
         npt.assert_almost_equal(simple_empirical_1d.particle(0), np.array([[-1.]]))
@@ -344,6 +346,7 @@ class TestDistrs(unittest.TestCase):
         # The weights can be specified as a one-dimensional array...
         simple_empirical_1d = distrs.EmpiricalDistr(particles=[[-1.], [1.]], weights=[.5, .5])
         self.assertEqual(simple_empirical_1d.particle_count, 2)
+        npt.assert_almost_equal(simple_empirical_1d.effective_particle_count, 2.)
         self.assertEqual(simple_empirical_1d.dim, 1)
         npt.assert_almost_equal(simple_empirical_1d.particles, np.array([[-1.], [1.]]))
         # ...but they come back as a (two-dimensional) column vector:
@@ -352,6 +355,7 @@ class TestDistrs(unittest.TestCase):
         # ...alternatively, the weights can be specified as a (two-dimensional) column vector:
         simple_empirical_1d = distrs.EmpiricalDistr(particles=[[-1.], [1.]], weights=[[.5], [.5]])
         self.assertEqual(simple_empirical_1d.particle_count, 2)
+        npt.assert_almost_equal(simple_empirical_1d.effective_particle_count, 2.)
         self.assertEqual(simple_empirical_1d.dim, 1)
         npt.assert_almost_equal(simple_empirical_1d.particles, np.array([[-1.], [1.]]))
         # ...they always come back as a (two-dimensional) column vector:
@@ -360,6 +364,7 @@ class TestDistrs(unittest.TestCase):
         # If the particles are specified as a one-dimensional array, they are interpreted as...
         simple_empirical_1d = distrs.EmpiricalDistr(particles=[-1., 1.], weights=[.5, .5])
         self.assertEqual(simple_empirical_1d.particle_count, 2)
+        npt.assert_almost_equal(simple_empirical_1d.effective_particle_count, 2.)
         self.assertEqual(simple_empirical_1d.dim, 1)
         # ...multiple one-dimensional particles (each row corresponds to a particle, each column to a dimension):
         npt.assert_almost_equal(simple_empirical_1d.particles, np.array([[-1.], [1.]]))
@@ -368,6 +373,7 @@ class TestDistrs(unittest.TestCase):
         # Now we shall be using "repeat"-type weights:
         repeat_empirical_1d = distrs.EmpiricalDistr(particles=[[-1.], [1.]], weights=[2., 1.])
         self.assertEqual(repeat_empirical_1d.particle_count, 2)
+        npt.assert_almost_equal(repeat_empirical_1d.effective_particle_count, 1.7999999999999998)
         self.assertEqual(repeat_empirical_1d.dim, 1)
         npt.assert_almost_equal(repeat_empirical_1d.particles, np.array([[-1.], [1.]]))
         npt.assert_almost_equal(repeat_empirical_1d.particle(0), np.array([[-1.]]))
@@ -389,6 +395,7 @@ class TestDistrs(unittest.TestCase):
         # Now we shall be using "repeat"-type weights. There are three two-dimensional particles:
         repeat_empirical_2d = distrs.EmpiricalDistr(particles=[[-2., 2.], [0., 0.], [1., -1.]], weights=[2., 1., 1.])
         self.assertEqual(repeat_empirical_2d.particle_count, 3)
+        npt.assert_almost_equal(repeat_empirical_2d.effective_particle_count, 2.6666666666666665)
         self.assertEqual(repeat_empirical_2d.dim, 2)
         npt.assert_almost_equal(repeat_empirical_2d.particles, np.array([[-2., 2.], [0., 0.], [1., -1.]]))
         npt.assert_almost_equal(repeat_empirical_2d.particle(0), np.array([[-2.], [2.]]))
@@ -414,6 +421,7 @@ class TestDistrs(unittest.TestCase):
         particles = normal_distr.sample(size=100)
         approx_normal_empirical_2d = distrs.EmpiricalDistr(particles=particles, weights=np.ones((100,)))
         self.assertEqual(approx_normal_empirical_2d.particle_count, 100)
+        npt.assert_almost_equal(approx_normal_empirical_2d.effective_particle_count, 100.)
         self.assertEqual(approx_normal_empirical_2d.dim, 2)
         npt.assert_almost_equal(approx_normal_empirical_2d.particles, particles)
         npt.assert_almost_equal(approx_normal_empirical_2d.particle(0), npu.col(*particles[0]))
@@ -437,6 +445,7 @@ class TestDistrs(unittest.TestCase):
         particles = normal_distr.sample(size=100000)
         approx_normal_empirical_2d = distrs.EmpiricalDistr(particles=particles, weights=np.ones((100000,)))
         self.assertEqual(approx_normal_empirical_2d.particle_count, 100000)
+        npt.assert_almost_equal(approx_normal_empirical_2d.effective_particle_count, 100000.)
         self.assertEqual(approx_normal_empirical_2d.dim, 2)
         npt.assert_almost_equal(approx_normal_empirical_2d.particles, particles)
         npt.assert_almost_equal(approx_normal_empirical_2d.particle(0), npu.col(*particles[0]))
@@ -462,6 +471,7 @@ class TestDistrs(unittest.TestCase):
         particles = normal_distr.sample(size=100000)
         approx_normal_empirical_2d = distrs.EmpiricalDistr(particles=particles, weights=np.ones((100000,)))
         self.assertEqual(approx_normal_empirical_2d.particle_count, 100000)
+        npt.assert_almost_equal(approx_normal_empirical_2d.effective_particle_count, 100000.)
         self.assertEqual(approx_normal_empirical_2d.dim, 2)
         npt.assert_almost_equal(approx_normal_empirical_2d.particles, particles)
         npt.assert_almost_equal(approx_normal_empirical_2d.particle(0), npu.col(*particles[0]))
@@ -484,6 +494,7 @@ class TestDistrs(unittest.TestCase):
 
         resampled_approx_normal_empirical_2d = distrs.multinomial_resample(approx_normal_empirical_2d)
         self.assertEqual(resampled_approx_normal_empirical_2d.particle_count, 100000)
+        npt.assert_almost_equal(resampled_approx_normal_empirical_2d.effective_particle_count, 100000.)
         self.assertEqual(resampled_approx_normal_empirical_2d.dim, 2)
         # The resampled particles should ("almost certainly") be different from the original ones:
         self.assertFalse(np.sum(resampled_approx_normal_empirical_2d.particles) == np.sum(particles))
@@ -512,6 +523,7 @@ class TestDistrs(unittest.TestCase):
 
         subsampled_approx_normal_empirical_2d = distrs.multinomial_resample(approx_normal_empirical_2d, target_particle_count=40000)
         self.assertEqual(subsampled_approx_normal_empirical_2d.particle_count, 40000)
+        npt.assert_almost_equal(subsampled_approx_normal_empirical_2d.effective_particle_count, 40000.)
         self.assertEqual(subsampled_approx_normal_empirical_2d.dim, 2)
         # The resampled particles should ("almost certainly") be different from the original ones:
         self.assertFalse(np.sum(subsampled_approx_normal_empirical_2d.particles) == np.sum(particles))
@@ -535,6 +547,7 @@ class TestDistrs(unittest.TestCase):
 
         supersampled_approx_normal_empirical_2d = distrs.multinomial_resample(approx_normal_empirical_2d, target_particle_count=300000)
         self.assertEqual(supersampled_approx_normal_empirical_2d.particle_count, 300000)
+        npt.assert_almost_equal(supersampled_approx_normal_empirical_2d.effective_particle_count, 300000.)
         self.assertEqual(supersampled_approx_normal_empirical_2d.dim, 2)
         # The resampled particles should ("almost certainly") be different from the original ones:
         self.assertFalse(np.sum(supersampled_approx_normal_empirical_2d.particles) == np.sum(particles))

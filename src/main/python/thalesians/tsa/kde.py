@@ -37,8 +37,6 @@ class GaussianKDEDistr(distrs.Distr):
         Number of dimensions.
     n : int
         Number of datapoints.
-    neff : float
-        Effective sample size using Kish's approximation.
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`, with which the covariance matrix is multiplied.
     covariance : ndarray
@@ -121,11 +119,56 @@ class GaussianKDEDistr(distrs.Distr):
     >>> plt.show()
     """
     def __init__(self, empirical_distr, bw_method=None):
+        """
+        Compute the estimator bandwidth with given method.
+    
+        The new bandwidth calculated after a call to `set_bandwidth` is used for subsequent evaluations of the estimated density.
+    
+        Parameters
+        ----------
+        bw_method : str, scalar or callable, optional
+            The method used to calculate the estimator bandwidth.  This can be 'scott', 'silverman', a scalar constant or a callable. If a scalar, this will be used directly as
+            `kde.factor`.  If a callable, it should take a `GaussianKDEDistr` instance as only parameter and return a scalar.  If None (default), nothing happens; the current
+            `kde.covariance_factor` method is kept.
+    
+        Examples
+        --------
+        >>> x1 = np.array([-7, -5, 1, 4, 5.])
+        >>> kde = stats.gaussian_kde(x1)
+        >>> xs = np.linspace(-10, 10, num=50)
+        >>> y1 = kde(xs)
+        >>> kde.set_bandwidth(bw_method='silverman')
+        >>> y2 = kde(xs)
+        >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
+        >>> y3 = kde(xs)
+    
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111)
+        >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo', label='Data points (rescaled)')
+        >>> ax.plot(xs, y1, label='Scott (default)')
+        >>> ax.plot(xs, y2, label='Silverman')
+        >>> ax.plot(xs, y3, label='Const (1/3 * Silverman)')
+        >>> ax.legend()
+        >>> plt.show()
+        """
         self._empirical_distr = empirical_distr
-        # Compute the effective sample size 
-        # http://surveyanalysis.org/wiki/Design_Effects_and_Effective_Sample_Size#Kish.27s_approximate_formula_for_computing_effective_sample_size
-        self.neff = 1.0 / np.sum(self._empirical_distr.normalised_weights ** 2)
-        self.set_bandwidth(bw_method=bw_method)
+
+        if bw_method is None:
+            pass
+        elif bw_method == 'scott':
+            self.covariance_factor = self.scotts_factor
+        elif bw_method == 'silverman':
+            self.covariance_factor = self.silverman_factor
+        elif np.isscalar(bw_method) and not checks.is_string(bw_method):
+            self._bw_method = 'use constant'
+            self.covariance_factor = lambda: bw_method
+        elif callable(bw_method):
+            self._bw_method = bw_method
+            self.covariance_factor = lambda: self._bw_method(self)
+        else:
+            raise ValueError("`bw_method` should be 'scott', 'silverman', a scalar or a callable.")
+
+        self._compute_covariance()
 
     @property
     def empirical_distr(self):
@@ -141,7 +184,7 @@ class GaussianKDEDistr(distrs.Distr):
 
     @property
     def mean(self):
-        return self._mean
+        return self._empirical_distr.mean
     
     @property
     def cov(self):
@@ -188,64 +231,13 @@ class GaussianKDEDistr(distrs.Distr):
         return result
 
     def scotts_factor(self):
-        return np.power(self.neff, -1./(self.dim + 4))
+        return np.power(self.empirical_distr.effective_particle_count, -1. / (self.dim + 4))
 
     def silverman_factor(self):
-        return np.power(self.neff*(self.dim + 2.0)/4.0, -1./(self.dim + 4))
+        return np.power(self.empirical_distr.effective_particle_count * (self.dim + 2.0) / 4.0, -1. / (self.dim + 4))
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
-
-    def set_bandwidth(self, bw_method=None):
-        """
-        Compute the estimator bandwidth with given method.
-
-        The new bandwidth calculated after a call to `set_bandwidth` is used for subsequent evaluations of the estimated density.
-
-        Parameters
-        ----------
-        bw_method : str, scalar or callable, optional
-            The method used to calculate the estimator bandwidth.  This can be 'scott', 'silverman', a scalar constant or a callable. If a scalar, this will be used directly as
-            `kde.factor`.  If a callable, it should take a `GaussianKDEDistr` instance as only parameter and return a scalar.  If None (default), nothing happens; the current
-            `kde.covariance_factor` method is kept.
-
-        Examples
-        --------
-        >>> x1 = np.array([-7, -5, 1, 4, 5.])
-        >>> kde = stats.gaussian_kde(x1)
-        >>> xs = np.linspace(-10, 10, num=50)
-        >>> y1 = kde(xs)
-        >>> kde.set_bandwidth(bw_method='silverman')
-        >>> y2 = kde(xs)
-        >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
-        >>> y3 = kde(xs)
-
-        >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111)
-        >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo', label='Data points (rescaled)')
-        >>> ax.plot(xs, y1, label='Scott (default)')
-        >>> ax.plot(xs, y2, label='Silverman')
-        >>> ax.plot(xs, y3, label='Const (1/3 * Silverman)')
-        >>> ax.legend()
-        >>> plt.show()
-        """
-        if bw_method is None:
-            pass
-        elif bw_method == 'scott':
-            self.covariance_factor = self.scotts_factor
-        elif bw_method == 'silverman':
-            self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not checks.is_string(bw_method):
-            self._bw_method = 'use constant'
-            self.covariance_factor = lambda: bw_method
-        elif callable(bw_method):
-            self._bw_method = bw_method
-            self.covariance_factor = lambda: self._bw_method(self)
-        else:
-            msg = "`bw_method` should be 'scott', 'silverman', a scalar or a callable."
-            raise ValueError(msg)
-
-        self._compute_covariance()
 
     def _compute_covariance(self):
         """
@@ -254,13 +246,7 @@ class GaussianKDEDistr(distrs.Distr):
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
-            # Compute the mean and residuals
-            self._mean = np.sum(npu.to_ndim_1(self.empirical_distr.normalised_weights) * self.empirical_distr.particles.T, axis=1)
-            _residual = (self.empirical_distr.particles - self._mean[:, None].T)
-            # Compute the biased covariance
-            self._data_covariance = np.atleast_2d(np.dot(_residual.T * self.empirical_distr.normalised_weights.T, _residual))
-            # Correct for bias (http://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Weighted_sample_covariance)
-            self._data_covariance /= (1 - np.sum(self.empirical_distr.normalised_weights ** 2))
+            self._data_covariance = self.empirical_distr.cov
             self._data_inv_cov = np.linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2

@@ -281,10 +281,13 @@ class LogNormalDistr(WideSenseDistr):
         if self._str_LogNormalDistr is None: self._str_LogNormalDistr = self.to_string_helper().to_string()
         return self._str_LogNormalDistr
 
+# Formulae for means and covariances of weighted samples can be found in
+#
+# George R. Price. Extension of covariance selection mathematics. Ann. Hum. Genet., Lond. (1972), 35, 485 - 490.
+#
+# See the reference on https://stats.stackexchange.com/questions/61225/correct-equation-for-weighted-unbiased-sample-covariance
 class EmpiricalDistr(WideSenseDistr):
-    def __init__(self, particles=None, weights=None,
-            dim=None, use_n_minus_1_stats=False, sampler=None, copy=True):
-
+    def __init__(self, particles=None, weights=None, dim=None, use_n_minus_1_stats=False, sampler=None, copy=True):
         self._particles, self._weights, self._dim = None, None, None
 
         if particles is not None:
@@ -317,6 +320,7 @@ class EmpiricalDistr(WideSenseDistr):
         #
         # See https://stats.stackexchange.com/questions/61225/correct-equation-for-weighted-unbiased-sample-covariance
 
+        self._effective_particle_count = None
         self._weight_sum = None
         self._mean = None
         self._var_n = None
@@ -338,6 +342,14 @@ class EmpiricalDistr(WideSenseDistr):
     @property
     def particle_count(self):
         return npu.nrow(self._particles) if self._particles is not None else 0
+    
+    @property
+    def effective_particle_count(self):
+        # Using Kish's approximate formula for computing the effective sample size: 
+        # http://surveyanalysis.org/wiki/Design_Effects_and_Effective_Sample_Size#Kish.27s_approximate_formula_for_computing_effective_sample_size
+        if self._effective_particle_count is None:
+            self._effective_particle_count = 1.0 / np.sum(self.normalised_weights ** 2)
+        return self._effective_particle_count
 
     @property
     def particles(self):
