@@ -167,8 +167,27 @@ class GaussianKDEDistr(distrs.Distr):
             self.covariance_factor = lambda: self._bw_method(self)
         else:
             raise ValueError("`bw_method` should be 'scott', 'silverman', a scalar or a callable.")
+        
+        self._cov = None
+        self._inv_cov = None
+        self._pdf_norm_factor = None
 
-        self._compute_covariance()
+    def _compute_covariance(self):
+        """
+        Computes the covariance matrix for each Gaussian kernel using covariance_factor().
+        """
+        self._cov = self.empirical_distr.cov * self.covariance_factor()**2
+        self._inv_cov = np.linalg.inv(self.empirical_distr.cov) / self.covariance_factor()**2
+        self._pdf_norm_factor = np.sqrt(np.linalg.det(2 * np.pi * self._cov)) #* self.n
+
+    def scotts_factor(self):
+        return np.power(self.empirical_distr.effective_particle_count, -1. / (self.dim + 4))
+
+    def silverman_factor(self):
+        return np.power(self.empirical_distr.effective_particle_count * (self.dim + 2.0) / 4.0, -1. / (self.dim + 4))
+
+    # Default method to calculate bandwidth, can be overwritten by subclass:
+    covariance_factor = scotts_factor
 
     @property
     def empirical_distr(self):
@@ -188,7 +207,21 @@ class GaussianKDEDistr(distrs.Distr):
     
     @property
     def cov(self):
-        raise NotImplementedError()
+        if self._cov is None:
+            self._compute_covariance()
+        return self._cov
+
+    @property    
+    def inv_cov(self):
+        if self._inv_cov is None:
+            self._compute_covariance()
+        return self._inv_cov
+    
+    @property
+    def pdf_norm_factor(self):
+        if self._pdf_norm_factor is None:
+            self._compute_covariance()
+        return self._pdf_norm_factor
     
     def sample(self, size=1, random_state=None):
         raise NotImplementedError()
@@ -226,29 +259,6 @@ class GaussianKDEDistr(distrs.Distr):
         # compute the normalised residuals
         chi2 = cdist(points, self.empirical_distr.particles, 'mahalanobis', VI=self.inv_cov) ** 2
         # compute the pdf
-        result = np.sum(np.exp(-.5 * chi2) * self.empirical_distr.normalised_weights.T, axis=1) / self._norm_factor        
+        result = np.sum(np.exp(-.5 * chi2) * self.empirical_distr.normalised_weights.T, axis=1) / self.pdf_norm_factor        
 
         return result
-
-    def scotts_factor(self):
-        return np.power(self.empirical_distr.effective_particle_count, -1. / (self.dim + 4))
-
-    def silverman_factor(self):
-        return np.power(self.empirical_distr.effective_particle_count * (self.dim + 2.0) / 4.0, -1. / (self.dim + 4))
-
-    #  Default method to calculate bandwidth, can be overwritten by subclass
-    covariance_factor = scotts_factor
-
-    def _compute_covariance(self):
-        """
-        Computes the covariance matrix for each Gaussian kernel using covariance_factor().
-        """
-        self.factor = self.covariance_factor()
-        # Cache covariance and inverse covariance of the data
-        if not hasattr(self, '_data_inv_cov'):
-            self._data_covariance = self.empirical_distr.cov
-            self._data_inv_cov = np.linalg.inv(self._data_covariance)
-
-        self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = self._data_inv_cov / self.factor**2
-        self._norm_factor = np.sqrt(np.linalg.det(2*np.pi*self.covariance)) #* self.n
