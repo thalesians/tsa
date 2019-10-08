@@ -4,7 +4,7 @@ import itertools
 import math
 import operator
 
-import thalesians.tsa.intervals as intervals
+import thalesians.tsa.intervals
 
 def sequence_eq(sequence1, sequence2):
     return len(sequence1) == len(sequence2) and all(map(operator.eq, sequence1, sequence2))
@@ -89,6 +89,18 @@ def peek(iterable, size=1):
         objs.append(obj)
     return objs, itertools.chain(objs, iterable)
 
+def intervals(start, end, delta, intervals_right_closed=False):
+    result = []
+    interval_start, interval_end = None, None
+    while True:
+        interval_start = start if interval_end is None else interval_end
+        interval_end = min(end, interval_start + delta)
+        result.append(thalesians.tsa.intervals.Interval(
+            interval_start, interval_end,
+            not intervals_right_closed, intervals_right_closed))
+        if interval_end == end: break
+    return result
+
 class Bracket(object):
     def __init__(self, interval, interval_offset):
         self.interval = interval
@@ -134,7 +146,7 @@ def bracket(iterable, origin, interval_size, already_sorted=False, intervals_rig
                 interval_left = new_interval_left
                 interval_right = interval_left + interval_size
                 brackets.append(
-                    Bracket(intervals.Interval(interval_left,
+                    Bracket(thalesians.tsa.intervals.Interval(interval_left,
                                      interval_right,
                                      not intervals_right_closed,
                                      intervals_right_closed),

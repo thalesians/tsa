@@ -44,6 +44,85 @@ class TestUtils(unittest.TestCase):
         self.assertSequenceEqual(first_three, [range(0, 2), range(2, 4), range(4, 6)])
         self.assertSequenceEqual(list(it), [range(6, 8), range(8, 10)])
         
+    def test_intervals(self):
+        result = utils.intervals(start=0, end=15, delta=5, intervals_right_closed=False)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(0, 5, left_closed=True, right_closed=False),
+            intervals.Interval(5, 10, left_closed=True, right_closed=False),
+            intervals.Interval(10, 15, left_closed=True, right_closed=False)])
+        
+        result = utils.intervals(start=0, end=15, delta=5, intervals_right_closed=True)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(0, 5, left_closed=False, right_closed=True),
+            intervals.Interval(5, 10, left_closed=False, right_closed=True),
+            intervals.Interval(10, 15, left_closed=False, right_closed=True)])
+        
+        result = utils.intervals(start=0, end=15, delta=4, intervals_right_closed=False)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(0, 4, left_closed=True, right_closed=False),
+            intervals.Interval(4, 8, left_closed=True, right_closed=False),
+            intervals.Interval(8, 12, left_closed=True, right_closed=False),
+            intervals.Interval(12, 15, left_closed=True, right_closed=False)])
+        
+        result = utils.intervals(start=0, end=15, delta=4, intervals_right_closed=True)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(0, 4, left_closed=False, right_closed=True),
+            intervals.Interval(4, 8, left_closed=False, right_closed=True),
+            intervals.Interval(8, 12, left_closed=False, right_closed=True),
+            intervals.Interval(12, 15, left_closed=False, right_closed=True)])
+        
+        result = utils.intervals(start=dt.date(2019, 8, 31), end=dt.date(2019, 9, 15), delta=dt.timedelta(days=5), intervals_right_closed=False)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.date(2019, 8, 31), dt.date(2019, 9, 5), left_closed=True, right_closed=False),
+            intervals.Interval(dt.date(2019, 9, 5), dt.date(2019, 9, 10), left_closed=True, right_closed=False),
+            intervals.Interval(dt.date(2019, 9, 10), dt.date(2019, 9, 15), left_closed=True, right_closed=False)])
+        
+        result = utils.intervals(start=dt.date(2019, 8, 31), end=dt.date(2019, 9, 15), delta=dt.timedelta(days=5), intervals_right_closed=True)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.date(2019, 8, 31), dt.date(2019, 9, 5), left_closed=False, right_closed=True),
+            intervals.Interval(dt.date(2019, 9, 5), dt.date(2019, 9, 10), left_closed=False, right_closed=True),
+            intervals.Interval(dt.date(2019, 9, 10), dt.date(2019, 9, 15), left_closed=False, right_closed=True)])
+        
+        result = utils.intervals(start=dt.date(2019, 8, 31), end=dt.date(2019, 9, 15), delta=dt.timedelta(days=4), intervals_right_closed=False)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.date(2019, 8, 31), dt.date(2019, 9, 4), left_closed=True, right_closed=False),
+            intervals.Interval(dt.date(2019, 9, 4), dt.date(2019, 9, 8), left_closed=True, right_closed=False),
+            intervals.Interval(dt.date(2019, 9, 8), dt.date(2019, 9, 12), left_closed=True, right_closed=False),
+            intervals.Interval(dt.date(2019, 9, 12), dt.date(2019, 9, 15), left_closed=True, right_closed=False)])
+        
+        result = utils.intervals(start=dt.date(2019, 8, 31), end=dt.date(2019, 9, 15), delta=dt.timedelta(days=4), intervals_right_closed=True)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.date(2019, 8, 31), dt.date(2019, 9, 4), left_closed=False, right_closed=True),
+            intervals.Interval(dt.date(2019, 9, 4), dt.date(2019, 9, 8), left_closed=False, right_closed=True),
+            intervals.Interval(dt.date(2019, 9, 8), dt.date(2019, 9, 12), left_closed=False, right_closed=True),
+            intervals.Interval(dt.date(2019, 9, 12), dt.date(2019, 9, 15), left_closed=False, right_closed=True)])
+        
+        result = utils.intervals(start=dt.datetime(2019, 10, 8, 0), end=dt.datetime(2019, 10, 8, 15), delta=dt.timedelta(hours=5), intervals_right_closed=False)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.datetime(2019, 10, 8, 0), dt.datetime(2019, 10, 8, 5), left_closed=True, right_closed=False),
+            intervals.Interval(dt.datetime(2019, 10, 8, 5), dt.datetime(2019, 10, 8, 10), left_closed=True, right_closed=False),
+            intervals.Interval(dt.datetime(2019, 10, 8, 10), dt.datetime(2019, 10, 8, 15), left_closed=True, right_closed=False)])
+        
+        result = utils.intervals(start=dt.datetime(2019, 10, 8, 0), end=dt.datetime(2019, 10, 8, 15), delta=dt.timedelta(hours=5), intervals_right_closed=True)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.datetime(2019, 10, 8, 0), dt.datetime(2019, 10, 8, 5), left_closed=False, right_closed=True),
+            intervals.Interval(dt.datetime(2019, 10, 8, 5), dt.datetime(2019, 10, 8, 10), left_closed=False, right_closed=True),
+            intervals.Interval(dt.datetime(2019, 10, 8, 10), dt.datetime(2019, 10, 8, 15), left_closed=False, right_closed=True)])
+        
+        result = utils.intervals(start=dt.datetime(2019, 10, 8, 0), end=dt.datetime(2019, 10, 8, 15), delta=dt.timedelta(hours=4), intervals_right_closed=False)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.datetime(2019, 10, 8, 0), dt.datetime(2019, 10, 8, 4), left_closed=True, right_closed=False),
+            intervals.Interval(dt.datetime(2019, 10, 8, 4), dt.datetime(2019, 10, 8, 8), left_closed=True, right_closed=False),
+            intervals.Interval(dt.datetime(2019, 10, 8, 8), dt.datetime(2019, 10, 8, 12), left_closed=True, right_closed=False),
+            intervals.Interval(dt.datetime(2019, 10, 8, 12), dt.datetime(2019, 10, 8, 15), left_closed=True, right_closed=False)])
+        
+        result = utils.intervals(start=dt.datetime(2019, 10, 8, 0), end=dt.datetime(2019, 10, 8, 15), delta=dt.timedelta(hours=4), intervals_right_closed=True)
+        self.assertSequenceEqual(result, [
+            intervals.Interval(dt.datetime(2019, 10, 8, 0), dt.datetime(2019, 10, 8, 4), left_closed=False, right_closed=True),
+            intervals.Interval(dt.datetime(2019, 10, 8, 4), dt.datetime(2019, 10, 8, 8), left_closed=False, right_closed=True),
+            intervals.Interval(dt.datetime(2019, 10, 8, 8), dt.datetime(2019, 10, 8, 12), left_closed=False, right_closed=True),
+            intervals.Interval(dt.datetime(2019, 10, 8, 12), dt.datetime(2019, 10, 8, 15), left_closed=False, right_closed=True)])
+        
     def test_bracket(self):
         data = [8, 11, 12, 13, 14, 27, 29, 37, 49, 50, 51, 79, 85]
         
