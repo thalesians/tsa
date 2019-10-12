@@ -5,6 +5,10 @@ import sys
 
 import numpy as np
 
+import thalesians.tsa.checks as checks
+import thalesians.tsa.conversions as conversions
+import thalesians.tsa.utils as utils
+
 def format_q_time(thing):
     if isinstance(thing, dt.datetime) or isinstance(thing, dt.time):
         hour = thing.hour
@@ -431,7 +435,7 @@ class QTypes(object):
     MINUTE_LIST   = QType( True , 'minute'  , '`minute'  , 'u' , 17  , '0Nu'  , 4   , None                      )
     SECOND_LIST   = QType( True , 'second'  , '`second'  , 'v' , 18  , '0Nv'  , 4   , None                      )
     TIME_LIST     = QType( True , 'time'    , '`time'    , 't' , 19  , '0Nt'  , 4   , None                      )
-
+    
 class QCreateTableStatementBuilder(object):
     def __init__(self, overwrite=False):
         self.__table = None
@@ -599,6 +603,9 @@ class QExpression(object):
         return s.getvalue()
 
 class QExpressionFactory(object):
+    def __init__(self):
+        pass
+    
     def make_plus_expression(self, lhs, rhs):
         return QExpression('+', lhs, rhs)
 
@@ -658,7 +665,7 @@ class QConstraintFactory(object):
     def make_within_constraint(self, lhs, rhs):
         return QConstraint('within', lhs, rhs)
 
-class QSelectStatementBuilder(object):
+class QQueryBuilder(object):
     def __init__(self):
         self.__table = None
         self.__select_columns = []
@@ -696,66 +703,123 @@ class QSelectStatementBuilder(object):
     def to_string(self):
         assert self.__table is not None, 'Table is not set'
 
-        statement = io.StringIO()
+        query = io.StringIO()
 
-        statement.write('?[')
-        statement.write(self.__table)
-        statement.write(';(')
+        query.write('?[')
+        query.write(self.__table)
+        query.write(';(')
         constraints_len = len(self.__constraints)
         if constraints_len == 0:
-            statement.write('enlist 1b')
+            query.write('enlist 1b')
         elif constraints_len == 1:
-            statement.write('enlist ')
+            query.write('enlist ')
         for constraint_index, constraint in enumerate(self.__constraints):
             if constraint_index > 0:
-                statement.write(';')
-            statement.write(str(constraint))
-        statement.write(');')
+                query.write(';')
+            query.write(str(constraint))
+        query.write(');')
         if len(self.__by_phrase_columns) == 0:
-            statement.write('0b')
+            query.write('0b')
         else:
-            statement.write('(')
+            query.write('(')
             by_phrase_columns_len = len(self.__by_phrase_columns)
             if by_phrase_columns_len == 1:
-                statement.write('enlist ')
+                query.write('enlist ')
             for by_phrase_column_index, by_phrase_column in enumerate(self.__by_phrase_columns):
                 if by_phrase_column_index > 0:
-                    statement.write(';')
-                statement.write(str(by_phrase_column[0]))
-            statement.write(')!(')
+                    query.write(';')
+                query.write(str(by_phrase_column[0]))
+            query.write(')!(')
             if by_phrase_columns_len == 1:
-                statement.write('enlist ')
+                query.write('enlist ')
             for by_phrase_column_index, by_phrase_column in enumerate(self.__by_phrase_columns):
                 if by_phrase_column_index > 0:
-                    statement.write(';')
-                statement.write(str(by_phrase_column[1]))
-            statement.write(')')
-        statement.write(';(')
+                    query.write(';')
+                query.write(str(by_phrase_column[1]))
+            query.write(')')
+        query.write(';(')
 
         select_columns_len = len(self.__select_columns)
         if select_columns_len == 1:
-            statement.write('enlist ')
+            query.write('enlist ')
         for select_column_index, select_column in enumerate(self.__select_columns):
             if select_column_index > 0:
-                statement.write(';')
-            statement.write(str(select_column[0]))
-        statement.write(')!(')
+                query.write(';')
+            query.write(str(select_column[0]))
+        query.write(')!(')
         if select_columns_len == 1:
-            statement.write('enlist ')
+            query.write('enlist ')
         for select_column_index, select_column in enumerate(self.__select_columns):
             if select_column_index > 0:
-                statement.write(';')
-            statement.write(str(select_column[1]))
-        statement.write(')')
-        statement.write(']')
+                query.write(';')
+            query.write(str(select_column[1]))
+        query.write(')')
+        query.write(']')
 
-        return statement.getvalue()
+        return query.getvalue()
 
     def __str__(self):
         return self.to_string()
 
     def __repr__(self):
         return self.to_string()
+
+class QBatchQueryBuilder(object):
+    def __init__(self):
+        self.__query_template = None
+        self.__start = None
+        self.__end = None
+        self.__delta = None
+        
+    def append_query_template_constraints(self, q_query_builder):
+        q_constraint_factory = QConstraintFactory()
+        q_query_builder.append_constraint(
+            q_constraint_factory.make_greater_than_or_equal_constraint(make_q_value('date'), QIdentifierValue('${START_DATE}')))
+        q_query_builder.append_constraint(
+            q_constraint_factory.make_less_than_or_equal_constraint(make_q_value('date'), QIdentifierValue('${END_DATE}')))
+        q_expression_factory = QExpressionFactory()
+        q_query_builder.append_constraint(
+            q_constraint_factory.make_greater_than_or_equal_constraint(
+                q_expression_factory.make_plus_expression(make_q_value('date'), make_q_value('time')), QIdentifierValue('${START}')))
+        q_query_builder.append_constraint(
+            q_constraint_factory.make_less_than_constraint(
+                q_expression_factory.make_plus_expression(make_q_value('date'), make_q_value('time')), QIdentifierValue('${END}')))
+
+    def set_query_template(self, query_template):
+        self.__query_template = query_template
+        return self
+    
+    def set_start(self, start):
+        self.__start = start
+        return self
+    
+    def set_end(self, end):
+        self.__end = end
+        return self
+    
+    def set_delta(self, delta):
+        self.__delta = delta
+        return self
+    
+    def to_list_of_strings(self):
+        assert self.__query_template is not None, 'Query template is not set'
+        assert self.__start is not None, 'Start is not set'
+        assert self.__end is not None, 'End is not set'
+        assert self.__delta is not None, 'Delta is not set'
+        result = []
+        intervals = utils.intervals(self.__start, self.__end, self.__delta)
+        for interval in intervals:
+            query = self.__query_template
+            query = query.replace('${START}', str(make_q_value(interval.left)))
+            if checks.is_some_datetime(interval.left):
+                start_date = conversions.to_python_date(interval.left)
+                query = query.replace('${START_DATE}', str(make_q_value(start_date)))
+            query = query.replace('${END}', str(make_q_value(interval.right)))
+            if checks.is_some_datetime(interval.right):
+                end_date = conversions.to_python_date(interval.right)
+                query = query.replace('${END_DATE}', str(make_q_value(end_date)))
+            result.append(query)
+        return result
 
 def convert_time_zone(q_result, from_time_zone, to_time_zone, column_indices=((0,1),), implicit_date=None):
     if not hasattr(column_indices, '__iter__'):
