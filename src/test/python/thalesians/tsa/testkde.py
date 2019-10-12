@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
+import thalesians.tsa.distrs as distrs
 import thalesians.tsa.kde as kde
 
 class TestKDE(unittest.TestCase):
@@ -20,20 +21,18 @@ class TestKDE(unittest.TestCase):
         #Generate equal-weighted samples
         samples = np.random.normal(size=num_samples)
         weights = np.ones(num_samples) / num_samples
+        empirical_distr = distrs.EmpiricalDistr(particles=samples, weights=weights)
         
         #Plot a histogram
-        plt.hist(samples, bins, (-xmax, xmax), histtype='stepfilled', 
-                 alpha=.2, normed=True, color='k', label='histogram')
+        plt.hist(empirical_distr.particles, bins, (-xmax, xmax), histtype='stepfilled', alpha=.2, density=True, color='k', label='histogram')
         
         #Construct a KDE and plot it
-        pdf = kde.GaussianKDE(samples)
+        pdf = kde.GaussianKDE(empirical_distr)
         x = np.linspace(-xmax, xmax, 200)
         y = pdf(x)
         plt.plot(x, y, label='kde')
-        
         #Plot the samples
-        plt.scatter(samples, np.zeros_like(samples), marker='x', 
-                    color='k', alpha=.1, label='samples')
+        plt.scatter(samples, np.zeros_like(samples), marker='x', color='k', alpha=.1, label='samples')
         
         #Plot the true pdf
         y = stats.norm().pdf(x)
@@ -45,7 +44,7 @@ class TestKDE(unittest.TestCase):
         plt.legend(loc='best', frameon=False)
         plt.tight_layout()
         plt.show()
-    
+            
     def test_weighted_1d(self):
         bins = 21
         
@@ -82,13 +81,13 @@ class TestKDE(unittest.TestCase):
         true_pdf = 0
         for w, m, s in zip(gaussian_weights, gaussian_means, gaussian_std):
             true_pdf = true_pdf + w * stats.norm(m, s).pdf(x)
-            
+        
         #Plot a histogram
-        plt.hist(samples, bins, (xmin, xmax), histtype='stepfilled', 
-                 alpha=.2, normed=True, color='k', label='histogram', weights=weights)
+        plt.hist(samples, bins, (xmin, xmax), histtype='stepfilled', alpha=.2, density=True, color='k', label='histogram', weights=weights)
         
         #Construct a KDE and plot it
-        pdf = kde.GaussianKDE(samples, weights=weights)
+        empirical_distr = distrs.EmpiricalDistr(particles=samples, weights=weights)
+        pdf = kde.GaussianKDE(empirical_distr)
         y = pdf(x)
         plt.plot(x, y, label='weighted kde')
         
@@ -98,8 +97,7 @@ class TestKDE(unittest.TestCase):
         plt.plot(x, y, label='unweighted kde')
         
         #Plot the samples
-        plt.scatter(samples, np.zeros_like(samples), marker='x', 
-                    color='k', alpha=.02, label='samples')
+        plt.scatter(samples, np.zeros_like(samples), marker='x', color='k', alpha=.02, label='samples')
         
         #Plot the true pdf
         plt.plot(x,true_pdf, label='true PDF')
@@ -148,8 +146,11 @@ class TestKDE(unittest.TestCase):
         for w, m, s in zip(gaussian_weights, gaussian_means, gaussian_std):
             true_pdf = true_pdf + w * stats.norm(m, s).pdf(xx) * stats.norm(m, s).pdf(yy)
         #Evaluate the kde on a grid
-        pdf = kde.GaussianKDE(samples, weights=weights)
-        zz = pdf((np.ravel(xx), np.ravel(yy)))
+        empirical_distr = distrs.EmpiricalDistr(particles=samples.T, weights=weights)
+        pdf = kde.GaussianKDE(empirical_distr)
+        points = (np.ravel(xx), np.ravel(yy))
+        points = np.array(points).T
+        zz = pdf(points)
         zz = np.reshape(zz, xx.shape)
         kwargs = dict(extent=(xmin, xmax, xmin, xmax), cmap='hot', origin='lower')
         #Plot the true pdf
@@ -165,8 +166,7 @@ class TestKDE(unittest.TestCase):
         
         #Plot a histogram
         ax = plt.subplot(223)
-        plt.hist2d(samples[0], samples[1], bins, ((xmin, xmax), (xmin, xmax)), 
-                   True, weights, cmap='hot')
+        plt.hist2d(samples[0], samples[1], bins, ((xmin, xmax), (xmin, xmax)), True, weights, cmap='hot')
         ax.set_aspect(1)
         plt.title('histogram')
         plt.tight_layout()
