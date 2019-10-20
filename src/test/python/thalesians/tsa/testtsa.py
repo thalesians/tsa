@@ -21,8 +21,6 @@ class TestTSA(unittest.TestCase):
             index=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
         )
         
-        df
-        
         ds = tsa.DataSet(df)
         
         self.assertSequenceEqual(ds.original_columns, ['col1', 'col2'])
