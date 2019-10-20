@@ -826,5 +826,47 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.all_test_sets.output_base, expected)
 
+        ds.set_output('sum', forecast_horizon=[1, 3], difference_from_present=True)
+        
+        expected = pd.DataFrame(
+                {
+                    'forecast(1,sum)': [110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., np.nan],
+                    'forecast(3,sum)': [330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., np.nan, np.nan, np.nan]
+                },
+                columns=['forecast(1,sum)', 'forecast(3,sum)'],
+                index=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+            )
+        assert_frame_equal(ds.output_all, expected)
+        
+        expected = pd.DataFrame(
+                {
+                    'forecast(1,sum)': [110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110., 110.],
+                    'forecast(3,sum)': [330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330., 330.]
+                },
+                columns=['forecast(1,sum)', 'forecast(3,sum)'],
+                index=['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.output_working, expected)
+        
+        expected = pd.DataFrame(
+                {
+                    'sum': [110., 220., 330., 440., 550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870., 1980., 2090., 2200.],
+                },
+                columns=['sum'],
+                index=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+            )
+        assert_frame_equal(ds.output_base_all, expected)
+        
+        expected = pd.DataFrame(
+                {
+                    'sum': [550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.output_base_working, expected)
+
+
+
 if __name__ == '__main__':
     unittest.main()
