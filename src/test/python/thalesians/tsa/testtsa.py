@@ -6,11 +6,6 @@ from pandas.util.testing import assert_frame_equal
 
 import thalesians.tsa.tsa as tsa
 
-#import thalesians.tsa.distrs as distrs
-#import thalesians.tsa.numpyutils as npu
-#import thalesians.tsa.stats as stats
-#from blaze.compute.tests.test_comprehensive import df
-
 class TestTSA(unittest.TestCase):
     def test_data_set(self):
         df = pd.DataFrame({
@@ -63,7 +58,11 @@ class TestTSA(unittest.TestCase):
         
         self.assertIsNone(ds.output_working)
         
-        ds.add_output('sum', forecast_horizon=[1, 3])
+        self.assertIsNone(ds.output_base_all)
+        
+        self.assertIsNone(ds.output_base_working)
+
+        ds.set_output('sum', forecast_horizon=[1, 3])
         
         expected = pd.DataFrame(
                 {
@@ -85,6 +84,24 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.output_working, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [110., 220., 330., 440., 550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870., 1980., 2090., 2200.],
+                },
+                columns=['sum'],
+                index=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+            )
+        assert_frame_equal(ds.output_base_all, expected)
+        
+        expected = pd.DataFrame(
+                {
+                    'sum': [220., 330., 440., 550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.output_base_working, expected)
+
         expected = pd.DataFrame(
                 {
                     'col1': [20., 30., 40., 50., 60., 70., 80., 90., 100., 110., 120., 130., 140., 150., 160., 170.],
@@ -155,6 +172,24 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.output_working, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [110., 220., 330., 440., 550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870., 1980., 2090., 2200.],
+                },
+                columns=['sum'],
+                index=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+            )
+        assert_frame_equal(ds.output_base_all, expected)
+        
+        expected = pd.DataFrame(
+                {
+                    'sum': [550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.output_base_working, expected)
+
         ds.add_ma([1, 2, 3], include_column_re='col1|col2')
         
         expected = pd.DataFrame(
@@ -223,6 +258,24 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.output_working, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [110., 220., 330., 440., 550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870., 1980., 2090., 2200.],
+                },
+                columns=['sum'],
+                index=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+            )
+        assert_frame_equal(ds.output_base_all, expected)
+        
+        expected = pd.DataFrame(
+                {
+                    'sum': [550., 660., 770., 880., 990., 1100., 1210., 1320., 1430., 1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.output_base_working, expected)
+
         ds.split(purpose=['training', 'validation', 'test'], fraction=[.5, .25, .25])
         
         expected = pd.DataFrame(
@@ -260,6 +313,15 @@ class TestTSA(unittest.TestCase):
         
         expected = pd.DataFrame(
                 {
+                    'sum': [550., 660., 770., 880., 990., 1100.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G', 'H', 'I', 'J']
+            )
+        assert_frame_equal(ds.training_set[0].output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [110., 120., 130.],
                     'col2': [1100., 1200., 1300.],
                     'sum': [1210., 1320., 1430.],
@@ -291,6 +353,15 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.validation_set[0].output, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [1210., 1320., 1430.],
+                },
+                columns=['sum'],
+                index=['K', 'L', 'M']
+            )
+        assert_frame_equal(ds.validation_set[0].output_base, expected)
+
         expected = pd.DataFrame(
                 {
                     'col1': [140., 150., 160., 170.],
@@ -326,6 +397,15 @@ class TestTSA(unittest.TestCase):
         
         expected = pd.DataFrame(
                 {
+                    'sum': [1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.test_set[0].output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [50., 60., 70., 80., 90., 100.],
                     'col2': [500., 600., 700., 800., 900., 1000.],
                     'sum': [550., 660., 770., 880., 990., 1100.],
@@ -357,6 +437,15 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.all_training_sets.output, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [550., 660., 770., 880., 990., 1100.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G', 'H', 'I', 'J']
+            )
+        assert_frame_equal(ds.all_training_sets.output_base, expected)
+
         expected = pd.DataFrame(
                 {
                     'col1': [110., 120., 130.],
@@ -392,6 +481,15 @@ class TestTSA(unittest.TestCase):
         
         expected = pd.DataFrame(
                 {
+                    'sum': [1210., 1320., 1430.],
+                },
+                columns=['sum'],
+                index=['K', 'L', 'M']
+            )
+        assert_frame_equal(ds.all_validation_sets.output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [140., 150., 160., 170.],
                     'col2': [1400., 1500., 1600., 1700.],
                     'sum': [1540., 1650., 1760., 1870.],
@@ -423,6 +521,15 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.all_test_sets.output, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.all_test_sets.output_base, expected)
+
         ds.split(purpose=['training', 'validation', 'validation', 'test'], fraction=[.25, .25, .25, .25])
         
         expected = pd.DataFrame(
@@ -460,6 +567,15 @@ class TestTSA(unittest.TestCase):
         
         expected = pd.DataFrame(
                 {
+                    'sum': [550., 660., 770.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G']
+            )
+        assert_frame_equal(ds.training_set[0].output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [80., 90., 100.],
                     'col2': [800., 900., 1000.],
                     'sum': [880., 990., 1100.],
@@ -491,6 +607,15 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.validation_set[0].output, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [880., 990., 1100.],
+                },
+                columns=['sum'],
+                index=['H', 'I', 'J']
+            )
+        assert_frame_equal(ds.validation_set[0].output_base, expected)
+
         expected = pd.DataFrame(
                 {
                     'col1': [110., 120., 130.],
@@ -526,6 +651,15 @@ class TestTSA(unittest.TestCase):
                 
         expected = pd.DataFrame(
                 {
+                    'sum': [1210., 1320., 1430.],
+                },
+                columns=['sum'],
+                index=['K', 'L', 'M']
+            )
+        assert_frame_equal(ds.validation_set[1].output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [140., 150., 160., 170.],
                     'col2': [1400., 1500., 1600., 1700.],
                     'sum': [1540., 1650., 1760., 1870.],
@@ -557,6 +691,15 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.test_set[0].output, expected)
         
+        expected = pd.DataFrame(
+                {
+                    'sum': [1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.test_set[0].output_base, expected)
+
         expected = pd.DataFrame(
                 {
                     'col1': [50., 60., 70.],
@@ -592,6 +735,15 @@ class TestTSA(unittest.TestCase):
         
         expected = pd.DataFrame(
                 {
+                    'sum': [550., 660., 770.],
+                },
+                columns=['sum'],
+                index=['E', 'F', 'G']
+            )
+        assert_frame_equal(ds.all_training_sets.output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [80., 90., 100., 110., 120., 130.],
                     'col2': [800., 900., 1000., 1100., 1200., 1300.],
                     'sum': [880., 990., 1100., 1210., 1320., 1430.],
@@ -625,6 +777,15 @@ class TestTSA(unittest.TestCase):
         
         expected = pd.DataFrame(
                 {
+                    'sum': [880., 990., 1100., 1210., 1320., 1430.],
+                },
+                columns=['sum'],
+                index=['H', 'I', 'J', 'K', 'L', 'M']
+            )
+        assert_frame_equal(ds.all_validation_sets.output_base, expected)
+
+        expected = pd.DataFrame(
+                {
                     'col1': [140., 150., 160., 170.],
                     'col2': [1400., 1500., 1600., 1700.],
                     'sum': [1540., 1650., 1760., 1870.],
@@ -655,6 +816,15 @@ class TestTSA(unittest.TestCase):
                 index=['N', 'O', 'P', 'Q']
             )
         assert_frame_equal(ds.all_test_sets.output, expected)        
+
+        expected = pd.DataFrame(
+                {
+                    'sum': [1540., 1650., 1760., 1870.],
+                },
+                columns=['sum'],
+                index=['N', 'O', 'P', 'Q']
+            )
+        assert_frame_equal(ds.all_test_sets.output_base, expected)
 
 if __name__ == '__main__':
     unittest.main()

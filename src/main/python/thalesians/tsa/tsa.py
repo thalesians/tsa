@@ -12,9 +12,10 @@ import thalesians.tsa.checks as checks
 class DataSet(object):
     class DataSubset(object):
         class InputAndOutput(object):
-            def __init__(self, input_df, output_df):
+            def __init__(self, input_df, output_df, output_base_df):
                 self.__input_df = input_df
                 self.__output_df = output_df
+                self.__output_base_df = output_base_df
             
             @property
             def input(self):
@@ -24,9 +25,14 @@ class DataSet(object):
             def output(self):
                 return self.__output_df
             
-        def __init__(self, input_df, output_df, purpose, split_purposes, split_starts_inclusive, split_ends_exclusive):
+            @property
+            def output_base(self):
+                return self.__output_base_df
+            
+        def __init__(self, input_df, output_df, output_base_df, purpose, split_purposes, split_starts_inclusive, split_ends_exclusive):
             self.__input_df = input_df
             self.__output_df = output_df
+            self.__output_base_df = output_base_df
             self.__purpose = purpose
             self.__split_purposes = split_purposes
             self.__split_starts_inclusive = split_starts_inclusive
@@ -36,22 +42,16 @@ class DataSet(object):
             j = [i for i, x in enumerate(self.__split_purposes) if x == self.__purpose][index]
             return DataSet.DataSubset.InputAndOutput(
                     self.__input_df.iloc[self.__split_starts_inclusive[j]:self.__split_ends_exclusive[j]],
-                    self.__output_df.iloc[self.__split_starts_inclusive[j]:self.__split_ends_exclusive[j]])
+                    self.__output_df.iloc[self.__split_starts_inclusive[j]:self.__split_ends_exclusive[j]],
+                    self.__output_base_df.iloc[self.__split_starts_inclusive[j]:self.__split_ends_exclusive[j]])
         
         def __len__(self):
             return len([i for i, x in enumerate(self.__split_purposes) if x == self.__purpose])
-        
-        @property
-        def input(self):
-            return self.__input
-        
-        @property
-        def output(self):
-            return self.__output
     
     def __init__(self, df):
         self.__input_df = df.copy()
         self.__output_df = None
+        self.__output_base_df = None
         self.__original_columns = tuple(df.columns)
         self.__is_split = False
         self.__split_purposes = None
@@ -161,15 +161,21 @@ class DataSet(object):
             logger.info('- Adding new ln column: %s' % new_column_name)
             self.__input_df[new_column_name] = self.__input_df[c].apply(np.log)
             
-    def add_output(self, column, forecast_horizon=0, remove_from_input=None):
+    def set_output(self, column, forecast_horizon=0, remove_from_input=None, difference_from_present=False):
         assert column is not None
         assert forecast_horizon is not None
         if not checks.is_iterable(forecast_horizon): forecast_horizon = [forecast_horizon]
         for fh in forecast_horizon: assert fh >= 0
         if remove_from_input is None:
             remove_from_input = not all(forecast_horizon)
-        self.__output_df = pd.concat([self.__input_df[column].shift(-fh) for fh in forecast_horizon], axis=1)
+        if difference_from_present:
+            self.__output_df = pd.concat([self.__input_df[column].shift(-fh) - self.__input_df[column] for fh in forecast_horizon], axis=1)
+        else:
+            self.__output_df = pd.concat([self.__input_df[column].shift(-fh) for fh in forecast_horizon], axis=1)
         self.__output_df.columns = ['forecast(' + str(fh) + ',' + column + ')' if fh > 0 else column for fh in forecast_horizon]
+        self.__output_base_df = self.__input_df[column].to_frame()
+        if remove_from_input:
+            del self.__input_df[column]
         self.__truncate_from_below = max(forecast_horizon)
     
     @property
@@ -181,12 +187,20 @@ class DataSet(object):
         return self.__output_df
     
     @property
+    def output_base_all(self):
+        return self.__output_base_df
+        
+    @property
     def input_working(self):
         return self.__input_df.iloc[self.__truncate_from_above:len(self.__input_df) - self.__truncate_from_below]
     
     @property
     def output_working(self):
         return None if self.__output_df is None else self.__output_df.iloc[self.__truncate_from_above:len(self.__input_df) - self.__truncate_from_below]
+    
+    @property
+    def output_base_working(self):
+        return None if self.__output_base_df is None else self.__output_base_df.iloc[self.__truncate_from_above:len(self.__input_df) - self.__truncate_from_below]
     
     @property
     def is_split(self):
@@ -225,38 +239,41 @@ class DataSet(object):
     @property    
     def training_set(self):
         assert self.__is_split
-        return DataSet.DataSubset(self.input_working, self.output_working, 'training', self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive)
+        return DataSet.DataSubset(self.input_working, self.output_working, self.output_base_working, 'training', self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive)
     
     @property
     def validation_set(self):
         assert self.__is_split
-        return DataSet.DataSubset(self.input_working, self.output_working, 'validation', self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive)
+        return DataSet.DataSubset(self.input_working, self.output_working, self.output_base_working, 'validation', self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive)
     
     @property
     def test_set(self):
         assert self.__is_split
-        return DataSet.DataSubset(self.input_working, self.output_working, 'test', self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive)
+        return DataSet.DataSubset(self.input_working, self.output_working, self.output_base_working, 'test', self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive)
     
     @property
     def all_training_sets(self):
         assert self.__is_split
         return DataSet.DataSubset.InputAndOutput(
                 pd.concat([self.input_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'training']),
-                pd.concat([self.output_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'training']))
+                pd.concat([self.output_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'training']),
+                pd.concat([self.output_base_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'training']))
     
     @property
     def all_validation_sets(self):
         assert self.__is_split
         return DataSet.DataSubset.InputAndOutput(
                 pd.concat([self.input_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'validation']),
-                pd.concat([self.output_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'validation']))
+                pd.concat([self.output_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'validation']),
+                pd.concat([self.output_base_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'validation']))
     
     @property
     def all_test_sets(self):
         assert self.__is_split
         return DataSet.DataSubset.InputAndOutput(
                 pd.concat([self.input_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'test']),
-                pd.concat([self.output_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'test']))
+                pd.concat([self.output_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'test']),
+                pd.concat([self.output_base_working[s:e] for (p, s, e) in zip(self.__split_purposes, self.__split_starts_inclusive, self.__split_ends_exclusive) if p == 'test']))
     
     def __len__(self):
         return len(self.__input_df)
