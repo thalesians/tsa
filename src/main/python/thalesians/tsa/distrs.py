@@ -84,7 +84,7 @@ class WideSenseDistr(Distr):
         self._to_string_helper_WideSenseDistr = None
         self._str_WideSenseDistr = None
         
-        super(WideSenseDistr, self).__init__()
+        super().__init__()
         
     @property
     def dim(self):
@@ -130,7 +130,7 @@ class WideSenseDistr(Distr):
 
 class NormalDistr(WideSenseDistr):
     def __init__(self, mean=None, cov=None, vol=None, dim=None, copy=True):
-        super(NormalDistr, self).__init__(mean, cov, vol, dim, copy)
+        super().__init__(mean, cov, vol, dim, copy)
 
     @staticmethod
     def approximate(distr, copy=True):
@@ -245,7 +245,7 @@ class LogNormalDistr(WideSenseDistr):
         self._to_string_helper_LogNormalDistr = None
         self._str_LogNormalDistr = None
         
-        super(LogNormalDistr, self).__init__(mean, cov, vol, self._dim, copy)
+        super().__init__(mean, cov, vol, self._dim, copy)
 
     @property
     def mean_of_log(self):
@@ -333,7 +333,7 @@ class EmpiricalDistr(WideSenseDistr):
         self._to_string_helper_EmpiricalDistr = None
         self._str_EmpiricalDistr = None
         
-        super(EmpiricalDistr, self).__init__(do_not_init=True)
+        super().__init__(do_not_init=True)
 
     @property
     def dim(self):
