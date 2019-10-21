@@ -299,7 +299,7 @@ def to_lstm_input(input, timesteps):
     return result
 
 def to_lstm_output(output, timesteps):
-    return output.values[:-timesteps + 1,:]
+    return output.values[timesteps - 1:,:]
 
 def __init_logging():
     module_dir = os.path.dirname(os.path.abspath(__file__))
