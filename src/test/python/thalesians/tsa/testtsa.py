@@ -866,7 +866,5 @@ class TestTSA(unittest.TestCase):
             )
         assert_frame_equal(ds.output_base_working, expected)
 
-
-
 if __name__ == '__main__':
     unittest.main()
