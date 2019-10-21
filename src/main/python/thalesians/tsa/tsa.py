@@ -177,6 +177,14 @@ class DataSet(object):
         if remove_from_input:
             del self.__input_df[column]
         self.__truncate_from_below = max(forecast_horizon)
+
+    @property    
+    def input_dim(self):
+        return np.shape(self.__input_df)[1]
+    
+    @property
+    def output_dim(self):
+        return np.shape(self.__output_df)[1]
     
     @property
     def input_all(self):
@@ -283,12 +291,21 @@ class DataSet(object):
     
     def __str__(self):
         return str(self.__input_df)
+    
+def to_lstm_input(input, timesteps):
+    result = np.empty((np.shape(input)[0] - timesteps + 1, timesteps, np.shape(input)[1]))
+    for i in range(np.shape(input)[0] - timesteps + 1):
+        result[i,:,:] = input.values[i:i+timesteps,:]
+    return result
+
+def to_lstm_output(output, timesteps):
+    return output.values[:-timesteps + 1,:]
 
 def __init_logging():
     module_dir = os.path.dirname(os.path.abspath(__file__))
-    logging_config_file_name = 'eleos-logging.cfg'
+    logging_config_file_name = 'tsa-logging.cfg'
     default_config_file_path = os.path.join(module_dir, '..', 'resources', logging_config_file_name)
-    config_file_path = os.getenv('ELEOS_LOGGING_CONFIG', default_config_file_path)
+    config_file_path = os.getenv('TSA_LOGGING_CONFIG', default_config_file_path)
     if not os.path.exists(config_file_path):
         config_file_path = os.path.join(module_dir, '..', '..', 'config', logging_config_file_name)
     if os.path.exists(config_file_path):
@@ -300,7 +317,7 @@ __version__ = '1.0.0'
 
 __init_logging()
 logger = logging.getLogger()
-logger.info('Initialising Eleos version %s' % __version__)
+logger.info('Initialising TSA version %s' % __version__)
 
 logger.info('Registering Pandas Matplotlib converters')
 pandas.plotting.register_matplotlib_converters()
