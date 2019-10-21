@@ -171,6 +171,11 @@ class GaussianKDEDistr(distrs.Distr):
         self._cov = None
         self._inv_cov = None
         self._pdf_norm_factor = None
+        
+        self._to_string_helper_GaussianKDEDistr = None
+        self._str_GaussianKDEDistr = None
+
+        super().__init__()
 
     def _compute_covariance(self):
         """
@@ -262,3 +267,15 @@ class GaussianKDEDistr(distrs.Distr):
         result = np.sum(np.exp(-.5 * chi2) * self.empirical_distr.normalised_weights.T, axis=1) / self.pdf_norm_factor        
 
         return result
+
+    def to_string_helper(self):
+        if self._to_string_helper_GaussianKDEDistr is None:
+            self._to_string_helper_GaussianKDEDistr = super().to_string_helper() \
+                    .set_type(self) \
+                    .add('particle_count', self.particle_count) \
+                    .add('dim', self.dim)
+        return self._to_string_helper_GaussianKDEDistr
+    
+    def __str__(self):
+        if self._str_GaussianKDEDistr is None: self._str_GaussianKDEDistr = self.to_string_helper().to_string()
+        return self._str_GaussianKDEDistr
