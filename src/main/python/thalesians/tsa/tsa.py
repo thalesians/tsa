@@ -67,11 +67,14 @@ class DataSet(object):
     def add_derived_column(self, name, func):
         result = self.__input_df.apply(func, axis=1)
         self.__input_df[name] = result
+        
+    def remove_input_column(self, column):
+        del self.__input_df[column]
     
     def add_diff(self, column=None, prefix='diff(', suffix=')', exclude_column_re=None, include_column_re=None):
         logger = logging.getLogger()
         if column is None: column = self.__input_df.columns
-        if not checks.is_iterable(column): column = [column]
+        if not checks.is_iterable_not_string(column): column = [column]
         if exclude_column_re is not None: exclude_column_re = re.compile(exclude_column_re)
         if include_column_re is not None: include_column_re = re.compile(include_column_re)
         for c in column:
@@ -94,7 +97,7 @@ class DataSet(object):
         checks.check_not_none(lag)
         if not checks.is_iterable(lag): lag = [lag]
         if column is None: column = self.__input_df.columns
-        if not checks.is_iterable(column): column = [column]
+        if not checks.is_iterable_not_string(column): column = [column]
         if exclude_column_re is not None: exclude_column_re = re.compile(exclude_column_re)
         if include_column_re is not None: include_column_re = re.compile(include_column_re)
         for c in column:
@@ -120,7 +123,7 @@ class DataSet(object):
         checks.check_not_none(window)
         if not checks.is_iterable(window): window = [window]
         if column is None: column = self.__input_df.columns
-        if not checks.is_iterable(column): column = [column]
+        if not checks.is_iterable_not_string(column): column = [column]
         if exclude_column_re is not None: exclude_column_re = re.compile(exclude_column_re)
         if include_column_re is not None: include_column_re = re.compile(include_column_re)
         for c in column:
@@ -144,7 +147,7 @@ class DataSet(object):
     def add_ln(self, column=None, prefix='ln(', suffix=')', exclude_column_re=None, include_column_re=None, exclude_columns_with_negative_values=True):
         logger = logging.getLogger()
         if column is None: column = self.__input_df.columns
-        if not checks.is_iterable(column): column = [column]
+        if not checks.is_iterable_not_string(column): column = [column]
         if exclude_column_re is not None: exclude_column_re = re.compile(exclude_column_re)
         if include_column_re is not None: include_column_re = re.compile(include_column_re)
         for c in column:
@@ -217,7 +220,7 @@ class DataSet(object):
     def split(self, purpose=('training', 'validation', 'test'), fraction=(.5, .25, .25)):
         logger = logging.getLogger()
         
-        if not checks.is_iterable(purpose): purpose = [purpose]
+        if not checks.is_iterable_not_string(purpose): purpose = [purpose]
         if not checks.is_iterable(fraction): fraction = [fraction]
 
         split_purposes = []
@@ -293,13 +296,15 @@ class DataSet(object):
         return str(self.__input_df)
     
 def to_lstm_input(input, timesteps):
-    result = np.empty((np.shape(input)[0] - timesteps + 1, timesteps, np.shape(input)[1]))
-    for i in range(np.shape(input)[0] - timesteps + 1):
-        result[i,:,:] = input.values[i:i+timesteps,:]
+    input_values = input.values if isinstance(input, pd.DataFrame) else input
+    result = np.empty((np.shape(input_values)[0] - timesteps + 1, timesteps, np.shape(input_values)[1]))
+    for i in range(np.shape(input_values)[0] - timesteps + 1):
+        result[i,:,:] = input_values[i:i+timesteps,:]
     return result
 
 def to_lstm_output(output, timesteps):
-    return output.values[timesteps - 1:,:]
+    output_values = output.values if isinstance(output, pd.DataFrame) else output
+    return output_values[timesteps - 1:,:]
 
 def __init_logging():
     module_dir = os.path.dirname(os.path.abspath(__file__))
