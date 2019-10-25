@@ -332,10 +332,10 @@ class IterativeFeatureSelector(object):
                 continue
             included_columns.append(c)
         selected_columns = []
+        prev_best_metric = None
+        best_metric = None
+        best_metric_column = None
         while len(selected_columns) < len(included_columns):
-            prev_best_metric = None
-            best_metric = None
-            best_metric_column = None
             for i, next_column in enumerate(included_columns):
                 logger.info('- Trying column %d of %d, "%s"' % (i + 1, len(included_columns), next_column))
                 if next_column in selected_columns:
