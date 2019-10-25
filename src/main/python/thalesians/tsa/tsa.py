@@ -6,6 +6,8 @@ import re
 import numpy as np
 import pandas as pd
 import pandas.plotting
+import sklearn.linear_model
+import sklearn.metrics
 
 import thalesians.tsa.checks as checks
 
@@ -16,6 +18,7 @@ class DataSet(object):
                 self.__input_df = input_df
                 self.__output_df = output_df
                 self.__output_base_df = output_base_df
+                self.__forecast_horizon = None
             
             @property
             def input(self):
@@ -28,6 +31,9 @@ class DataSet(object):
             @property
             def output_base(self):
                 return self.__output_base_df
+            
+            def __len__(self):
+                return len(self.__input_df)
             
         def __init__(self, input_df, output_df, output_base_df, purpose, split_purposes, split_starts_inclusive, split_ends_exclusive):
             self.__input_df = input_df
@@ -177,6 +183,7 @@ class DataSet(object):
             self.__output_df = pd.concat([self.__input_df[column].shift(-fh) for fh in forecast_horizon], axis=1)
         self.__output_df.columns = ['forecast(' + str(fh) + ',' + column + ')' if fh > 0 else column for fh in forecast_horizon]
         self.__output_base_df = self.__input_df[column].to_frame()
+        self.__forecast_horizon = list(forecast_horizon)
         if remove_from_input:
             del self.__input_df[column]
         self.__truncate_from_below = max(forecast_horizon)
@@ -212,6 +219,10 @@ class DataSet(object):
     @property
     def output_base_working(self):
         return None if self.__output_base_df is None else self.__output_base_df.iloc[self.__truncate_from_above:len(self.__input_df) - self.__truncate_from_below]
+    
+    @property
+    def forecast_horizon(self):
+        return self.__forecast_horizon
     
     @property
     def is_split(self):
@@ -295,6 +306,88 @@ class DataSet(object):
     def __str__(self):
         return str(self.__input_df)
     
+class IterativeFeatureSelector(object):
+    def __init__(self, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, metric_improvement_threshold=.00025, weight_metric_by_forecast_horizon=False,
+                 exclude_column_re=None, include_column_re=None):
+        self.__model = model
+        self.__metric = metric
+        self.__metric_improvement_threshold = metric_improvement_threshold
+        self.__weight_metric_by_forecast_horizon = weight_metric_by_forecast_horizon
+        if exclude_column_re is not None: exclude_column_re = re.compile(exclude_column_re)
+        self.__exclude_column_re = exclude_column_re
+        if include_column_re is not None: include_column_re = re.compile(include_column_re)
+        self.__include_column_re = include_column_re
+    
+    def select(self, ds):
+        assert len(ds.training_set) > 0, 'Must have at least one training set in the dataset'
+        assert len(ds.validation_set) > 0, 'Must have at least one validation set in the dataset'
+        logger = logging.getLogger()
+        included_columns = []
+        for c in ds.input_working.columns:
+            if self.__exclude_column_re is not None and self.__exclude_column_re.match(c):
+                logger.info('- Excluding column due to exclude_column_re: %s' % c)
+                continue
+            if self.__include_column_re is not None and not self.__include_column_re.match(c):
+                logger.info('- Including column due to include_column_re: %s' % c)
+                continue
+            included_columns.append(c)
+        selected_columns = []
+        while len(selected_columns) < len(included_columns):
+            prev_best_metric = None
+            best_metric = None
+            best_metric_column = None
+            for i, next_column in enumerate(included_columns):
+                logger.info('- Trying column %d of %d, "%s"' % (i + 1, len(included_columns), next_column))
+                if next_column in selected_columns:
+                    logger.info('  Column "%s" already selected, continuing' % next_column)
+                    continue
+                current_columns = []
+                current_columns.extend(selected_columns)
+                current_columns.append(next_column)
+                metrics = []
+                if len(ds.training_set) == len(ds.validation_set):
+                    for j, (ts, vs) in enumerate(zip(ds.training_set, ds.validation_set)):
+                        x_train = ts.input[current_columns].values
+                        y_train = ts.output.values
+                        self.__model.fit(x_train, y_train)
+                        x_validation = vs.input[current_columns].values
+                        y_validation = vs.output.values
+                        y_validation_pred = self.__model.predict(x_validation)
+                        if self.__weight_metric_by_forecast_horizon:
+                            metric = 0.
+                            for k, fh in enumerate(ds.forecast_horizon):
+                                metric += (fh / np.max(ds.forecast_horizon)) * self.__metric(y_validation[:,j], y_validation_pred[:,j])
+                        else:
+                            metric = self.__metric(y_validation, y_validation_pred)
+                        metrics.append(metric)
+                else:
+                    x_train = ds.all_training_sets.input[current_columns].values
+                    y_train = ds.all_training_sets.output.values
+                    self.__model.fit(x_train, y_train)
+                    for j, vs in enumerate(ds.validation_set):
+                        x_validation = vs.input[current_columns].values
+                        y_validation = vs.output.values
+                        y_validation_pred = self.__model.predict(x_validation)
+                        if self.__weight_metric_by_forecast_horizon:
+                            metric = 0.
+                            for k, fh in enumerate(ds.forecast_horizon):
+                                metric += (fh / np.max(ds.forecast_horizon)) * self.__metric(y_validation[:,j], y_validation_pred[:,j])
+                        else:
+                            metric = self.__metric(y_validation, y_validation_pred)
+                        metrics.append(metric)
+                mean_metric = np.mean(metrics)
+                logger.info('  Achieved metric %05f' % mean_metric)
+                if best_metric is None or best_metric < mean_metric:
+                    best_metric = mean_metric
+                    best_metric_column = next_column
+            if prev_best_metric is not None and best_metric - prev_best_metric < self.__metric_improvement_threshold:
+                break
+            logger.info('*** Selected column "%s", which improved the metric to %05f' % (best_metric_column, best_metric))
+            selected_columns.append(best_metric_column)
+            prev_best_metric = best_metric
+        logger.info('*** Final metric: %05f' % best_metric)
+        return selected_columns
+    
 def to_lstm_input(input, timesteps):
     input_values = input.values if isinstance(input, pd.DataFrame) else input
     result = np.empty((np.shape(input_values)[0] - timesteps + 1, timesteps, np.shape(input_values)[1]))
@@ -309,7 +402,7 @@ def to_lstm_output(output, timesteps):
 def __init_logging():
     module_dir = os.path.dirname(os.path.abspath(__file__))
     logging_config_file_name = 'tsa-logging.cfg'
-    default_config_file_path = os.path.join(module_dir, '..', 'resources', logging_config_file_name)
+    default_config_file_path = os.path.join(module_dir, '..', '..', '..', 'resources', logging_config_file_name)
     config_file_path = os.getenv('TSA_LOGGING_CONFIG', default_config_file_path)
     if not os.path.exists(config_file_path):
         config_file_path = os.path.join(module_dir, '..', '..', 'config', logging_config_file_name)
