@@ -1,8 +1,11 @@
-import logging
+import itertools
+# Not sure why Eclipse highlights the below as an unused input; it is certainly used
+import logging  # @UnusedImport
 import logging.config
 import os
 import re
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandas.plotting
@@ -75,7 +78,15 @@ class DataSet(object):
         self.__input_df[name] = result
         
     def remove_input_column(self, column):
-        del self.__input_df[column]
+        if not checks.is_iterable_not_string(column): column = [column]
+        for c in column:
+            del self.__input_df[c]
+        
+    def keep_input_column(self, column):
+        if not checks.is_iterable_not_string(column): column = [column]
+        for c in self.__input_df.columns:
+            if c not in column:
+                del self.__input_df[c]
     
     def add_diff(self, column=None, prefix='diff(', suffix=')', exclude_column_re=None, include_column_re=None):
         logger = logging.getLogger()
@@ -346,7 +357,7 @@ class IterativeFeatureSelector(object):
                 current_columns.append(next_column)
                 metrics = []
                 if len(ds.training_set) == len(ds.validation_set):
-                    for j, (ts, vs) in enumerate(zip(ds.training_set, ds.validation_set)):
+                    for ts, vs in zip(ds.training_set, ds.validation_set):
                         x_train = ts.input[current_columns].values
                         y_train = ts.output.values
                         self.__model.fit(x_train, y_train)
@@ -356,7 +367,7 @@ class IterativeFeatureSelector(object):
                         if self.__weight_metric_by_forecast_horizon:
                             metric = 0.
                             for k, fh in enumerate(ds.forecast_horizon):
-                                metric += (fh / np.max(ds.forecast_horizon)) * self.__metric(y_validation[:,j], y_validation_pred[:,j])
+                                metric += (fh / np.max(ds.forecast_horizon)) * self.__metric(y_validation[:,k], y_validation_pred[:,k])
                         else:
                             metric = self.__metric(y_validation, y_validation_pred)
                         metrics.append(metric)
@@ -364,18 +375,20 @@ class IterativeFeatureSelector(object):
                     x_train = ds.all_training_sets.input[current_columns].values
                     y_train = ds.all_training_sets.output.values
                     self.__model.fit(x_train, y_train)
-                    for j, vs in enumerate(ds.validation_set):
+                    for vs in ds.validation_set:
                         x_validation = vs.input[current_columns].values
                         y_validation = vs.output.values
                         y_validation_pred = self.__model.predict(x_validation)
                         if self.__weight_metric_by_forecast_horizon:
                             metric = 0.
                             for k, fh in enumerate(ds.forecast_horizon):
-                                metric += (fh / np.max(ds.forecast_horizon)) * self.__metric(y_validation[:,j], y_validation_pred[:,j])
+                                metric += (fh / np.max(ds.forecast_horizon)) * self.__metric(y_validation[:,k], y_validation_pred[:,k])
                         else:
                             metric = self.__metric(y_validation, y_validation_pred)
                         metrics.append(metric)
                 mean_metric = np.mean(metrics)
+                log_message = '  Achieved metric %05f' % mean_metric
+                if best_metric is not None: log_message += ', the maximum being %05f' % best_metric
                 logger.info('  Achieved metric %05f' % mean_metric)
                 if best_metric is None or best_metric < mean_metric:
                     best_metric = mean_metric
@@ -383,20 +396,74 @@ class IterativeFeatureSelector(object):
             if prev_best_metric is not None and best_metric - prev_best_metric < self.__metric_improvement_threshold:
                 break
             logger.info('*** Selected column "%s", which improved the metric to %05f' % (best_metric_column, best_metric))
+            logger.info('*** So far, selected %d columns: %s' % (len(selected_columns), ', '.join(['"%s"' % sc for sc in selected_columns])))
             selected_columns.append(best_metric_column)
             prev_best_metric = best_metric
         logger.info('*** Final metric: %05f' % best_metric)
         return selected_columns
+
+def evaluate_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score):
+    logger = logging.getLogger()
+    if column is None: column = ds.input_all.columns
+    if not checks.is_iterable_not_string(column): column = [column]
+    logger.info('Evaluating the metric for column(s) %s' % ', '.join(['"%s"' % c for c in column]))
+    metrics = []
+    if len(ds.training_set) == len(ds.validation_set):
+        for ts, vs in zip(ds.training_set, ds.validation_set):
+            x_train = ts.input[column].values
+            y_train = ts.output.values
+            model.fit(x_train, y_train)
+            x_validation = vs.input[column].values
+            y_validation = vs.output.values
+            y_validation_pred = model.predict(x_validation)
+            validation_set_metrics = []
+            for i in range(len(ds.forecast_horizon)):
+                validation_set_metrics.append(metric(y_validation[:,i], y_validation_pred[:,i]))
+            metrics.append(validation_set_metrics)
+    else:
+        x_train = ds.all_training_sets.input[column].values
+        y_train = ds.all_training_sets.output.values
+        model.fit(x_train, y_train)
+        for vs in ds.validation_set:
+            x_validation = vs.input[column].values
+            y_validation = vs.output.values
+            y_validation_pred = model.predict(x_validation)
+            validation_set_metrics = []
+            for i in range(len(ds.forecast_horizon)):
+                validation_set_metrics.append(metric(y_validation[:,i], y_validation_pred[:,i]))
+            metrics.append(validation_set_metrics)
+    # The mean is taken over the validation sets
+    return np.mean(metrics, axis=0)
     
-def to_lstm_input(input, timesteps):
-    input_values = input.values if isinstance(input, pd.DataFrame) else input
+def visualise_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, figure=None):
+    if column is None: column = ds.input_all.columns
+    if not checks.is_iterable_not_string(column): column = [column]
+    if figure is None: figure = plt.figure(figsize=(12, 12))
+    metrics_by_column = {}
+    for c in column:
+        metrics_by_column[c] = evaluate_metrics_by_forecast_horizon(ds, c, model, metric)
+    metrics = evaluate_metrics_by_forecast_horizon(ds, column, model, metric)
+    ax = figure.add_subplot(111)
+    markers = itertools.cycle(('.', ',', 'o', 'v', '^', '<', '>', '1', '2', '3', '4', '8', 's', 'p', 'P', '*', 'h', 'H', '+', 'x', 'X', 'D', 'd', '|', '_'))
+    linestyles = itertools.cycle((':', '-.', '--', '-'))
+    for c in column:
+        ax.plot(ds.forecast_horizon, metrics_by_column[c], marker=next(markers), linestyle=next(linestyles), linewidth=1, alpha=.5, label=c)
+    ax.plot(ds.forecast_horizon, metrics, 'o-', linewidth=2, label='combined')
+    # Shrink current axis's height by 10% on the bottom
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
+    # Put a legend below current axis
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), fancybox=True, shadow=True, ncol=5)
+
+def to_lstm_input(raw_input, timesteps):
+    input_values = raw_input.values if isinstance(raw_input, pd.DataFrame) else raw_input
     result = np.empty((np.shape(input_values)[0] - timesteps + 1, timesteps, np.shape(input_values)[1]))
     for i in range(np.shape(input_values)[0] - timesteps + 1):
         result[i,:,:] = input_values[i:i+timesteps,:]
     return result
 
-def to_lstm_output(output, timesteps):
-    output_values = output.values if isinstance(output, pd.DataFrame) else output
+def to_lstm_output(raw_output, timesteps):
+    output_values = raw_output.values if isinstance(raw_output, pd.DataFrame) else raw_output
     return output_values[timesteps - 1:,:]
 
 def __init_logging():
