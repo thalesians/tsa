@@ -395,9 +395,9 @@ class IterativeFeatureSelector(object):
                     best_metric_column = next_column
             if prev_best_metric is not None and best_metric - prev_best_metric < self.__metric_improvement_threshold:
                 break
+            selected_columns.append(best_metric_column)
             logger.info('*** Selected column "%s", which improved the metric to %05f' % (best_metric_column, best_metric))
             logger.info('*** So far, selected %d columns: %s' % (len(selected_columns), ', '.join(['"%s"' % sc for sc in selected_columns])))
-            selected_columns.append(best_metric_column)
             prev_best_metric = best_metric
         logger.info('*** Final metric: %05f' % best_metric)
         return selected_columns

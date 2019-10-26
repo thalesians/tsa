@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='thalesians.tsa',
-      version='0.1',
+      version='0.2',
       description='The Thalesians\' Time Series Analysis (TSA) library',
       url='https://github.com/thalesians/tsa',
       author='Thalesians Ltd',
@@ -12,5 +12,7 @@ setup(name='thalesians.tsa',
             'thalesians.tsa',
             'thalesians.tsa.datasets',
             'thalesians.tsa.filtering',
+            'thalesians.tsa.neural',
+            'thalesians.tsa.optimisation',
             'thalesians.tsa.q'],
       zip_safe=False)
