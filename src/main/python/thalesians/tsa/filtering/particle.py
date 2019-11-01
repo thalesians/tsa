@@ -12,7 +12,7 @@ import thalesians.tsa.objects as objects
 import thalesians.tsa.outliers as outliers
 import thalesians.tsa.processes as proc
 import thalesians.tsa.numpyutils as npu
-import thalesians.tsa.random as rnd
+import thalesians.tsa.randomness as rnd
 
 class ParticleObsResult(filtering.ObsResult):
     def __init__(self, accepted, obs, predicted_obs, innov_distr, log_likelihood):

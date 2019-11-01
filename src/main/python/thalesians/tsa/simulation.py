@@ -6,7 +6,7 @@ import pandas as pd
 import thalesians.tsa.checks as checks
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.processes as proc
-import thalesians.tsa.random as rnd
+import thalesians.tsa.randomness as rnd
 
 def xtimes(start, stop=None, step=None):
     checks.check_not_none(start)

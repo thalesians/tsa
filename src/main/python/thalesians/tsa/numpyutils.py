@@ -11,7 +11,7 @@ def init_warnings():
     np.warnings.filterwarnings('ignore', message='All-NaN axis encountered')
     warnings.filterwarnings('ignore', message='Warning: converting a masked element to nan.')
 
-def apply(func, arg, dtype=np.dtype('float64')):
+def apply(func, arg, dtype='float64'):
     result = np.empty(np.shape(arg), dtype=dtype)
     result.flat[:] = [func(x) for x in arg.flat[:]]
     return result

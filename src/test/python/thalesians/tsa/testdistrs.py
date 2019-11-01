@@ -5,7 +5,7 @@ import numpy.testing as npt
 
 import thalesians.tsa.distrs as distrs
 import thalesians.tsa.numpyutils as npu
-import thalesians.tsa.random as rnd
+import thalesians.tsa.randomness as rnd
 import thalesians.tsa.stats as stats
 
 class TestDistrs(unittest.TestCase):

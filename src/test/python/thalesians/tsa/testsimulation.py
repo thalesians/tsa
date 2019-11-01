@@ -10,7 +10,7 @@ import pandas.util.testing as pdt
 import thalesians.tsa.numpyutils as npu
 import thalesians.tsa.simulation as sim
 import thalesians.tsa.processes as proc
-import thalesians.tsa.random as rnd
+import thalesians.tsa.randomness as rnd
 
 class TestSimulation(unittest.TestCase):
     def test_xtimes(self):

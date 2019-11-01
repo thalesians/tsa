@@ -519,10 +519,6 @@ class TestConditions(unittest.TestCase):
         with self.assertRaises(AssertionError):
             checks.check_instance(None, (int, float))
         with self.assertRaises(AssertionError):
-            checks.check_instance(None, (int, float))
-        with self.assertRaises(AssertionError):
-            checks.check_instance(None, (str, list))
-        with self.assertRaises(AssertionError):
             checks.check_instance(None, (str, list))
     
         checks.check_instance(1, int, allow_none=True)
@@ -1151,7 +1147,7 @@ class TestConditions(unittest.TestCase):
         with self.assertRaises(AssertionError):
             checks.check_some_timedelta(None)
         checks.check_some_timedelta(None, allow_none=True)
-        
+
     def test_iterables(self):
         import numpy as np
         

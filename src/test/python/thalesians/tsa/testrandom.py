@@ -5,7 +5,7 @@ import numpy as np
 import numpy.testing as npt
 
 import thalesians.tsa.exceptions as exc
-import thalesians.tsa.random as rnd
+import thalesians.tsa.randomness as rnd
 
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers)
 
