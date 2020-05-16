@@ -10,6 +10,9 @@ import thalesians.tsa.utils as utils
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers).
 
 class TestUtils(unittest.TestCase):
+    def test_is_notebok(self):
+        self.assertFalse(utils.is_notebook())
+    
     def test_most_common(self):
         self.assertEqual(utils.most_common(['foo', 'bar', 'bar', 'foo', 'bar']), 'bar')
         self.assertEqual(utils.most_common(['foo', 'bar', 'bar', 'foo']), 'foo')
