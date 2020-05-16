@@ -467,16 +467,32 @@ def to_lstm_output(raw_output, timesteps):
     return output_values[timesteps - 1:,:]
 
 def __init_logging():
-    module_dir = os.path.dirname(os.path.abspath(__file__))
-    logging_config_file_name = 'tsa-logging.cfg'
-    default_config_file_path = os.path.join(module_dir, '..', '..', '..', 'resources', logging_config_file_name)
-    config_file_path = os.getenv('TSA_LOGGING_CONFIG', default_config_file_path)
-    if not os.path.exists(config_file_path):
-        config_file_path = os.path.join(module_dir, '..', '..', 'config', logging_config_file_name)
-    if os.path.exists(config_file_path):
-        logging.config.fileConfig(config_file_path)
-    else:
-        logging.basicConfig()
+	config = {
+		'version': 1,
+	    'loggers': {
+	    	'keys': 'root'
+	    },
+	    'formatters': {
+	    	'standard': {
+		    	'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+	    	}
+	    },
+	    'handlers': {
+	    	'default': {
+	    		'level': 'DEBUG',
+	    		'formatter': 'standard',
+	    		'class': 'logging.StreamHandler',
+	    		'stream': 'ext://sys.stderr'
+	    	}
+	    },
+	    'loggers': {
+	    	'': {  # root logger
+	    		'handlers': ['default'],
+	    		'level': 'DEBUG'
+	    	}
+	    }
+	}
+	logging.config.dictConfig(config)
 
 __version__ = '1.0.0'
 
