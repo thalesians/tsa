@@ -6,6 +6,24 @@ import operator
 
 import thalesians.tsa.intervals
 
+# Based on an answer by Gustavo Bezerra on Stack Overflow
+# https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
+def is_notebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            # Jupyter notebook or qtconsole
+            return True
+        elif shell == 'TerminalInteractiveShell':
+            # Terminal running IPython
+            return False
+        else:
+            # Other type (?)
+            return False
+    except NameError:
+        # Probably a standard Python interpreter
+        return False
+
 def sequence_eq(sequence1, sequence2):
     """
     Compares two sequences.
