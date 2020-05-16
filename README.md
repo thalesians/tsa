@@ -17,6 +17,7 @@ This library is based on the efforts of our staff, members, and volunteers. We a
 ## Dedication
 
 Dedicated to the memory of some of the outstanding mathematicians, on some of whose work this library is based:
+* Mark H. A. Davis (1945 - 2020)
 * Leonhard Euler (1707 – 1783)
 * Kiyosi Itô (1915 – 2008)
 * Rudolf Emil Kálmán (1930 – 2016)
