@@ -14,6 +14,8 @@ Welcome to TSA's documentation!
 .. automodule:: thalesians.tsa
 .. automodule:: thalesians.tsa.checks
    :members:
+.. automodule:: thalesians.tsa.tsa_settings
+   :members:
 .. automodule:: thalesians.tsa.utils
    :members:
 

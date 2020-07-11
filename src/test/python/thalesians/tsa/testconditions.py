@@ -22,7 +22,7 @@ class TestConditions(unittest.TestCase):
             return arg + 1
         self.assertEqual(plus_one(1), 2)
         # Even though the precondition is violated, its level is less than
-        # settings.MIN_PRECONDITION_LEVEL, so it is not checked:
+        # tsa_settings.MIN_PRECONDITION_LEVEL, so it is not checked:
         self.assertEqual(plus_one(-1), 0)
         
     def test_binary_function_precondition(self):
@@ -94,7 +94,7 @@ class TestConditions(unittest.TestCase):
         self.assertEqual(plus_one(1), 2)
         self.assertEqual(plus_one(-1), 0)
         # Even though the postcondition is violated, its level is less than
-        # settings.MIN_POSTCONDITION_LEVEL, so it is not checked:
+        # tsa_settings.MIN_POSTCONDITION_LEVEL, so it is not checked:
         self.assertEqual(plus_one(-2), -1)
             
     def test_method_postcondition(self):

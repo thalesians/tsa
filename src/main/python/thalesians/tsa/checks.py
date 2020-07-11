@@ -1,15 +1,67 @@
-import collections as col
+"""
+`thalesians.tsa.checks`
+=======================
 
-import thalesians.tsa.settings as settings
+A collection of utility functions for checking whether given conditions hold.
+
+Those functions that start with `is_` or `are_` return `False` if a given condition does not hold and `True` if it does
+hold. Those functions that start with `check_` return their argument if a given condition holds and raise an
+`AssertionError` if it does not hold.
+"""
+
+import collections.abc
+
+import thalesians.tsa.tsa_settings as tsa_settings
 import thalesians.tsa.utils as utils
 
 def check(arg, message='Check failed', level=1):
     """
+    Checks whether `arg` is `True`.
+    
+    If the check succeeds, the function returns the argument. If the check fails, the function raises an
+    `AssertionError` with a given `message`.
+
+    Parameters
+    ----------
+    arg : bool, callable
+        The argument whose truth value is to be checked. If `arg` is callable, then it will be called with no arguments
+        to obtain the argument.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        The argument. If the `arg` passed to the function was callable, then `arg()` is returned.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
+
+    >>> check(True)
+    True
     >>> check(True is True)
+    True
     >>> check(False is False)
+    True
     >>> check(1 < 3)
+    True
     >>> check(3 == 3)
+    True
     >>> check(3 > 1)
+    True
+    >>> check(False)
+    Traceback (most recent call last):
+        ...
+    AssertionError: Check failed
     >>> check(True is False)
     Traceback (most recent call last):
         ...
@@ -31,15 +83,44 @@ def check(arg, message='Check failed', level=1):
         ...
     AssertionError: Check failed
     """
-    if settings.MIN_POSTCONDITION_LEVEL <= level:
-        if is_callable(arg): arg = arg()
-        if not arg:
-            if is_callable(message):
-                message = message()
-            raise AssertionError(message)
+    if is_callable(arg): arg = arg()
+    if level < tsa_settings.MIN_CHECK_LEVEL or arg:
+        return arg
+    else:
+        if is_callable(message):
+            message = message()
+        raise AssertionError(message)
         
 def check_none(arg, message='Argument is not None', level=1):
     """
+    Checks whether `arg` is `None`.
+    
+    If the check succeeds (the argument is `None`), the function returns the argument. If the check fails, the function
+    raises an `AssertionError` with a given `message`.
+
+    Parameters
+    ----------
+    arg : bool, callable
+        The argument to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    None
+        The argument.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_none(None)
     >>> check_none(3)
     Traceback (most recent call last):
@@ -48,9 +129,37 @@ def check_none(arg, message='Argument is not None', level=1):
     """
     check(arg is None, message, level)
     return arg
-        
+    
 def check_not_none(arg, message='Argument is None', level=1):
     """
+    Checks whether `arg` is not `None`.
+    
+    If the check succeeds (the argument is not `None`), the function returns the argument. If the check fails, the
+    function raises an `AssertionError` with a given `message`.
+
+    Parameters
+    ----------
+    arg : bool, callable
+        The argument to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    not None
+        The argument.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_not_none(3)
     3
     >>> check_not_none(None)
@@ -63,6 +172,20 @@ def check_not_none(arg, message='Argument is None', level=1):
 
 def are_all_not_none(*args):
     """
+    Returns `True` if all arguments are not `None`, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> are_all_not_none(1, 2, 3)
     True
     >>> are_all_not_none(None, 2, 3)
@@ -103,7 +226,36 @@ def are_all_not_none(*args):
 
 def check_all_not_none(*args, **kwargs):
     """
+    Checks whether all arguments are not `None`.
+    
+    If the check succeeds (all arguments are not `None`), the function returns `True`. If the check fails, the function
+    raises an `AssertionError` with a given `message`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_all_not_none(1, 2, 3)
+    True
     >>> check_all_not_none(None, 2, 3)
     Traceback (most recent call last):
         ...
@@ -130,6 +282,7 @@ def check_all_not_none(*args, **kwargs):
     AssertionError: At least one of the arguments is None
     
     >>> check_all_not_none(1, 2, 3, 'hi')
+    True
     >>> check_all_not_none(None, 2, 3, 'hi')
     Traceback (most recent call last):
         ...
@@ -165,10 +318,24 @@ def check_all_not_none(*args, **kwargs):
     """
     message = kwargs['message'] if 'message' in kwargs else 'At least one of the arguments is None'
     level = kwargs['level'] if 'level' in kwargs else 1
-    check(are_all_not_none(*args), message, level)
+    return check(are_all_not_none(*args), message, level)
 
 def are_all_none(*args):
     """
+    Returns `True` if all arguments are `None`, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> are_all_none(1, 2, 3)
     False
     >>> are_all_none(None, 2, 3)
@@ -211,6 +378,37 @@ def are_all_none(*args):
 
 def check_all_none(*args, **kwargs):
     """
+    Checks whether all arguments are `None`.
+    
+    If the check succeeds (all arguments are `None`), the function returns `True`. If the check fails, the function
+    raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_all_none(1, 2, 3)
     Traceback (most recent call last):
         ...
@@ -269,14 +467,30 @@ def check_all_none(*args, **kwargs):
         ...
     AssertionError: At least one of the arguments is not None
     >>> check_all_none(None, None, None)
+    True
     >>> check_all_none(None)
+    True
     """
     message = kwargs['message'] if 'message' in kwargs else 'At least one of the arguments is not None'
     level = kwargs['level'] if 'level' in kwargs else 1
-    check(are_all_none(*args), message, level)
+    return check(are_all_none(*args), message, level)
 
 def is_exactly_one_not_none(*args):
     """
+    Returns `True` if exactly one of the arguments is not `None`, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_exactly_one_not_none(1, 2, 3)
     False
     >>> is_exactly_one_not_none(None, 2, 3)
@@ -317,6 +531,37 @@ def is_exactly_one_not_none(*args):
 
 def check_exactly_one_not_none(*args, **kwargs):
     """
+    Checks whether exactly one of the arguments is not `None`.
+    
+    If the check succeeds (exactly one of the arguments is not `None`), the function returns `True`. If the check fails,
+    the function raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_exactly_one_not_none(1, 2, 3)
     Traceback (most recent call last):
         ...
@@ -334,8 +579,11 @@ def check_exactly_one_not_none(*args, **kwargs):
         ...
     AssertionError: The number of non-None arguments is not 1
     >>> check_exactly_one_not_none(1, None, None)
+    True
     >>> check_exactly_one_not_none(None, 2, None)
+    True
     >>> check_exactly_one_not_none(None, None, 3)
+    True
     
     >>> check_exactly_one_not_none(1, 2, 3, 'hi')
     Traceback (most recent call last):
@@ -376,10 +624,24 @@ def check_exactly_one_not_none(*args, **kwargs):
     """
     message = kwargs['message'] if 'message' in kwargs else 'The number of non-None arguments is not 1'
     level = kwargs['level'] if 'level' in kwargs else 1
-    check(is_exactly_one_not_none(*args), message, level)
+    return check(is_exactly_one_not_none(*args), message, level)
     
 def is_at_least_one_not_none(*args):
     """
+    Returns `True` if at least one of the arguments is not `None`, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_at_least_one_not_none(1, 2, 3)
     True
     >>> is_at_least_one_not_none(None, 2, 3)
@@ -420,21 +682,66 @@ def is_at_least_one_not_none(*args):
     
 def check_at_least_one_not_none(*args, **kwargs):
     """
+    Checks whether at least one of the arguments is not `None`.
+    
+    If the check succeeds (at least one of the arguments is not `None`), the function returns `True`. If the check
+    fails, the function raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_at_least_one_not_none(1, 2, 3)
+    True
     >>> check_at_least_one_not_none(None, 2, 3)
+    True
     >>> check_at_least_one_not_none(1, None, 3)
+    True
     >>> check_at_least_one_not_none(1, 2, None)
+    True
     >>> check_at_least_one_not_none(1, None, None)
+    True
     >>> check_at_least_one_not_none(None, 2, None)
+    True
     >>> check_at_least_one_not_none(None, None, 3)
+    True
     
     >>> check_at_least_one_not_none(1, 2, 3, 'hi')
+    True
     >>> check_at_least_one_not_none(None, 2, 3, 'hi')
+    True
     >>> check_at_least_one_not_none(1, None, 3, 'hi')
+    True
     >>> check_at_least_one_not_none(1, 2, None, 'hi')
+    True
     >>> check_at_least_one_not_none(1, None, None, 'hi')
+    True
     >>> check_at_least_one_not_none(None, 2, None, 'hi')
+    True
     >>> check_at_least_one_not_none(None, None, 3, 'hi')
+    True
     
     >>> check_at_least_one_not_none(None, None, None)
     Traceback (most recent call last):
@@ -448,10 +755,24 @@ def check_at_least_one_not_none(*args, **kwargs):
     """
     message = kwargs['message'] if 'message' in kwargs else 'The number of non-None arguments is 0'
     level = kwargs['level'] if 'level' in kwargs else 1
-    check(is_at_least_one_not_none(*args), message, level)
+    return check(is_at_least_one_not_none(*args), message, level)
     
 def is_at_most_one_not_none(*args):
     """
+    Returns `True` if at most one of the arguments is not `None`, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_at_most_one_not_none(1, 2, 3)
     False
     >>> is_at_most_one_not_none(None, 2, 3)
@@ -492,6 +813,37 @@ def is_at_most_one_not_none(*args):
 
 def check_at_most_one_not_none(*args, **kwargs):
     """
+    Checks whether at most one of the arguments is not `None`.
+    
+    If the check succeeds (at most one of the arguments is not `None`), the function returns `True`. If the check fails,
+    the function raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_at_most_one_not_none(1, 2, 3)
     Traceback (most recent call last):
         ...
@@ -509,8 +861,11 @@ def check_at_most_one_not_none(*args, **kwargs):
         ...
     AssertionError: The number of non-None arguments is neither 0 nor 1
     >>> check_at_most_one_not_none(1, None, None)
+    True
     >>> check_at_most_one_not_none(None, 2, None)
+    True
     >>> check_at_most_one_not_none(None, None, 3)
+    True
     
     >>> check_at_most_one_not_none(1, 2, 3, 'hi')
     Traceback (most recent call last):
@@ -541,14 +896,30 @@ def check_at_most_one_not_none(*args, **kwargs):
         ...
     AssertionError: The number of non-None arguments is neither 0 nor 1
     >>> check_at_most_one_not_none(None, None, None)
+    True
     >>> check_at_most_one_not_none(None)
+    True
     """
     message = kwargs['message'] if 'message' in kwargs else 'The number of non-None arguments is neither 0 nor 1'
     level = kwargs['level'] if 'level' in kwargs else 1
-    check(is_at_most_one_not_none(*args), message, level)
+    return check(is_at_most_one_not_none(*args), message, level)
     
 def is_same_len(*args):
     """
+    Returns `True` if all the arguments are of the same length, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_same_len(1, 'aaa')
     Traceback (most recent call last):
         ...
@@ -629,8 +1000,149 @@ def is_same_len(*args):
     len0 = len(args[0])
     return all([len(x) == len0 for x in args])
 
+def check_same_len(*args, **kwargs):
+    """
+    Checks whether all the arguments are of the same length.
+    
+    If the check succeeds (all the arguments are of the same length), the function returns `True`. If the check fails,
+    the function raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
+    >>> check_same_len(1, 'aaa')
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'int' has no len()
+
+    >>> check_same_len([1], ['aaa'])
+    True
+    >>> check_same_len([1, 'b'], ['aaa', 222])
+    True
+    >>> check_same_len([1, 'b', 3], ['aaa', 222, 'ccc'])
+    True
+
+    >>> check_same_len([], ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are not of the same length
+    >>> check_same_len([1], ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are not of the same length
+    >>> check_same_len([1, 'b'], ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are not of the same length
+
+    >>> check_same_len([1], ['aaa'], [111])
+    True
+    >>> check_same_len([1, 'b'], ['aaa', 222], [111, 'BBB'])
+    True
+    >>> check_same_len([1, 'b', 3], ['aaa', 222, 'ccc'], [111, 'BBB', 333])
+    True
+
+    >>> check_same_len([], ['aaa'], [111])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are not of the same length
+    >>> check_same_len([1], ['aaa', 222], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are not of the same length
+    >>> check_same_len([1, 'b'], ['aaa'], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are not of the same length
+
+    >>> check_same_len([1, 'b'], None)
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, ['aaa'])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, None)
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+
+    >>> check_same_len([1, 'b'], None, ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, ['aaa'], [111])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, None, [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, None, None)
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+
+    >>> check_same_len([1], None, ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, ['aaa'], [])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    >>> check_same_len(None, ['aaa'], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'NoneType' has no len()
+    """
+    message = kwargs['message'] if 'message' in kwargs else 'The arguments are not of the same length'
+    level = kwargs['level'] if 'level' in kwargs else 1
+    return check(is_same_len(*args), message, level)
+
 def is_same_len_or_none(*args):
     """
+    Returns `True` if all the arguments are of the same length, otherwise `False`.
+    
+    Arguments that are `None` are ignored and excluded from the comparison.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_same_len_or_none(1, 'aaa')
     Traceback (most recent call last):
         ...
@@ -694,8 +1206,135 @@ def is_same_len_or_none(*args):
             elif the_len != len(x): return False
     return True
 
+def check_same_len_or_none(*args, **kwargs):
+    """
+    Checks whether all the arguments are of the same length.
+    
+    Arguments that are `None` are ignored and excluded from the comparison.
+    
+    If the check succeeds (all the arguments are of the same length), the function returns `True`. If the check fails,
+    the function raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
+    >>> check_same_len_or_none(1, 'aaa')
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'int' has no len()
+
+    >>> check_same_len_or_none([1], ['aaa'])
+    True
+    >>> check_same_len_or_none([1, 'b'], ['aaa', 222])
+    True
+    >>> check_same_len_or_none([1, 'b', 3], ['aaa', 222, 'ccc'])
+    True
+
+    >>> check_same_len_or_none([], ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    >>> check_same_len_or_none([1], ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    >>> check_same_len_or_none([1, 'b'], ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+
+    >>> check_same_len_or_none([1], ['aaa'], [111])
+    True
+    >>> check_same_len_or_none([1, 'b'], ['aaa', 222], [111, 'BBB'])
+    True
+    >>> check_same_len_or_none([1, 'b', 3], ['aaa', 222, 'ccc'], [111, 'BBB', 333])
+    True
+
+    >>> check_same_len_or_none([], ['aaa'], [111])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    >>> check_same_len_or_none([1], ['aaa', 222], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    >>> check_same_len_or_none([1, 'b'], ['aaa'], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+
+    >>> check_same_len_or_none([1, 'b'], None)
+    True
+    >>> check_same_len_or_none(None, ['aaa'])
+    True
+    >>> check_same_len_or_none(None, None)
+    True
+
+    >>> check_same_len_or_none([1, 'b'], None, ['aaa', 222])
+    True
+    >>> check_same_len_or_none(None, ['aaa'], [111])
+    True
+    >>> check_same_len_or_none(None, None, [111, 'BBB'])
+    True
+    >>> check_same_len_or_none(None, None, None)
+    True
+
+    >>> check_same_len_or_none([1], None, ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    >>> check_same_len_or_none(None, ['aaa'], [])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    >>> check_same_len_or_none(None, ['aaa'], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The non-None arguments are not of the same length
+    """
+    message = kwargs['message'] if 'message' in kwargs else 'The non-None arguments are not of the same length'
+    level = kwargs['level'] if 'level' in kwargs else 1
+    return check(is_same_len_or_none(*args), message, level)
+
 def is_same_len_or_all_none(*args):
     """
+    Returns `True` if either all the arguments are of the same length, or all the arguments are None, otherwise `False`.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_same_len_or_all_none(1, 'aaa')
     Traceback (most recent call last):
         ...
@@ -764,8 +1403,149 @@ def is_same_len_or_all_none(*args):
             elif the_len != len(x): return False
     return True
 
+def check_same_len_or_all_none(*args, **kwargs):
+    """
+    Checks whether either all the arguments are of the same length or all are None.
+    
+    If the check succeeds (all the arguments are of the same length or all are None), the function returns `True`. If
+    the check fails, the function raises an `AssertionError` with a given `message`.
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    *args : miscellaneous
+        The argument(s) to be checked.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
+    >>> check_same_len_or_all_none(1, 'aaa')
+    Traceback (most recent call last):
+        ...
+    TypeError: object of type 'int' has no len()
+
+    >>> check_same_len_or_all_none([1], ['aaa'])
+    True
+    >>> check_same_len_or_all_none([1, 'b'], ['aaa', 222])
+    True
+    >>> check_same_len_or_all_none([1, 'b', 3], ['aaa', 222, 'ccc'])
+    True
+
+    >>> check_same_len_or_all_none([], ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none([1], ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none([1, 'b'], ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+
+    >>> check_same_len_or_all_none([1], ['aaa'], [111])
+    True
+    >>> check_same_len_or_all_none([1, 'b'], ['aaa', 222], [111, 'BBB'])
+    True
+    >>> check_same_len_or_all_none([1, 'b', 3], ['aaa', 222, 'ccc'], [111, 'BBB', 333])
+    True
+
+    >>> check_same_len_or_all_none([], ['aaa'], [111])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none([1], ['aaa', 222], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none([1, 'b'], ['aaa'], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+
+    >>> check_same_len_or_all_none([1, 'b'], None)
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, ['aaa'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, None)
+    True
+
+    >>> check_same_len_or_all_none([1, 'b'], None, ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, ['aaa'], [111])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, None, [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, None, None)
+    True
+
+    >>> check_same_len_or_all_none([1], None, ['aaa', 222])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, ['aaa'], [])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    >>> check_same_len_or_all_none(None, ['aaa'], [111, 'BBB'])
+    Traceback (most recent call last):
+        ...
+    AssertionError: The arguments are neither of the same length nor all None
+    """
+    message = kwargs['message'] if 'message' in kwargs else 'The arguments are neither of the same length nor all None'
+    level = kwargs['level'] if 'level' in kwargs else 1
+    return check(is_same_len_or_all_none(*args), message, level)
+
 def is_instance(arg, types, allow_none=False):
     """
+    Returns `True` if `arg` is of one of the given `types`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True` irrespective of the `types`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    types : a type or an iterable of types
+        The type or types.
+    allow_none : bool
+        Allow `None`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_instance(1, int)
     True
     >>> is_instance(3.5, float)
@@ -2212,8 +2992,8 @@ def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of typ
         ...
     AssertionError: Argument "2019-09-10 12:03:00" of type <class 'datetime.datetime'> is not a timedelta
 
-    >>> check_timedelta(dt.timedelta(seconds=5))
-    datetime.timedelta(0, 5)
+    >>> check_timedelta(dt.timedelta(seconds=5))    #doctest: +ELLIPSIS
+    datetime.timedelta(...)
     
     >>> import numpy as np
     
@@ -2311,8 +3091,8 @@ def check_some_timedelta(arg, allow_none=False, message='Argument "%(string)s" o
     Traceback (most recent call last):
         ...
     AssertionError: Argument "2019-09-10 12:03:00" of type <class 'datetime.datetime'> is not some timedelta
-    >>> check_some_timedelta(dt.timedelta(seconds=5))
-    datetime.timedelta(0, 5)
+    >>> check_some_timedelta(dt.timedelta(seconds=5))    #doctest: +ELLIPSIS
+    datetime.timedelta(...)
     >>> import numpy as np
     >>> check_some_timedelta(np.timedelta64(5, 's'))
     numpy.timedelta64(5,'s')
@@ -2352,7 +3132,7 @@ def is_iterable(arg, allow_none=False):
     >>> is_iterable(None, allow_none=True)
     True
     """
-    return is_instance(arg, col.Iterable, allow_none)
+    return is_instance(arg, collections.abc.Iterable, allow_none)
 
 def check_iterable(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not iterable', level=1):
     """
@@ -2603,6 +3383,7 @@ def is_dict(arg, allow_none=False):
     False
     >>> is_dict({'name': 'Paul', 'surname': 'Bilokon'})
     True
+    >>> import collections as col
     >>> is_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon'))))
     True
     >>> is_dict(None)
@@ -2646,6 +3427,7 @@ def check_dict(arg, allow_none=False, message='Argument "%(string)s" of type %(a
      [1 2 3]]" of type <class 'numpy.ndarray'> is not a dict
     >>> check_dict({'name': 'Paul', 'surname': 'Bilokon'})
     {'name': 'Paul', 'surname': 'Bilokon'}
+    >>> import collections as col
     >>> check_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon'))))
     OrderedDict([('name', 'Paul'), ('surname', 'Bilokon')])
     >>> check_dict(None)
@@ -2676,6 +3458,7 @@ def is_some_dict(arg, allow_none=False):
     False
     >>> is_some_dict({'name': 'Paul', 'surname': 'Bilokon'})
     True
+    >>> import collections as col
     >>> is_some_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon'))))
     True
     >>> is_some_dict(None)
@@ -2719,6 +3502,7 @@ def check_some_dict(arg, allow_none=False, message='Argument "%(string)s" of typ
      [1 2 3]]" of type <class 'numpy.ndarray'> is not a dictionary
     >>> check_some_dict({'name': 'Paul', 'surname': 'Bilokon'})
     {'name': 'Paul', 'surname': 'Bilokon'}
+    >>> import collections as col
     >>> check_some_dict(col.OrderedDict((('name', 'Paul'), ('surname', 'Bilokon'))))
     OrderedDict([('name', 'Paul'), ('surname', 'Bilokon')])
     >>> check_some_dict(None)
@@ -2760,7 +3544,7 @@ def is_callable(arg, allow_none=False):
     >>> is_callable(None, allow_none=True)
     True
     """
-    return (allow_none and arg is None) or (hasattr(arg, '__call__') or isinstance(arg, col.Callable))
+    return (allow_none and arg is None) or (hasattr(arg, '__call__') or isinstance(arg, collections.abc.Callable))
 
 def check_callable(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not callable', level=1):
     """
