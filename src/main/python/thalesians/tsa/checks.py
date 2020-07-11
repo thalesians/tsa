@@ -1537,7 +1537,7 @@ def is_instance(arg, types, allow_none=False):
     types : a type or an iterable of types
         The type or types.
     allow_none : bool
-        Allow `None`.
+        Allow `None` `arg`.
 
     Returns
     -------
@@ -1658,6 +1658,46 @@ def is_instance(arg, types, allow_none=False):
     
 def check_instance(arg, types, allow_none=False, message='Argument "%(string)s" is not of type %(expected)s, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of one of the given `types`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed irrespective of the `types`.
+
+    If the check succeeds, the function returns `True`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s` will be replaced with a string representation of `arg`, `%(expected)s` will be replaced
+    with the expected type(s), `%(actual)s` will be replaced with the actual type of `arg`. 
+    
+    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
+    be passed in as non-keyword arguments.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    types : a type or an iterable of types
+        The type or types.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    bool
+        `True` if the check succeeds.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_instance(1, int)
     1
     >>> check_instance(3.5, float)
@@ -1803,6 +1843,25 @@ def check_instance(arg, types, allow_none=False, message='Argument "%(string)s" 
 
 def is_int(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of type `int`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_int(3)
     True
     >>> is_int(3.5)
