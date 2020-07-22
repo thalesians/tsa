@@ -6,7 +6,7 @@ import numpy.testing as npt
 
 import thalesians.tsa.checks as checks
 import thalesians.tsa.numpyutils as npu
-from thalesians.tsa.numpyutils import vectorised
+from thalesians.tsa.numpyutils import vectorized
 
 # In case you are interested, the numbers used in these tests come from the A000108 sequence (Catalan numbers)
 
@@ -292,7 +292,7 @@ class TestNumPyUtils(unittest.TestCase):
         npt.assert_almost_equal(npu.vec(a), b)
         npt.assert_almost_equal(npu.unvec(b, 3), a)
 
-    def test_vectorised(self):
+    def test_vectorized(self):
         func_call_count = 0
 
         def func(a, b):
@@ -302,14 +302,14 @@ class TestNumPyUtils(unittest.TestCase):
         
         funcv_call_count = 0
         
-        @vectorised
+        @vectorized
         def funcv(a, b):
             nonlocal funcv_call_count
             funcv_call_count += 1
             return a + b
         
         def solver(a, b, f):
-            if npu.is_vectorised(f):
+            if npu.is_vectorized(f):
                 return f(a, b)
             else:
                 rc = np.shape(a)[0]
@@ -318,8 +318,8 @@ class TestNumPyUtils(unittest.TestCase):
                     r[i] = f(a[i], b[i])
                 return r
             
-        self.assertFalse(npu.is_vectorised(func))
-        self.assertTrue(npu.is_vectorised(funcv))
+        self.assertFalse(npu.is_vectorized(func))
+        self.assertTrue(npu.is_vectorized(funcv))
         a = npu.col(14., 2., 429.)
         b = npu.col(42., 1., 5.)
         r = solver(a, b, func)

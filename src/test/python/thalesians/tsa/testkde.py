@@ -71,7 +71,7 @@ class TestKDE(unittest.TestCase):
             samples.extend(_samples)
             weights.extend(np.ones_like(_samples) / o)
         
-        #Renormalise the sample weights
+        #Renormalize the sample weights
         weights = np.array(weights, np.float)
         weights /= np.sum(weights)
         samples = np.array(samples)
@@ -135,7 +135,7 @@ class TestKDE(unittest.TestCase):
             samples.extend(_samples)
             weights.extend(np.ones(len(_samples)) / o)
         
-        #Renormalise the sample weights
+        #Renormalize the sample weights
         weights = np.array(weights, np.float)
         weights /= np.sum(weights)
         samples = np.transpose(samples)

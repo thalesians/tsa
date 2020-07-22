@@ -149,7 +149,7 @@ class SolvedItoMarkovProcess(MarkovProcess, SolvedItoProcess):
     
     def propagate(self, time0, value0, time, variate=None, state0=None, random_state=None):
         if self.noise_dim != self.process_dim:
-            raise NotImplementedError('Cannot utilise the propagate_distr of the Markov process in propagate if noise_dim != process_dim; provide a custom implementation')
+            raise NotImplementedError('Cannot utilize the propagate_distr of the Markov process in propagate if noise_dim != process_dim; provide a custom implementation')
         if time == time0: return npu.to_ndim_2(value0, ndim_1_to_col=True, copy=True)
         value0 = npu.to_ndim_2(value0, ndim_1_to_col=True, copy=False)
         if variate is None:

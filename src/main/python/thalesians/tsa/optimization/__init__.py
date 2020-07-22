@@ -19,7 +19,7 @@ def _param_names_and_values_to_args_and_kwargs(param_names, param_values):
     return args, kwargs
 
 def _evaluate(func, param_ranges, param_names, param_value_indices,
-        optimisation_id, work_id, call_count, repeat_count, evaluator,
+        optimization_id, work_id, call_count, repeat_count, evaluator,
         pype):
     param_values = [param_ranges[pn][param_value_indices[i]] for i, pn in enumerate(param_names)]
     args, kwargs = _param_names_and_values_to_args_and_kwargs(param_names, param_values)
@@ -27,7 +27,7 @@ def _evaluate(func, param_ranges, param_names, param_value_indices,
             'param_ranges': param_ranges,
             'param_names': param_names,
             'param_value_indices': param_value_indices,
-            'optimisation_id': optimisation_id,
+            'optimization_id': optimization_id,
             'work_id': work_id
         }
     status = evaluation.evaluate(func, args, kwargs,
@@ -37,9 +37,9 @@ def _evaluate(func, param_ranges, param_names, param_value_indices,
     return status
 
 class GridSearchResult(object):
-    def __init__(self, param_ranges, optimisation_id, evaluation_statuses):
+    def __init__(self, param_ranges, optimization_id, evaluation_statuses):
         self._param_ranges = param_ranges
-        self._optimisation_id = optimisation_id
+        self._optimization_id = optimization_id
         self._evaluation_statuses = evaluation_statuses
 
     @property
@@ -47,8 +47,8 @@ class GridSearchResult(object):
         return self._param_ranges
 
     @property
-    def optimisation_id(self):
-        return self._optimisation_id
+    def optimization_id(self):
+        return self._optimization_id
 
     @property
     def evaluation_statuses(self):
@@ -57,7 +57,7 @@ class GridSearchResult(object):
     def to_string_helper(self):
         return ToStringHelper(self) \
                     .add('param_ranges', self._param_ranges) \
-                    .add('optimisation_id', self._optimisation_id) \
+                    .add('optimization_id', self._optimization_id) \
                     .add('evaluation_statuses', self._evaluation_statuses)
     
     def __str__(self):
@@ -67,11 +67,11 @@ class GridSearchResult(object):
         return str(self)
 
 def grid_search(func, param_ranges,
-        optimisation_id=None, work_id=None, call_count=1, repeat_count=1, evaluator=None,
+        optimization_id=None, work_id=None, call_count=1, repeat_count=1, evaluator=None,
         pype=None):
     param_ranges = copy.copy(param_ranges)
-    if optimisation_id is None: optimisation_id = uuid.uuid4().hex
-    if work_id is None: work_id = optimisation_id
+    if optimization_id is None: optimization_id = uuid.uuid4().hex
+    if work_id is None: work_id = optimization_id
     if not checks.is_callable(work_id):
         last_index = 0
         def work_id_callable():
@@ -86,7 +86,7 @@ def grid_search(func, param_ranges,
     evaluation_statuses = []
 
     status = _evaluate(func, param_ranges, param_names, copy.copy(param_value_indices),
-            optimisation_id=optimisation_id, work_id=work_id(),
+            optimization_id=optimization_id, work_id=work_id(),
             call_count=call_count, repeat_count=repeat_count,
             evaluator=evaluator,
             pype=pype)
@@ -102,7 +102,7 @@ def grid_search(func, param_ranges,
                     param_value_indices[param_index1] = 0
 
                 status = _evaluate(func, param_ranges, param_names, copy.copy(param_value_indices),
-                        optimisation_id=optimisation_id, work_id=work_id(),
+                        optimization_id=optimization_id, work_id=work_id(),
                         call_count=call_count, repeat_count=repeat_count,
                         evaluator=evaluator,
                         pype=pype)
@@ -113,5 +113,5 @@ def grid_search(func, param_ranges,
 
     return GridSearchResult(
             param_ranges=param_ranges,
-            optimisation_id=optimisation_id,
+            optimization_id=optimization_id,
             evaluation_statuses=evaluation_statuses)

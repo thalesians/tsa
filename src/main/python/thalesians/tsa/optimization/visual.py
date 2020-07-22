@@ -16,13 +16,13 @@ def _aggregate(aggregate_func, data, empty_aggregate):
     else:
         return npu.apply(aggregate_func, data)
 
-def visualise_grid_search(grid_search_result,
+def visualize_grid_search(grid_search_result,
         aggregate_func=np.nanmean, empty_aggregate='none',
         fig=None, title=None,
         refresh_until_ready=False):
     if fig is None: fig = plt.figure()
 
-    if title is None: title = grid_search_result.optimisation_id
+    if title is None: title = grid_search_result.optimization_id
     fig.suptitle(title)
 
     param_names = list(grid_search_result.param_ranges.keys())

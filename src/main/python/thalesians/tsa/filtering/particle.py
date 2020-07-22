@@ -103,7 +103,7 @@ class ParticleFilter(objects.Named):
         
         self._prior_particles = np.empty((self._particle_count, self._state_dim))
         self._resampled_particles = np.empty((self._particle_count, self._state_dim))
-        self._unnormalised_weights = np.empty((self._particle_count,))
+        self._unnormalized_weights = np.empty((self._particle_count,))
         self._weights = np.empty((self._particle_count,))
         self._resampled_particles_uptodate = False
         
@@ -131,7 +131,7 @@ class ParticleFilter(objects.Named):
             
         self._context = OrderedDict()
         
-        self._initialise()
+        self._initialize()
 
     @property
     def time(self):
@@ -223,14 +223,14 @@ class ParticleFilter(objects.Named):
         return ParticleFilter.ParticleObservable(self, name, None, args)
             
     # An auxiliary method of the constructor. Not called anywhere else.
-    def _initialise(self):
-        # TODO Vectorise
+    def _initialize(self):
+        # TODO Vectorize
         for i in range(self._particle_count):
             self._current_particle_idx = i
             self._prior_particles[i,:] = npu.to_ndim_1(self._state_distr.sample())
             self._resampled_particles[i,:] = self._prior_particles[i,:]
         self._current_particle_idx = None
-        self._unnormalised_weights[:] = np.NaN
+        self._unnormalized_weights[:] = np.NaN
         self._weights[:] = 1./self._particle_count
             
     def predict(self, time, true_value=None):
@@ -246,7 +246,7 @@ class ParticleFilter(objects.Named):
         self._prior_particles = np.empty((self._particle_count, self._state_dim))
         for p in self._processes:
             process_dim = p.process_dim
-            if npu.is_vectorised(p.propagate):
+            if npu.is_vectorized(p.propagate):
                 self._prior_particles[:, row:row+process_dim] = p.propagate(self._time, self._resampled_particles[:, row:row+process_dim], time)
             else:
                 for i in range(self._particle_count):
@@ -261,11 +261,11 @@ class ParticleFilter(objects.Named):
         self._cached_prior_mean = None
         self._cached_prior_var = None
         
-        # TODO Vectorise
+        # TODO Vectorize
         # TODO using fft kde - assumes all weights are equal!
         # TODO This only works when self._state_dim == 1
         if self._predicted_observation_sampler is not None:
-            if npu.is_vectorised(self._predicted_observation_sampler):
+            if npu.is_vectorized(self._predicted_observation_sampler):
                 self.predicted_observation_particles = self._predicted_observation_sampler(self._prior_particles, self)
             else:
                 self.predicted_observation_particles = np.empty((self._particle_count, self._observation_dim))
@@ -292,26 +292,26 @@ class ParticleFilter(objects.Named):
         
         weight_sum = 0.
 
-        if npu.is_vectorised(self._weighting_func):
-            self._unnormalised_weights = npu.to_ndim_1(self._weighting_func(observation, self._prior_particles, self))
-            weight_sum = np.sum(self._unnormalised_weights)
+        if npu.is_vectorized(self._weighting_func):
+            self._unnormalized_weights = npu.to_ndim_1(self._weighting_func(observation, self._prior_particles, self))
+            weight_sum = np.sum(self._unnormalized_weights)
         else:
             for i in range(self._particle_count):
                 self._current_particle_idx = i
-                self._unnormalised_weights[i] = npu.toscalar(self._weighting_func(observation, self._prior_particles[i,:], self))
-                weight_sum += self._unnormalised_weights[i]
+                self._unnormalized_weights[i] = npu.toscalar(self._weighting_func(observation, self._prior_particles[i,:], self))
+                weight_sum += self._unnormalized_weights[i]
             self._current_particle_idx = None
                 
         if weight_sum < ParticleFilter.MIN_WEIGHT_SUM:
             warnings.warn('The sum of weights is less than MIN_WEIGHT_SUM')
-            #self._unnormalised_weights[:] = 1. / self._particle_count
+            #self._unnormalized_weights[:] = 1. / self._particle_count
             #weight_sum = 1.
         
-        self._weights = self._unnormalised_weights / weight_sum
+        self._weights = self._unnormalized_weights / weight_sum
         
         self.effective_sample_size = 1. / np.sum(np.square(self._weights))
 
-        self.log_likelihood += np.log(np.sum(self._unnormalised_weights) / self._particle_count)
+        self.log_likelihood += np.log(np.sum(self._unnormalized_weights) / self._particle_count)
         
         self._last_observation = observation
         
@@ -345,8 +345,8 @@ class ParticleFilter(objects.Named):
         return npu.immutablecopyof(self._resampled_particles)
 
     @property
-    def unnormalised_weights(self):
-        return npu.immutablecopyof(self._unnormalised_weights)
+    def unnormalized_weights(self):
+        return npu.immutablecopyof(self._unnormalized_weights)
 
     @property
     def weights(self):
@@ -421,10 +421,10 @@ class MultinomialResamplingParticleFilter(ParticleFilter):
         self._cached_resampled_mean = None
         self._cached_resampled_var = None
 
-class RegularisedResamplingParticleFilter(ParticleFilter):
+class RegularizedResamplingParticleFilter(ParticleFilter):
     def _resample(self):
         # TODO This only works when self._state_dim == 1
-        # TODO Vectorise
+        # TODO Vectorize
         kde = sm.nonparametric.KDEUnivariate(self._prior_particles)
         kde.fit(fft=False, weights=self._weights)
         counts = self._random_state.multinomial(self._particle_count, self._weights)

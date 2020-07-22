@@ -387,11 +387,11 @@ class ObsPlot(FilteringPlot):
 class InnovPlot(FilteringPlot):
     def __init__(self, fig=None, ax=None, auto_refresh=True,
                  title=None, filter_name=None,
-                 standardise=False,
+                 standardize=False,
                  observable_names=None, obs_indices=None, obs_labels=None,
                  obs_colours=_default_obs_colours, 
                  *args, **kwargs):
-        if title is None: title = 'standardised innovation' if standardise else 'innovation'
+        if title is None: title = 'standardized innovation' if standardize else 'innovation'
         
         super().__init__(fig=fig, ax=ax, auto_refresh=auto_refresh,
                 title=title, filter_name=filter_name,
@@ -402,7 +402,7 @@ class InnovPlot(FilteringPlot):
                 state_colours=None, true_value_colours=None, obs_colours=obs_colours,
                 *args, **kwargs)
         
-        self._standardise = standardise
+        self._standardize = standardize
         
         self._innov_plot_indices = []
         self._minus_sd_plot_indices = []
@@ -419,7 +419,7 @@ class InnovPlot(FilteringPlot):
     def _process_obs_result_for_obs_index(self, obs_result, plot_offset, observable_name, obs_index):
         sd = np.sqrt(obs_result.innov_distr.cov[obs_index, obs_index])
         innov = obs_result.innov_distr.mean[obs_index]
-        if self._standardise: innov /= sd
+        if self._standardize: innov /= sd
         self.append(obs_result.obs.time, innov, self._innov_plot_indices[plot_offset], refresh=False)
         self.append(obs_result.obs.time, -sd, self._minus_sd_plot_indices[plot_offset], refresh=False)
         self.append(obs_result.obs.time, sd, self._plus_sd_plot_indices[plot_offset], refresh=False)
@@ -451,8 +451,8 @@ class CUSUMPlot(FilteringPlot):
     def _process_obs_result_for_obs_index(self, obs_result, plot_offset, observable_name, obs_index):
         sd = np.sqrt(obs_result.innov_distr.cov[obs_index, obs_index])
         innov = obs_result.innov_distr.mean[obs_index]
-        standardised_innov = innov / sd
-        self._cusums[plot_offset] += standardised_innov
+        standardized_innov = innov / sd
+        self._cusums[plot_offset] += standardized_innov
         self.append(obs_result.obs.time, self._cusums[plot_offset], self._cusum_plot_indices[plot_offset], refresh=False)
         
 class LogLikelihoodPlot(FilteringPlot):

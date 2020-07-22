@@ -33,14 +33,14 @@ def bar_chart_from_dict(d, fig=None, ax=None, title=None):
     if title is not None: ax.set_title(title)
     return fig, ax
     
-def visualise_categorical_series(ser, fig=None, ax=None):
+def visualize_categorical_series(ser, fig=None, ax=None):
     vc = ser.value_counts()
     bar_chart_from_dict(vc, fig, ax, ser.name)
     
-def visualise_categorical_iterable(it, name=None, fig=None, ax=None):
-    visualise_categorical_series(pd.Series(it, name=name), fig, ax)
+def visualize_categorical_iterable(it, name=None, fig=None, ax=None):
+    visualize_categorical_series(pd.Series(it, name=name), fig, ax)
     
-def visualise_date_series(ser, fig=None, ax=None, **kwargs):
+def visualize_date_series(ser, fig=None, ax=None, **kwargs):
     fig, ax = get_figure_and_axes(fig, ax)
     year = lambda x: x.date().year if type(x) == dt.datetime else (x.year if x is not None else None)
     month = lambda x: x.date().month if type(x) == dt.datetime else (x.month if x is not None else None)
@@ -49,10 +49,10 @@ def visualise_date_series(ser, fig=None, ax=None, **kwargs):
     ax.set_ylabel('frequency')
     return fig, ax
 
-def visualise_date_iterable(it, name=None, fig=None, ax=None, **kwargs):
-    visualise_date_series(pd.Series(it, name=name), fig, ax, **kwargs)
+def visualize_date_iterable(it, name=None, fig=None, ax=None, **kwargs):
+    visualize_date_series(pd.Series(it, name=name), fig, ax, **kwargs)
     
-def visualise_time_series(ser, fig=None, ax=None, **kwargs):
+def visualize_time_series(ser, fig=None, ax=None, **kwargs):
     fig, ax = get_figure_and_axes(fig, ax)
     hour = lambda x: x.time().hour if type(x) == dt.datetime else (x.hour if x is not None else None)
     ser.groupby([ser.apply(hour)]).count().plot(ax=ax, kind='bar', **kwargs)
@@ -60,10 +60,10 @@ def visualise_time_series(ser, fig=None, ax=None, **kwargs):
     ax.set_ylabel('frequency')
     return fig, ax
 
-def visualise_time_iterable(it, name=None, fig=None, ax=None, **kwargs):
-    visualise_time_series(pd.Series(it, name=name), fig, ax, **kwargs)
+def visualize_time_iterable(it, name=None, fig=None, ax=None, **kwargs):
+    visualize_time_series(pd.Series(it, name=name), fig, ax, **kwargs)
     
-def visualise_float_series(ser, fig=None, ax=None, **kwargs):
+def visualize_float_series(ser, fig=None, ax=None, **kwargs):
     fig, ax = get_figure_and_axes(fig, ax)
     if 'alpha' not in kwargs: kwargs['alpha'] = .75
     ser = ser.dropna()
@@ -79,52 +79,52 @@ def visualise_float_series(ser, fig=None, ax=None, **kwargs):
     ax.legend(loc='best', fancybox=True, framealpha=.5)
     return fig, ax
     
-def visualise_df_categorical_columns(df, categorical_columns=None):
+def visualize_df_categorical_columns(df, categorical_columns=None):
     if categorical_columns is None:
         categorical_columns = pdutils.detect_df_categorical_columns(df)
     for c in categorical_columns:
-        visualise_categorical_series(df[c])
+        visualize_categorical_series(df[c])
 
-def visualise_df_int_columns(df, int_columns=None):
+def visualize_df_int_columns(df, int_columns=None):
     if int_columns is None:    
         int_columns = pdutils.get_df_int_columns(df)
     for c in int_columns:
-        visualise_float_series(df[c])
+        visualize_float_series(df[c])
         
-def visualise_df_float_columns(df, float_columns=None):
+def visualize_df_float_columns(df, float_columns=None):
     if float_columns is None:    
         float_columns = pdutils.get_df_float_columns(df)
     for c in float_columns:
-        visualise_float_series(df[c])
+        visualize_float_series(df[c])
         
-def visualise_df_date_columns(df, date_columns=None):
+def visualize_df_date_columns(df, date_columns=None):
     if date_columns is None:    
         date_columns = pdutils.get_df_date_columns(df)
     for c in date_columns:
-        visualise_date_series(df[c])
+        visualize_date_series(df[c])
         
-def visualise_df_time_columns(df, time_columns=None):
+def visualize_df_time_columns(df, time_columns=None):
     if time_columns is None:
         time_columns = pdutils.get_df_time_columns(df)
     for c in time_columns:
-        visualise_time_series(df[c])
+        visualize_time_series(df[c])
         
-def visualise_df_datetime_columns(df, datetime_columns=None):
+def visualize_df_datetime_columns(df, datetime_columns=None):
     if datetime_columns is None:
         datetime_columns = pdutils.get_df_datetime_columns(df)
     for c in datetime_columns:
-        visualise_date_iterable([conv.to_python_datetime(x).date() for x in df[c].values], name='%s.date' % c)
-        visualise_time_iterable([conv.to_python_datetime(x).time() for x in df[c].values], name='%s.time' % c)
+        visualize_date_iterable([conv.to_python_datetime(x).date() for x in df[c].values], name='%s.date' % c)
+        visualize_time_iterable([conv.to_python_datetime(x).time() for x in df[c].values], name='%s.time' % c)
 
-def visualise_df(df):
-    visualise_df_categorical_columns(df)
-    visualise_df_int_columns(df)
-    visualise_df_float_columns(df)
-    visualise_df_date_columns(df)
-    visualise_df_time_columns(df)
-    visualise_df_datetime_columns(df)
+def visualize_df(df):
+    visualize_df_categorical_columns(df)
+    visualize_df_int_columns(df)
+    visualize_df_float_columns(df)
+    visualize_df_date_columns(df)
+    visualize_df_time_columns(df)
+    visualize_df_datetime_columns(df)
 
-def visualise_sized_point_series(time_ser, value_ser, size_ser, scaling=None, fig=None, ax=None, **kwargs):
+def visualize_sized_point_series(time_ser, value_ser, size_ser, scaling=None, fig=None, ax=None, **kwargs):
     if 'alpha' not in kwargs: kwargs['alpha'] = .3
     
     if scaling is None: scaling = lambda x: x
@@ -146,8 +146,8 @@ def visualise_sized_point_series(time_ser, value_ser, size_ser, scaling=None, fi
 
     return fig, ax
 
-def visualise_df_sized_point_series(df, time_column, value_column, size_column, scaling=None, fig=None, ax=None, **kwargs):
-    return visualise_sized_point_series(df[time_column], df[value_column], df[size_column], scaling, fig, ax, **kwargs)
+def visualize_df_sized_point_series(df, time_column, value_column, size_column, scaling=None, fig=None, ax=None, **kwargs):
+    return visualize_sized_point_series(df[time_column], df[value_column], df[size_column], scaling, fig, ax, **kwargs)
 
 class LivePlot(object):
     _figure_refresh_times = {}

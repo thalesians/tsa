@@ -464,7 +464,7 @@ def evaluate_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_m
     # The mean is taken over the predict sets
     return np.mean(metrics, axis=0)
     
-def visualise_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, fit_set='training', predict_set='test', figure=None):
+def visualize_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, fit_set='training', predict_set='test', figure=None):
     if column is None: column = ds.input_all.columns
     if not checks.is_iterable_not_string(column): column = [column]
     assert fit_set in ('training', 'validation', 'test')

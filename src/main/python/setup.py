@@ -13,6 +13,6 @@ setup(name='thalesians.tsa',
             'thalesians.tsa.datasets',
             'thalesians.tsa.filtering',
             'thalesians.tsa.neural',
-            'thalesians.tsa.optimisation',
+            'thalesians.tsa.optimization',
             'thalesians.tsa.q'],
       zip_safe=False)

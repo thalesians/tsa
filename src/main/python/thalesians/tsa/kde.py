@@ -261,10 +261,10 @@ class GaussianKDEDistr(distrs.Distr):
                 msg = "points have dimension %s, particles has dimension %s" % (d, self.dim)
                 raise ValueError(msg)
         
-        # compute the normalised residuals
+        # compute the normalized residuals
         chi2 = cdist(points, self.empirical_distr.particles, 'mahalanobis', VI=self.inv_cov) ** 2
         # compute the pdf
-        result = np.sum(np.exp(-.5 * chi2) * self.empirical_distr.normalised_weights.T, axis=1) / self.pdf_norm_factor        
+        result = np.sum(np.exp(-.5 * chi2) * self.empirical_distr.normalized_weights.T, axis=1) / self.pdf_norm_factor        
 
         return result
 

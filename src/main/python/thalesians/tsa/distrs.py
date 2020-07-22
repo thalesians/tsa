@@ -348,7 +348,7 @@ class EmpiricalDistr(WideSenseDistr):
         # Using Kish's approximate formula for computing the effective sample size: 
         # http://surveyanalysis.org/wiki/Design_Effects_and_Effective_Sample_Size#Kish.27s_approximate_formula_for_computing_effective_sample_size
         if self._effective_particle_count is None:
-            self._effective_particle_count = 1.0 / np.sum(self.normalised_weights ** 2)
+            self._effective_particle_count = 1.0 / np.sum(self.normalized_weights ** 2)
         return self._effective_particle_count
 
     @property
@@ -374,10 +374,10 @@ class EmpiricalDistr(WideSenseDistr):
         return self._weight_sum
 
     @property
-    def normalised_weights(self):
+    def normalized_weights(self):
         return self.weights / self.weight_sum
     
-    def normalised_weight(self, idx):
+    def normalized_weight(self, idx):
         return self.weight(idx) / self.weight_sum
 
     @property
@@ -479,7 +479,7 @@ class EmpiricalDistr(WideSenseDistr):
 def multinomial_resample(empirical_distr, target_particle_count=None, random_state=None):
     if target_particle_count is None: target_particle_count = empirical_distr.particle_count
     if random_state is None: random_state = rnd.random_state()
-    counts = rnd.multinomial(target_particle_count, npu.to_ndim_1(empirical_distr.normalised_weights))
+    counts = rnd.multinomial(target_particle_count, npu.to_ndim_1(empirical_distr.normalized_weights))
     assert np.sum(counts) == target_particle_count
     particle_idx = 0
     resampled_particles = np.empty((target_particle_count, np.shape(empirical_distr.particles)[1]))
@@ -490,10 +490,10 @@ def multinomial_resample(empirical_distr, target_particle_count=None, random_sta
     return EmpiricalDistr(particles=resampled_particles, weights=np.ones((target_particle_count,)))
 
 '''
-class RegularisedResamplingParticleFilter(ParticleFilter):
+class RegularizedResamplingParticleFilter(ParticleFilter):
     def _resample(self):
         # TODO This only works when state_dim == 1
-        # TODO Vectorise
+        # TODO Vectorize
         kde = sm.nonparametric.KDEUnivariate(self._prior_particles)
         kde.fit(fft=False, weights=self._weights)
         counts = self._random_state.multinomial(self.particle_count, self._weights)

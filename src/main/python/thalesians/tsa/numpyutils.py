@@ -121,15 +121,15 @@ def vec(arg):
 def unvec(arg, nrow):
     return np.resize(to_ndim_1(arg, copy=False), (np.size(arg) // nrow, nrow)).T
 
-def vectorised(func):
-    func.__dict__['vectorised'] = True
+def vectorized(func):
+    func.__dict__['vectorized'] = True
     return func
 
-def is_vectorised(func):
+def is_vectorized(func):
     res = False
     if hasattr(func, '__call__'):
         if hasattr(func.__call__, '__dict__'):
-            res |= func.__call__.__getattribute__('__dict__').get('vectorised', False)
+            res |= func.__call__.__getattribute__('__dict__').get('vectorized', False)
     if not res and hasattr(func, '__dict__'):
-        res = func.__getattribute__('__dict__').get('vectorised', False)
+        res = func.__getattribute__('__dict__').get('vectorized', False)
     return res
