@@ -73,9 +73,16 @@ class DataSet(object):
     def original_columns(self):
         return self.__original_columns
     
-    def add_derived_column(self, name, func):
-        result = self.__input_df.apply(func, axis=1)
+    def add_derived_column(self, name, func, vectorized=False):
+        if vectorized:
+            result = func(self.__input_df)
+        else:
+            result = self.__input_df.apply(func, axis=1)
         self.__input_df[name] = result
+        try:
+            self.__truncate_from_above = max(self.__truncate_from_above, list(self.__input_df[name].isnull().values).index(False))
+        except ValueError:
+            self.__truncate_from_above = max(self.__truncate_from_above, len(self.__input_df))
         
     def remove_input_column(self, column):
         if not checks.is_iterable_not_string(column): column = [column]
@@ -402,58 +409,83 @@ class IterativeFeatureSelector(object):
         logger.info('*** Final metric: %05f' % best_metric)
         return selected_columns
 
-def evaluate_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score):
+def evaluate_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, fit_set='training', predict_set='test'):
     logger = logging.getLogger()
+    
     if column is None: column = ds.input_all.columns
     if not checks.is_iterable_not_string(column): column = [column]
+    
+    assert fit_set in ('training', 'validation', 'test')
+    assert predict_set in ('training', 'validation', 'test')
+    
+    if fit_set == 'training':
+        fit_sets = ds.training_set
+        all_fit_sets = ds.all_training_sets
+    elif fit_set == 'validation':
+        fit_sets = ds.validation_set
+        all_fit_sets = ds.all_validation_sets
+    else:
+        fit_sets = ds.test_set
+        all_fit_sets = ds.all_test_sets
+        
+    if predict_set == 'training':
+        predict_sets = ds.training_set
+    elif predict_set == 'validation':
+        predict_sets = ds.validation_set
+    else:
+        predict_sets = ds.test_set
+        
     logger.info('Evaluating the metric for column(s) %s' % ', '.join(['"%s"' % c for c in column]))
     metrics = []
-    if len(ds.training_set) == len(ds.validation_set):
-        for ts, vs in zip(ds.training_set, ds.validation_set):
-            x_train = ts.input[column].values
-            y_train = ts.output.values
+    if len(fit_sets) == len(predict_sets):
+        for fs, ps in zip(fit_sets, predict_sets):
+            x_train = fs.input[column].values
+            y_train = fs.output.values
             model.fit(x_train, y_train)
-            x_validation = vs.input[column].values
-            y_validation = vs.output.values
-            y_validation_pred = model.predict(x_validation)
-            validation_set_metrics = []
+            x_predict = ps.input[column].values
+            y_predict = ps.output.values
+            y_predict_pred = model.predict(x_predict)
+            predict_set_metrics = []
             for i in range(len(ds.forecast_horizon)):
-                validation_set_metrics.append(metric(y_validation[:,i], y_validation_pred[:,i]))
-            metrics.append(validation_set_metrics)
+                predict_set_metrics.append(metric(y_predict[:,i], y_predict_pred[:,i]))
+            metrics.append(predict_set_metrics)
     else:
-        x_train = ds.all_training_sets.input[column].values
-        y_train = ds.all_training_sets.output.values
+        x_train = all_fit_sets.input[column].values
+        y_train = all_fit_sets.output.values
         model.fit(x_train, y_train)
-        for vs in ds.validation_set:
-            x_validation = vs.input[column].values
-            y_validation = vs.output.values
-            y_validation_pred = model.predict(x_validation)
-            validation_set_metrics = []
+        for ps in predict_sets:
+            x_predict = ps.input[column].values
+            y_predict = ps.output.values
+            y_predict_pred = model.predict(x_predict)
+            predict_set_metrics = []
             for i in range(len(ds.forecast_horizon)):
-                validation_set_metrics.append(metric(y_validation[:,i], y_validation_pred[:,i]))
-            metrics.append(validation_set_metrics)
-    # The mean is taken over the validation sets
+                predict_set_metrics.append(metric(y_predict[:,i], y_predict_pred[:,i]))
+            metrics.append(predict_set_metrics)
+    # The mean is taken over the predict sets
     return np.mean(metrics, axis=0)
     
-def visualise_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, figure=None):
+def visualise_metrics_by_forecast_horizon(ds, column=None, model=sklearn.linear_model.LinearRegression(), metric=sklearn.metrics.r2_score, fit_set='training', predict_set='test', figure=None):
     if column is None: column = ds.input_all.columns
     if not checks.is_iterable_not_string(column): column = [column]
+    assert fit_set in ('training', 'validation', 'test')
+    assert predict_set in ('training', 'validation', 'test')
     if figure is None: figure = plt.figure(figsize=(12, 12))
     metrics_by_column = {}
     for c in column:
-        metrics_by_column[c] = evaluate_metrics_by_forecast_horizon(ds, c, model, metric)
-    metrics = evaluate_metrics_by_forecast_horizon(ds, column, model, metric)
+        metrics_by_column[c] = evaluate_metrics_by_forecast_horizon(ds, c, model, metric, fit_set, predict_set)
+    combined_metrics = evaluate_metrics_by_forecast_horizon(ds, column, model, metric, fit_set, predict_set)
     ax = figure.add_subplot(111)
     markers = itertools.cycle(('.', ',', 'o', 'v', '^', '<', '>', '1', '2', '3', '4', '8', 's', 'p', 'P', '*', 'h', 'H', '+', 'x', 'X', 'D', 'd', '|', '_'))
     linestyles = itertools.cycle((':', '-.', '--', '-'))
     for c in column:
         ax.plot(ds.forecast_horizon, metrics_by_column[c], marker=next(markers), linestyle=next(linestyles), linewidth=1, alpha=.5, label=c)
-    ax.plot(ds.forecast_horizon, metrics, 'o-', linewidth=2, label='combined')
+    ax.plot(ds.forecast_horizon, combined_metrics, 'o-', linewidth=2, label='combined')
     # Shrink current axis's height by 10% on the bottom
     box = ax.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
     # Put a legend below current axis
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), fancybox=True, shadow=True, ncol=5)
+    return {'metrics_by_column': metrics_by_column, 'combined_metrics': combined_metrics}
 
 def to_lstm_input(raw_input, timesteps):
     input_values = raw_input.values if isinstance(raw_input, pd.DataFrame) else raw_input
@@ -494,11 +526,9 @@ def __init_logging():
 	}
 	logging.config.dictConfig(config)
 
-__version__ = '1.0.0'
-
 __init_logging()
 logger = logging.getLogger()
-logger.info('Initialising TSA version %s' % __version__)
+logger.info('Initialising TSA')
 
 logger.info('Registering Pandas Matplotlib converters')
 pandas.plotting.register_matplotlib_converters()
