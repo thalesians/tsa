@@ -1662,15 +1662,13 @@ def check_instance(arg, types, allow_none=False, message='Argument "%(string)s" 
     
     If `allow_none` is `True`, and `arg` is `None`, the check will succeed irrespective of the `types`.
 
-    If the check succeeds, the function returns `True`. If the check fails, the function raises an `AssertionError` with
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
     a given `message`.
     
-    In `message`, `%(string)s` will be replaced with a string representation of `arg`, `%(expected)s` will be replaced
-    with the expected type(s), `%(actual)s` will be replaced with the actual type of `arg`. 
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(expected)s`, if
+    present, will be replaced with the expected type(s); `%(actual)s`, if present, will be replaced with the actual type
+    of `arg`. 
     
-    The `message` and `level`, if they are specified, must be passed in as keyword arguments. The other arguments must
-    be passed in as non-keyword arguments.
-
     Parameters
     ----------
     arg :
@@ -1688,8 +1686,8 @@ def check_instance(arg, types, allow_none=False, message='Argument "%(string)s" 
 
     Returns
     -------
-    bool
-        `True` if the check succeeds.
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
     
     Raises
     ------
@@ -1880,6 +1878,42 @@ def is_int(arg, allow_none=False):
 
 def check_int(arg, allow_none=False, message='Argument "%(string)s" is not an integer, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of type int.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_int(3)
     3
     >>> check_int(3.5)
@@ -1906,6 +1940,25 @@ def check_int(arg, allow_none=False, message='Argument "%(string)s" is not an in
 
 def is_some_numpy_int(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of one of the NumPy integral types, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_numpy_int(3)
     False
     >>> is_some_numpy_int(3.5)
@@ -1925,6 +1978,42 @@ def is_some_numpy_int(arg, allow_none=False):
 
 def check_some_numpy_int(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy int*, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of one of the NumPy integral types.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_numpy_int(3)
     Traceback (most recent call last):
         ...
@@ -1951,6 +2040,25 @@ def check_some_numpy_int(arg, allow_none=False, message='Argument "%(string)s" i
 
 def is_some_numpy_uint(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of one of the NumPy unsigned integral types, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_numpy_uint(3)
     False
     >>> is_some_numpy_uint(3.5)
@@ -1970,6 +2078,42 @@ def is_some_numpy_uint(arg, allow_none=False):
 
 def check_some_numpy_uint(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy uint*, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of one of the NumPy unsigned integral types.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_numpy_uint(3)
     Traceback (most recent call last):
         ...
@@ -1996,6 +2140,26 @@ def check_some_numpy_uint(arg, allow_none=False, message='Argument "%(string)s" 
 
 def is_some_int(arg, allow_none=False):
     """
+    Returns `True` if `arg` is either a native Python `int` or of one of the NumPy signed or unsigned integral types,
+    otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_int(3)
     True
     >>> is_some_int(3.5)
@@ -2014,6 +2178,42 @@ def is_some_int(arg, allow_none=False):
 
 def check_some_int(arg, allow_none=False, message='Argument "%(string)s" is not some (u)int*, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is either a native Python `int` or of one of the NumPy signed or unsigned integral types.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_int(3)
     3
     >>> check_some_int(3.5)
@@ -2040,6 +2240,25 @@ def check_some_int(arg, allow_none=False, message='Argument "%(string)s" is not 
 
 def is_float(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of type `float`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_float(3)
     False
     >>> is_float(3.5)
