@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='thalesians.tsa',
-      version='0.5',    # This version should match that in thalesians/tsa/__init__.py
+      version='0.6',    # This version should match that in thalesians/tsa/__init__.py
       description='The Thalesians\' Time Series Analysis (TSA) library',
       url='https://github.com/thalesians/tsa',
       author='Thalesians Ltd',
