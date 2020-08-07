@@ -2289,6 +2289,42 @@ def is_float(arg, allow_none=False):
 
 def check_float(arg, allow_none=False, message='Argument "%(string)s" is not a float, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of type float.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_float(3)
     Traceback (most recent call last):
         ...
@@ -2315,6 +2351,25 @@ def check_float(arg, allow_none=False, message='Argument "%(string)s" is not a f
 
 def is_some_numpy_float(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of a NumPy floating point type, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_numpy_float(3)
     False
     
@@ -2344,6 +2399,42 @@ def is_some_numpy_float(arg, allow_none=False):
 
 def check_some_numpy_float(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy float*, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of a NumPy floating point type.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_numpy_float(3)
     Traceback (most recent call last):
         ...
@@ -2372,6 +2463,25 @@ def check_some_numpy_float(arg, allow_none=False, message='Argument "%(string)s"
 
 def is_some_numpy_double(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of a NumPy `double` or of a NumPy `longdouble` type, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_numpy_double(3)
     False
 
@@ -2402,6 +2512,42 @@ def is_some_numpy_double(arg, allow_none=False):
 
 def check_some_numpy_double(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy double/longdouble, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of a NumPy `double` or of a NumPy `longdouble` type.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_numpy_double(3)
     Traceback (most recent call last):
         ...
@@ -2430,6 +2576,25 @@ def check_some_numpy_double(arg, allow_none=False, message='Argument "%(string)s
 
 def is_some_float(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of some floating point type (either native or NumPy), otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_float(3)
     False
     >>> is_some_float(3.5)
@@ -2450,6 +2615,42 @@ def is_some_float(arg, allow_none=False):
 
 def check_some_float(arg, allow_none=False, message='Argument "%(string)s" is not some float*/double/longdouble, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of some floating point type (either native or NumPy).
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_float(3)
     Traceback (most recent call last):
         ...
@@ -2476,6 +2677,26 @@ def check_some_float(arg, allow_none=False, message='Argument "%(string)s" is no
 
 def is_some_number(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of some numeric type (either integer or floating point, whether native or NumPy),
+    otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_number(3)
     True
     >>> is_some_number(3.5)
@@ -2498,6 +2719,42 @@ def is_some_number(arg, allow_none=False):
 
 def check_some_number(arg, allow_none=False, message='Argument "%(string)s" is not some number, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is of some some numeric type (either integer or floating point, whether native or NumPy).
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_number(3)
     3
     >>> check_some_number(3.5)
@@ -2522,6 +2779,25 @@ def check_some_number(arg, allow_none=False, message='Argument "%(string)s" is n
 
 def is_numpy_array(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a NumPy array, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> import numpy as np
     >>> is_numpy_array(np.array([1, 2, 3]))
     True
@@ -2551,6 +2827,42 @@ def is_numpy_array(arg, allow_none=False):
 
 def check_numpy_array(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy array, but of type %(actual)s', level=1):
     """
+    Checks whether `arg` is a NumPy array.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> import numpy as np
     >>> check_numpy_array(np.array([1, 2, 3]))
     array([1, 2, 3])
@@ -2594,6 +2906,25 @@ def check_numpy_array(arg, allow_none=False, message='Argument "%(string)s" is n
 
 def is_string(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a string, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_string([1, 2, 3])
     False
     >>> is_string(3)
@@ -2613,6 +2944,42 @@ def is_string(arg, allow_none=False):
 
 def check_string(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a string', level=1):
     """
+    Checks whether `arg` is a string.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_string([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -2640,6 +3007,25 @@ def check_string(arg, allow_none=False, message='Argument "%(string)s" of type %
 
 def is_date(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a Python `date`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_date([1, 2, 3])
     False
     >>> is_date(3)
@@ -2676,6 +3062,42 @@ def is_date(arg, allow_none=False):
 
 def check_date(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a date', level=1):
     """
+    Checks whether `arg` is a Python `date`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_date([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -2732,6 +3154,25 @@ def check_date(arg, allow_none=False, message='Argument "%(string)s" of type %(a
 
 def is_some_date(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of some type representing a date, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_date([1, 2, 3])
     False
     >>> is_some_date(3)
@@ -2766,6 +3207,42 @@ def is_some_date(arg, allow_none=False):
 
 def check_some_date(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a date', level=1):
     """
+    Checks whether `arg` is of some type representing a date.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_date([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -2822,6 +3299,25 @@ def check_some_date(arg, allow_none=False, message='Argument "%(string)s" of typ
 
 def is_time(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a Python `time`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_time([1, 2, 3])
     False
     >>> is_time(3)
@@ -2857,6 +3353,42 @@ def is_time(arg, allow_none=False):
 
 def check_time(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a time', level=1):
     """
+    Checks whether `arg` is a Python `time`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_time([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -2913,6 +3445,25 @@ def check_time(arg, allow_none=False, message='Argument "%(string)s" of type %(a
 
 def is_some_time(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of some type representing a time, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_time([1, 2, 3])
     False
     >>> is_some_time(3)
@@ -2941,6 +3492,42 @@ def is_some_time(arg, allow_none=False):
 
 def check_some_time(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a time', level=1):
     """
+    Checks whether `arg` is of some type representing a time.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_time([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -2997,6 +3584,25 @@ def check_some_time(arg, allow_none=False, message='Argument "%(string)s" of typ
 
 def is_datetime(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a Python `datetime`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_datetime([1, 2, 3])
     False
     >>> is_datetime(3)
@@ -3032,6 +3638,42 @@ def is_datetime(arg, allow_none=False):
 
 def check_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a datetime', level=1):
     """
+    Checks whether `arg` is a Python `datetime`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_datetime([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -3089,6 +3731,25 @@ def check_datetime(arg, allow_none=False, message='Argument "%(string)s" of type
 
 def is_some_datetime(arg, allow_none=False):
     """
+    Returns `True` if `arg` is of some type representing a datetime, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_datetime([1, 2, 3])
     False
     >>> is_some_datetime(3)
@@ -3120,6 +3781,42 @@ def is_some_datetime(arg, allow_none=False):
 
 def check_some_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not some datetime', level=1):
     """
+    Checks whether `arg` is of some type representing a datetime.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_datetime([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -3176,6 +3873,25 @@ def check_some_datetime(arg, allow_none=False, message='Argument "%(string)s" of
 
 def is_timedelta(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a Python `timedelta`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_timedelta([1, 2, 3])
     False
 
@@ -3228,6 +3944,42 @@ def is_timedelta(arg, allow_none=False):
 
 def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a timedelta', level=1):
     """
+    Checks whether `arg` is a Python `timedelta`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_timedelta([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -3299,6 +4051,25 @@ def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of typ
 
 def is_some_timedelta(arg, allow_none=False):
     """
+    Returns `True` if `arg` is some type representing a time delta, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_timedelta([1, 2, 3])
     False
     >>> is_some_timedelta(3)
@@ -3336,6 +4107,42 @@ def is_some_timedelta(arg, allow_none=False):
 
 def check_some_timedelta(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not some timedelta', level=1):
     """
+    Checks whether `arg` is of some type representing a time delta.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_timedelta([1, 2, 3])
     Traceback (most recent call last):
         ...
@@ -3388,6 +4195,25 @@ def check_some_timedelta(arg, allow_none=False, message='Argument "%(string)s" o
 
 def is_iterable(arg, allow_none=False):
     """
+    Returns `True` if `arg` is iterable, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_iterable(3)
     False
     >>> is_iterable(3.5)
@@ -3414,6 +4240,42 @@ def is_iterable(arg, allow_none=False):
 
 def check_iterable(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not iterable', level=1):
     """
+    Checks whether `arg` is iterable.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_iterable(3)
     Traceback (most recent call last):
         ...
@@ -3447,6 +4309,25 @@ def check_iterable(arg, allow_none=False, message='Argument "%(string)s" of type
 
 def is_iterable_not_string(arg, allow_none=False):
     """
+    Returns `True` if `arg` is iterable but not a string, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_iterable_not_string(3)
     False
     >>> is_iterable_not_string(3.5)
@@ -3473,6 +4354,42 @@ def is_iterable_not_string(arg, allow_none=False):
 
 def check_iterable_not_string(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is either not iterable or a string', level=1):
     """
+    Checks whether `arg` is iterable but not a string.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_iterable_not_string(3)
     Traceback (most recent call last):
         ...
@@ -3508,6 +4425,32 @@ def check_iterable_not_string(arg, allow_none=False, message='Argument "%(string
 
 def is_iterable_over_instances(arg, types, allow_none=False, allow_empty=False):
     """
+    Returns `True` if `arg` is iterable over instances of `types` (or one of the `types` if `types` is an iterable).
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+    
+    This function does not check every single element of the iterable. It considers only the first one.
+    
+    Since this function has to "peek" into `arg`, it may end up with the first element removed. Therefore the client
+    should no longer use `arg`, preferring instead `arg`'s replacement returned by this function.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    types : a single type or iterable of types
+        The types.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    tuple
+        The tuple of the result (`True` or `False`) and `arg`'s replacement.
+    
+    Examples
+    --------
     >>> result, iterable = is_iterable_over_instances(3, int)
     >>> result
     False
@@ -3587,6 +4530,52 @@ def is_iterable_over_instances(arg, types, allow_none=False, allow_empty=False):
     
 def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=False, message='Argument is not an iterable over type %(expected)s', level=1):
     """
+    Checks whether `arg` is iterable over instances of `types` (or one of the `types` if `types` is an iterable).
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+    
+    If `allow_empty` is `True`, and `arg` is an empty iterable, the check will succeed. If `allow_empty` is `False`, and
+    `arg` is an empty iterable, the check will fail.
+
+    Since this function has to "peek" into `arg`, it may end up with the first element removed. Therefore the client
+    should no longer use `arg`, preferring instead `arg`'s replacement returned by this function.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    types : a single type or iterable of types
+        The types.
+    allow_none : bool
+        Allow `None` `arg`.
+    allow_empty : bool
+        Allow empty `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        `arg`'s replacement.
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_iterable_over_instances(3, int)
     Traceback (most recent call last):
         ...
@@ -3644,6 +4633,25 @@ def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=Fals
 
 def is_dict(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a Python `dict`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_dict(3)
     False
     >>> is_dict(3.5)
@@ -3673,6 +4681,42 @@ def is_dict(arg, allow_none=False):
 
 def check_dict(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a dict', level=1):
     """
+    Checks whether `arg` is a Python `dict`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_dict(3)
     Traceback (most recent call last):
         ...
@@ -3719,6 +4763,25 @@ def check_dict(arg, allow_none=False, message='Argument "%(string)s" of type %(a
 
 def is_some_dict(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a dictionary, not necessarily a standard `dict`, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_some_dict(3)
     False
     >>> is_some_dict(3.5)
@@ -3748,6 +4811,42 @@ def is_some_dict(arg, allow_none=False):
 
 def check_some_dict(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a dictionary', level=1):
     """
+    Checks whether `arg` is a dictionary, not necessarily a standard `dict`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_some_dict(3)
     Traceback (most recent call last):
         ...
@@ -3794,6 +4893,25 @@ def check_some_dict(arg, allow_none=False, message='Argument "%(string)s" of typ
 
 def is_callable(arg, allow_none=False):
     """
+    Returns `True` if `arg` is callable, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_callable(3)
     False
     >>> is_callable(3.5)
@@ -3826,6 +4944,42 @@ def is_callable(arg, allow_none=False):
 
 def check_callable(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not callable', level=1):
     """
+    Checks whether `arg` is callable.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_callable(3)
     Traceback (most recent call last):
         ...
@@ -3877,6 +5031,25 @@ def check_callable(arg, allow_none=False, message='Argument "%(string)s" of type
 
 def is_type(arg, allow_none=False):
     """
+    Returns `True` if `arg` is a type, otherwise `False`.
+    
+    If `allow_none` is `True`, and `arg` is `None`, will return `True`. If `allow_none` is `False`, and `arg` is `None`,
+    will return `False`.
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+
+    Returns
+    -------
+    bool
+        `True` or `False`.
+    
+    Examples
+    --------
     >>> is_type(3)
     False
     >>> is_type('hi')
@@ -3897,6 +5070,42 @@ def is_type(arg, allow_none=False):
 
 def check_type(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a type', level=1):
     """
+    Checks whether `arg` is a type.
+    
+    If `allow_none` is `True`, and `arg` is `None`, the check will succeed. If `allow_none` is `False`, and `arg` is
+    `None`, the check will fail.
+
+    If the check succeeds, the function returns `arg`. If the check fails, the function raises an `AssertionError` with
+    a given `message`.
+    
+    In `message`, `%(string)s`, if present, will be replaced with a string representation of `arg`; `%(actual)s`, if
+    present, will be replaced with the actual type of `arg`. 
+
+    Parameters
+    ----------
+    arg :
+        The argument to be checked.
+    allow_none : bool
+        Allow `None` `arg`.
+    message : str, callable
+        The message for the `AssertionError` in case the check has failed. If `message` is callable, then it will be
+        called with no arguments to obtain the message. If unspecified, the default message will be used.
+    level : int
+        The level of this check. The check will only be carried out if `tsa_settings.MIN_CHECK_LEVEL` is less than or
+        equal to `level`. Otherwise the check will succeed regardless of the `arg`. If unspecified, defaults to 1.
+
+    Returns
+    -------
+    object
+        The argument is returned to facilitate the fluent pattern (function call chaining).
+    
+    Raises
+    ------
+    AssertionError
+        The check has failed.
+    
+    Examples
+    --------
     >>> check_type(3)
     Traceback (most recent call last):
         ...
