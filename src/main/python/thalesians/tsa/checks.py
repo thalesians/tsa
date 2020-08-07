@@ -7,6 +7,9 @@ A collection of utility functions for checking whether given conditions hold.
 Those functions that start with `is_` or `are_` return `False` if a given condition does not hold and `True` if it does
 hold. Those functions that start with `check_` return their argument if a given condition holds and raise an
 `AssertionError` if it does not hold.
+
+While this module is useful for checking whether (or asserting that) an argument is of a given type, the `conversions`
+module is useful for converting from one type to another.
 """
 
 import collections.abc
@@ -1656,7 +1659,8 @@ def is_instance(arg, types, allow_none=False):
     """
     return (allow_none and arg is None) or isinstance(arg, types)
     
-def check_instance(arg, types, allow_none=False, message='Argument "%(string)s" is not of type %(expected)s, but of type %(actual)s', level=1):
+def check_instance(arg, types, allow_none=False,
+            message='Argument "%(string)s" is not of type %(expected)s, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is of one of the given `types`.
     
@@ -1836,7 +1840,8 @@ def check_instance(arg, types, allow_none=False, message='Argument "%(string)s" 
     >>> check_instance(None, (str, list), allow_none=True)
     >>> check_instance(None, (str, list), allow_none=True)
     """
-    check(is_instance(arg, types, allow_none), lambda: message % {'string': str(arg), 'actual': type(arg), 'expected': types}, level)
+    check(is_instance(arg, types, allow_none), \
+            lambda: message % {'string': str(arg), 'actual': type(arg), 'expected': types}, level)
     return arg
 
 def is_int(arg, allow_none=False):
@@ -1876,7 +1881,8 @@ def is_int(arg, allow_none=False):
     """
     return is_instance(arg, int, allow_none)
 
-def check_int(arg, allow_none=False, message='Argument "%(string)s" is not an integer, but of type %(actual)s', level=1):
+def check_int(arg, allow_none=False, message='Argument "%(string)s" is not an integer, but of type %(actual)s',
+            level=1):
     """
     Checks whether `arg` is of type int.
     
@@ -1976,7 +1982,8 @@ def is_some_numpy_int(arg, allow_none=False):
     import numpy as np
     return is_instance(arg, (np.int0, np.int8, np.int16, np.int32, np.int64), allow_none)
 
-def check_some_numpy_int(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy int*, but of type %(actual)s', level=1):
+def check_some_numpy_int(arg, allow_none=False,
+            message='Argument "%(string)s" is not a NumPy int*, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is of one of the NumPy integral types.
     
@@ -2076,7 +2083,8 @@ def is_some_numpy_uint(arg, allow_none=False):
     import numpy as np
     return is_instance(arg, (np.uint, np.uint0, np.uint8, np.uint16, np.uint32, np.uint64), allow_none)
 
-def check_some_numpy_uint(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy uint*, but of type %(actual)s', level=1):
+def check_some_numpy_uint(arg, allow_none=False,
+            message='Argument "%(string)s" is not a NumPy uint*, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is of one of the NumPy unsigned integral types.
     
@@ -2176,7 +2184,8 @@ def is_some_int(arg, allow_none=False):
     """
     return is_int(arg, allow_none) or is_some_numpy_int(arg, allow_none) or is_some_numpy_uint(arg, allow_none)
 
-def check_some_int(arg, allow_none=False, message='Argument "%(string)s" is not some (u)int*, but of type %(actual)s', level=1):
+def check_some_int(arg, allow_none=False, message='Argument "%(string)s" is not some (u)int*, but of type %(actual)s',
+            level=1):
     """
     Checks whether `arg` is either a native Python `int` or of one of the NumPy signed or unsigned integral types.
     
@@ -2397,7 +2406,8 @@ def is_some_numpy_float(arg, allow_none=False):
     import numpy as np
     return is_instance(arg, (np.float16, np.float32, np.float64), allow_none)
 
-def check_some_numpy_float(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy float*, but of type %(actual)s', level=1):
+def check_some_numpy_float(arg, allow_none=False,
+            message='Argument "%(string)s" is not a NumPy float*, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is of a NumPy floating point type.
     
@@ -2510,7 +2520,8 @@ def is_some_numpy_double(arg, allow_none=False):
     import numpy as np
     return is_instance(arg, (np.double, np.longdouble), allow_none)
 
-def check_some_numpy_double(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy double/longdouble, but of type %(actual)s', level=1):
+def check_some_numpy_double(arg, allow_none=False,
+            message='Argument "%(string)s" is not a NumPy double/longdouble, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is of a NumPy `double` or of a NumPy `longdouble` type.
     
@@ -2613,7 +2624,8 @@ def is_some_float(arg, allow_none=False):
     """
     return is_float(arg, allow_none) or is_some_numpy_float(arg, allow_none) or is_some_numpy_double(arg, allow_none)
 
-def check_some_float(arg, allow_none=False, message='Argument "%(string)s" is not some float*/double/longdouble, but of type %(actual)s', level=1):
+def check_some_float(arg, allow_none=False,
+            message='Argument "%(string)s" is not some float*/double/longdouble, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is of some floating point type (either native or NumPy).
     
@@ -2717,7 +2729,8 @@ def is_some_number(arg, allow_none=False):
     """
     return is_some_int(arg, allow_none) or is_some_float(arg, allow_none)
 
-def check_some_number(arg, allow_none=False, message='Argument "%(string)s" is not some number, but of type %(actual)s', level=1):
+def check_some_number(arg, allow_none=False, message='Argument "%(string)s" is not some number, but of type %(actual)s',
+            level=1):
     """
     Checks whether `arg` is of some some numeric type (either integer or floating point, whether native or NumPy).
     
@@ -2825,7 +2838,8 @@ def is_numpy_array(arg, allow_none=False):
     import numpy as np
     return is_instance(arg, np.ndarray, allow_none)
 
-def check_numpy_array(arg, allow_none=False, message='Argument "%(string)s" is not a NumPy array, but of type %(actual)s', level=1):
+def check_numpy_array(arg, allow_none=False,
+            message='Argument "%(string)s" is not a NumPy array, but of type %(actual)s', level=1):
     """
     Checks whether `arg` is a NumPy array.
     
@@ -3636,7 +3650,8 @@ def is_datetime(arg, allow_none=False):
     import datetime as dt
     return is_instance(arg, dt.datetime, allow_none)
 
-def check_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a datetime', level=1):
+def check_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a datetime',
+            level=1):
     """
     Checks whether `arg` is a Python `datetime`.
     
@@ -3779,7 +3794,8 @@ def is_some_datetime(arg, allow_none=False):
     import pandas as pd
     return is_instance(arg, (dt.datetime, np.datetime64, pd.Timestamp), allow_none)
 
-def check_some_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not some datetime', level=1):
+def check_some_datetime(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not some datetime',
+            level=1):
     """
     Checks whether `arg` is of some type representing a datetime.
     
@@ -3942,7 +3958,8 @@ def is_timedelta(arg, allow_none=False):
     import datetime as dt
     return is_instance(arg, dt.timedelta, allow_none)
 
-def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a timedelta', level=1):
+def check_timedelta(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a timedelta',
+            level=1):
     """
     Checks whether `arg` is a Python `timedelta`.
     
@@ -4105,7 +4122,8 @@ def is_some_timedelta(arg, allow_none=False):
     import pandas as pd
     return is_instance(arg, (dt.timedelta, np.timedelta64, pd.Timedelta), allow_none)
 
-def check_some_timedelta(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not some timedelta', level=1):
+def check_some_timedelta(arg, allow_none=False,
+            message='Argument "%(string)s" of type %(actual)s is not some timedelta', level=1):
     """
     Checks whether `arg` is of some type representing a time delta.
     
@@ -4352,7 +4370,8 @@ def is_iterable_not_string(arg, allow_none=False):
     """
     return (allow_none and arg is None) or ((not is_string(arg)) and is_iterable(arg))
 
-def check_iterable_not_string(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is either not iterable or a string', level=1):
+def check_iterable_not_string(arg, allow_none=False,
+            message='Argument "%(string)s" of type %(actual)s is either not iterable or a string', level=1):
     """
     Checks whether `arg` is iterable but not a string.
     
@@ -4528,7 +4547,8 @@ def is_iterable_over_instances(arg, types, allow_none=False, allow_empty=False):
         return isinstance(objs[0], types), iterable
     return False, arg
     
-def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=False, message='Argument is not an iterable over type %(expected)s', level=1):
+def check_iterable_over_instances(arg, types, allow_none=False, allow_empty=False,
+            message='Argument is not an iterable over type %(expected)s', level=1):
     """
     Checks whether `arg` is iterable over instances of `types` (or one of the `types` if `types` is an iterable).
     
@@ -4809,7 +4829,8 @@ def is_some_dict(arg, allow_none=False):
     """
     return (allow_none and arg is None) or hasattr(arg, 'keys')
 
-def check_some_dict(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a dictionary', level=1):
+def check_some_dict(arg, allow_none=False, message='Argument "%(string)s" of type %(actual)s is not a dictionary',
+            level=1):
     """
     Checks whether `arg` is a dictionary, not necessarily a standard `dict`.
     
